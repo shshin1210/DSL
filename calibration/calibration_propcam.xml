@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<img_shape type_id="opencv-matrix">
+  <rows>2</rows>
+  <cols>1</cols>
+  <dt>d</dt>
+  <data>
+    1536. 2048.</data></img_shape>
+<rms>8.3941037609222757e-01</rms>
+<cam_int type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>d</dt>
+  <data>
+    3.4814862215300755e+03 0. 1.0850774502916179e+03 0.
+    3.4962811804122616e+03 8.4801915388853001e+02 0. 0. 1.</data></cam_int>
+<cam_dist type_id="opencv-matrix">
+  <rows>1</rows>
+  <cols>5</cols>
+  <dt>d</dt>
+  <data>
+    -3.8469683699597201e-01 3.5670497475161818e+00
+    7.2611115565953484e-04 2.2154683511137947e-04
+    -2.5106465420122998e+01</data></cam_dist>
+<proj_int type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>d</dt>
+  <data>
+    2.0263612749616177e+03 0. 6.4159788730416665e+02 0.
+    2.0429619677533606e+03 6.8820113241202682e+02 0. 0. 1.</data></proj_int>
+<proj_dist type_id="opencv-matrix">
+  <rows>1</rows>
+  <cols>5</cols>
+  <dt>d</dt>
+  <data>
+    -6.0860805795589702e-02 4.7635735135482937e-01
+    6.8745703228014522e-03 -4.3654191114478698e-03
+    -2.5445358861735028e+00</data></proj_dist>
+<rotation type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>d</dt>
+  <data>
+    9.9966345616614727e-01 1.0261031526901167e-02 2.3826154493690851e-02
+    -7.6574536530243601e-03 9.9424012370543235e-01
+    -1.0690154263507312e-01 -2.4785838890484791e-02
+    1.0668311790630472e-01 9.9398409169577984e-01</data></rotation>
+<translation type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>1</cols>
+  <dt>d</dt>
+  <data>
+    -5.2593873799226301e+01 -1.1566956383775786e+01
+    6.9780818853891047e+00</data></translation>
+<fundamental type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>d</dt>
+  <data>
+    4.6971075795109105e-08 -1.1237377021854628e-06
+    -4.2671054961448658e-03 7.7694188609206934e-07
+    7.7506320006367752e-07 2.3508849602790899e-02 2.7836132508403124e-03
+    -1.4350221934557511e-02 1.</data></fundamental>
+<epipolar type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>d</dt>
+  <data>
+    3.4013105600590710e-01 -8.1718879686633361e+00
+    -1.0751402916630122e+01 5.6721501723443453e+00
+    5.6824807578954459e+00 5.2443734734157339e+01 1.1965798746978969e+01
+    -5.2172250688166443e+01 5.8979623321132717e+00</data></epipolar>
+</opencv_storage>
