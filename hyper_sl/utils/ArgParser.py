@@ -49,15 +49,15 @@ class Argument:
 		self.parser.add_argument('--cam_H', type = int, default= 580)
 		self.parser.add_argument('--proj_W', type = int, default= 1280//2) # 720
 		self.parser.add_argument('--proj_H', type = int, default= 720//2)
-		self.parser.add_argument('--scene_train_num', type = int, default= 1) # 200
-		self.parser.add_argument('--scene_test_num', type = int, default= 1) # 20
-		self.parser.add_argument('--eval_num', type = int, default= 1)
+		self.parser.add_argument('--scene_train_num', type = int, default= 200) # 200
+		self.parser.add_argument('--scene_test_num', type = int, default= 20) # 20
+		self.parser.add_argument('--eval_num', type = int, default= 2)
 
 		self.parser.add_argument('--illum_num', type = int, default= 40)
 
 		self.parser.add_argument('--num_train_px_per_iter', type = int, default= 1000) # 400
-		self.parser.add_argument('--batch_size_train', type = int, default= 1) # 5
-		self.parser.add_argument('--batch_size_test', type = int, default= 1) # 4
+		self.parser.add_argument('--batch_size_train', type = int, default= 32) # 5
+		self.parser.add_argument('--batch_size_test', type = int, default= 16) # 4
 		self.parser.add_argument('--batch_size_eval', type = int, default= 1)
 
 		self.parser.add_argument('--model_lr', type = float, default= 5*1e-4) # 5*1e-4

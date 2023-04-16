@@ -92,7 +92,7 @@ def train(arg, epochs, cam_crf):
             pred_xy = model(N3_arr_normalized)
             loss_depth = loss_fn(gt_xy, pred_xy)
             
-            pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
+            # pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
             
             # HYPERSPECTRAL ESTIMATION
             # hyp datas reshape
@@ -190,7 +190,7 @@ def train(arg, epochs, cam_crf):
                 pred_xy = model(N3_arr_normalized)
                 loss_depth = loss_fn(gt_xy, pred_xy)
                 
-                pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
+                # pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
                 
                 # HYPERSPECTRAL ESTIMATION
                 # hyp datas
@@ -308,14 +308,8 @@ def train(arg, epochs, cam_crf):
                     x_gt = shading_term * hyp # 25M, 1
                     
                     # hyp lstsq
-                    A = illum * cam_crf
-                    A = A.reshape(-1, batch_size * pixel_num, arg.wvl_num).permute(1,0,2)
-                    
-                    import numpy as np
-                    
-                    np.save('I.npy', I.detach().cpu().numpy())
-                    np.save('A.npy', A.detach().cpu().numpy())
-                    np.save('x_gt.npy', x_gt.detach().cpu().numpy())
+                    # A = illum * cam_crf
+                    # A = A.reshape(-1, batch_size * pixel_num, arg.wvl_num).permute(1,0,2)
 
                     # list_A = list(A)
                     # block = torch.block_diag(*list_A)
