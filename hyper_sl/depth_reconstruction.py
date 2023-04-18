@@ -8,6 +8,7 @@ from hyper_sl.utils import load_data
 from hyper_sl.image_formation import projector
 from hyper_sl.image_formation import camera
 from hyper_sl.utils import normalize
+from hyper_sl.utils import data_process
 
 class depthReconstruction():
     def __init__(self, arg):
@@ -20,6 +21,7 @@ class depthReconstruction():
         self.proj = projector.Projector(arg, device= self.device)
         self.cam = camera.Camera(arg)
         self.normalize = normalize
+        self.dilation = data_process.dilation
         
         # intrinsic of proj & cam
         self.cam_H, self.cam_W = arg.cam_H, arg.cam_W
@@ -173,8 +175,8 @@ if __name__ == "__main__":
     
     pixel_num = arg.cam_H * arg.cam_W
     
-    x_proj = torch.tensor(np.load('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/prediction/prediction_xy_750.npy'))
-    gt_proj = torch.tensor(np.load('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/prediction/ground_truth_xy_750.npy'))
+    x_proj = torch.tensor(np.load('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/prediction/prediction_xy_1020.npy'))
+    gt_proj = torch.tensor(np.load('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/prediction/ground_truth_xy_1020.npy'))
     # unnorm_gt = torch.tensor(np.load('/workspace/Scalable-Hyperspectral-3D-Imaging/prediction/ground_truth_xy_real_150.npy'))
     cam_coord = create_data.createData(arg, 'coord', pixel_num, random = False).create().unsqueeze(dim = 0)
 
