@@ -6,7 +6,7 @@ sys.path.append('/home/shshin/Scalable-Hyperspectral-3D-Imaging')
 
 import glob
 from hyper_sl.utils import open_exr
-from hyper_sl.utils import crop
+from hyper_sl.utils import data_process
 
 # import openEXR
 
@@ -17,7 +17,7 @@ class load_data():
         self.illum_path = arg.illum_dir
         self.img_hyp_text_path = arg.img_hyp_texture_dir
         self.openEXR = open_exr.openExr(arg)
-        self.crop = crop
+        self.crop = data_process
         
         # cam
         self.cam_H, self.cam_W = arg.cam_H, arg.cam_W

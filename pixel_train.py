@@ -5,13 +5,20 @@ import numpy as np
 import os
 from hyper_sl.utils.ArgParser import Argument
 
-from hyper_sl.mlp import MLP
+from hyper_sl.mlp import mlp_depth
 import hyper_sl.datatools as dtools 
 from hyper_sl.image_formation import renderer
 from hyper_sl.hyp_reconstruction import compute_hyp, diff_hyp
 from hyper_sl.depth_reconstruction import depthReconstruction
+from hyper_sl.utils import data_process, normalize
+from hyper_sl.image_formation import camera
 
 from torch.utils.tensorboard import SummaryWriter
+import torch.nn as nn
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+print('cuda visible device count :',torch.cuda.device_count())
+print('current device number :', torch.cuda.current_device())
 
 def train(arg, epochs, cam_crf):
     writer = SummaryWriter(log_dir=arg.log_dir)
@@ -26,7 +33,7 @@ def train(arg, epochs, cam_crf):
     eval_loader = DataLoader(eval_dataset, batch_size= arg.batch_size_eval, shuffle=True)
 
     # bring model MLP
-    model = MLP(input_dim = arg.illum_num*3, output_dim = 2).to(device=arg.device) 
+    model = mlp_depth(input_dim = arg.patch_pixel_num * arg.illum_num*3, output_dim = 2).to(device=arg.device) 
     # optimizer, schedular, loss function
     optimizer = torch.optim.Adam(list(model.parameters()), lr= arg.model_lr)
     scheduler = torch.optim.lr_scheduler.StepLR((optimizer), step_size= arg.model_step_size, gamma= arg.model_gamma)
@@ -72,6 +79,12 @@ def train(arg, epochs, cam_crf):
                     
             # to device
             N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
+            """
+            N3_arr B, # pixel, N, 3
+            에서 reshaping을 할 때
+            N3_arr B, # pixel // 9, 9, N, 3 이런식으로!
+            
+            """
             gt_xy = gt_xy.to(arg.device) # B, # pixel
             illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
             hyp = hyp.to(arg.device) # B, # pixel, 25
@@ -87,12 +100,14 @@ def train(arg, epochs, cam_crf):
             
             # normalization of N3_arr
             N3_arr_normalized = normalize.N3_normalize(N3_arr, arg.illum_num)
-
+            N3_arr_normalized = N3_arr_normalized.reshape(-1, 1, arg.patch_pixel_num, arg.illum_num, 3)
+            
             # model coord
             pred_xy = model(N3_arr_normalized)
+            gt_xy = gt_xy.reshape(-1, 1, arg.patch_pixel_num, 2)[...,4,:].squeeze()
             loss_depth = loss_fn(gt_xy, pred_xy)
             
-            # pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
+            pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
             
             # HYPERSPECTRAL ESTIMATION
             # hyp datas reshape
@@ -128,7 +143,7 @@ def train(arg, epochs, cam_crf):
             # loss = (loss_depth * 10) * arg.weight_depth + loss_hyp * arg.weight_hyp
             losses_total.append(loss.item())
             
-            optimizer.zero_grad()            
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             total_iter += 1
@@ -185,12 +200,14 @@ def train(arg, epochs, cam_crf):
                 
                 # normalization of N3_arr
                 N3_arr_normalized = normalize.N3_normalize(N3_arr, arg.illum_num)
-
+                N3_arr_normalized = N3_arr_normalized.reshape(-1, 1, arg.patch_pixel_num, arg.illum_num, 3)
+                
                 # model coordinate
                 pred_xy = model(N3_arr_normalized)
+                gt_xy = gt_xy.reshape(-1, 1, arg.patch_pixel_num, 2)[...,4,:].squeeze()
                 loss_depth = loss_fn(gt_xy, pred_xy)
                 
-                # pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
+                pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
                 
                 # HYPERSPECTRAL ESTIMATION
                 # hyp datas
@@ -271,20 +288,19 @@ def train(arg, epochs, cam_crf):
                 
                     # DEPTH ESTIMATION
                     # reshape
-                    N3_arr = N3_arr.reshape(-1,arg.illum_num, 3)
                     I = N3_arr.reshape(-1, arg.illum_num * 3)
-                
-                    N3_arr = N3_arr.unsqueeze(dim = 1)
                     gt_xy = gt_xy.reshape(-1,2)
                     
-                    # normalization of N3_arr
-                    N3_arr_normalized = normalize.N3_normalize(N3_arr, arg.illum_num)
-
-                    # model coord
-                    pred_xy = model(N3_arr_normalized) # B * # of pixel, 2
+                    # N3_arr padding
+                    N3_arr = data_process.to_patch(arg, N3_arr)
                     
-                    # pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, True)[...,2]
-
+                    # normalization of N3_arr
+                    N3_arr_normalized = normalize.N3_normalize(N3_arr, arg.illum_num)                    
+                    N3_arr_normalized = N3_arr_normalized.reshape(-1, 1, arg.patch_pixel_num, arg.illum_num, 3)
+                    
+                    pred_xy = model(N3_arr_normalized) # B * # of pixel, 2                    
+                    pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, True)[...,2]
+                    
                     # Nan indexing
                     check = torch.where(torch.isnan(pred_xy) == False)
                     pred_xy_loss = pred_xy[check]
@@ -306,10 +322,6 @@ def train(arg, epochs, cam_crf):
                     # hyp gt data
                     shading_term = shading[:,0,:,:].permute(0,2,1).reshape(-1,1) #29M, 1
                     x_gt = shading_term * hyp # 25M, 1
-                    
-                    # hyp lstsq
-                    # A = illum * cam_crf
-                    # A = A.reshape(-1, batch_size * pixel_num, arg.wvl_num).permute(1,0,2)
 
                     # list_A = list(A)
                     # block = torch.block_diag(*list_A)
@@ -352,12 +364,8 @@ if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
     
-    from hyper_sl.utils import normalize
-    from hyper_sl.image_formation import camera
-    
     cam_crf = camera.Camera(arg).get_CRF()
     cam_crf = torch.tensor(cam_crf, device= arg.device).T
-    # cam_crf = torch.tensor(np.load(os.path.join(arg.camera_response,'CRF_cam.npy')), device= arg.device).T
 
     # training
     train(arg, arg.epoch_num, cam_crf)

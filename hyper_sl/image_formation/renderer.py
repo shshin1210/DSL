@@ -384,7 +384,7 @@ if __name__ == "__main__":
     from scipy.io import loadmat
     from hyper_sl.utils.ArgParser import Argument
     from hyper_sl.data import create_data
-    from hyper_sl.utils import crop
+    from hyper_sl.utils import data_process
     
     argument = Argument()
     arg = argument.parse()
@@ -393,7 +393,7 @@ if __name__ == "__main__":
     create_data = create_data.createData
     
     plane_XYZ = torch.tensor(loadmat('C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/rendering_prac/plane_XYZ.mat')['XYZ_q'])
-    plane_XYZ = crop.crop(plane_XYZ)
+    plane_XYZ = data_process.crop(plane_XYZ)
     
     
     pixel_num = arg.cam_H * arg.cam_W
