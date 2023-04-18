@@ -1,8 +1,8 @@
 import numpy as np
 import torch
-import sys
+import sys, os
 
-sys.path.append('/home/shshin/Scalable-Hyperspectral-3D-Imaging')
+sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
 from hyper_sl.utils import ArgParser
 from hyper_sl.utils import load_data
 from hyper_sl.image_formation import projector
@@ -14,7 +14,7 @@ class depthReconstruction():
         # arg
         self.arg = arg
         self.device = arg.device
-                
+        
         # class
         self.load_data = load_data.load_data(arg)
         self.proj = projector.Projector(arg, device= self.device)
@@ -35,7 +35,7 @@ class depthReconstruction():
     def depth_reconstruction(self, pred_xy, gt_xy, cam_coord, eval):
         # pixel num
         if eval == False:
-            self.pixel_num = self.arg.num_train_px_per_iter
+            self.pixel_num = self.arg.num_train_px_per_iter // self.arg.patch_pixel_num
         else:
             self.pixel_num = self.cam_H * self.cam_W
         # batch size
@@ -54,7 +54,7 @@ class depthReconstruction():
         xyz_proj_world, center_proj, center_world = self.xy_proj_world(pred_xy_unnorm)
         
         # camera plane xyz 
-        xyz_cam = self.camera_plane_coord(cam_coord)
+        xyz_cam = self.camera_plane_coord(cam_coord, eval)
         
         # unit dir of cam & proj
         cam_dir = self.dir_cam(xyz_cam= xyz_cam)
@@ -62,7 +62,6 @@ class depthReconstruction():
         
         point3d_list = self.point3d(center_world, center_proj, cam_dir, proj_dir)
         point3d_list = point3d_list.reshape(-1, self.pixel_num, 3)
-        # depth_error = self.depth_error(point3d_list, self.eval)
         
         return point3d_list
 
@@ -84,13 +83,10 @@ class depthReconstruction():
         
         return xyz_proj_world, center_proj, center_world
         
-    def camera_plane_coord(self, cam_coord):
-        # r, c= torch.meshgrid(torch.linspace(0, self.cam_H-1, self.cam_H), torch.linspace(0, self.cam_W-1, self.cam_W), indexing='ij')
-        # ones = torch.ones_like(r)
-        
-        # cr1 = torch.stack((c,r,ones), dim = 0)
-        # cr1_r = cr1.reshape(-1, self.cam_H*self.cam_W).unsqueeze(dim = 0)
-        
+    def camera_plane_coord(self, cam_coord, eval):
+        if eval == False:
+            cam_coord = cam_coord.reshape(-1, self.pixel_num, self.arg.patch_pixel_num, 3)[...,4,:]
+
         cr1_r = cam_coord.reshape(-1, self.pixel_num, 3).permute(0,2,1)
         
         xyz_cam = torch.linalg.inv(self.intrinsic_cam)@(cr1_r*self.focal_length_cam)
@@ -126,10 +122,9 @@ class depthReconstruction():
         lines from the system given by eq. 13 in 
         http://cal.cs.illinois.edu/~johannes/research/LS_line_intersect.pdf.
         """
-        
-        projs = torch.eye(dir.shape[1], device=self.device) - torch.unsqueeze(dir, dim =2)* torch.unsqueeze(dir, dim =1)
-        R = projs.sum(axis=0) 
-        q = (projs @ torch.unsqueeze(P, dim = 2)).sum(axis=0)
+        projs = torch.eye(dir.shape[2], device=self.device) - torch.unsqueeze(dir, dim =3)* torch.unsqueeze(dir, dim =2)
+        R = projs.sum(axis=1) 
+        q = (projs @ torch.unsqueeze(P, dim = 3)).sum(axis=1)
         
         # solve the least squares problem for the 
         # intersection point p: Rp = q
@@ -144,18 +139,14 @@ class depthReconstruction():
         
         center_cam_world = center_world[:3].to(self.device)
         center_proj_world = center_proj[:3]
+    
+        p = torch.vstack((center_cam_world.squeeze(dim=1), center_proj_world.squeeze(dim =1))).unsqueeze(dim=0)
+        d = torch.stack((cam_dir, proj_dir), dim = 1)
         
-        p_list = torch.zeros(size=(cam_dir.shape[0], 3))
+        point = self.intersect(p, d).squeeze()
+
         
-        p = torch.vstack((center_cam_world.squeeze(dim=1), center_proj_world.squeeze(dim =1))) 
-        
-        for i in range(cam_dir.shape[0]):
-            d = torch.vstack((cam_dir[i], proj_dir[i]))
-            point = self.intersect(p, d).squeeze()
-            
-            p_list[i] = point
-        
-        return p_list
+        return point
     
     def depth_error(self, point3d_list, eval):
         if eval == True:
@@ -182,11 +173,11 @@ if __name__ == "__main__":
     
     pixel_num = arg.cam_H * arg.cam_W
     
-    x_proj = torch.tensor(np.load('/home/shshin/Scalable-Hyperspectral-3D-Imaging/prediction/prediction_xy_1050.npy'))
-    gt_proj = torch.tensor(np.load('/home/shshin/Scalable-Hyperspectral-3D-Imaging/prediction/ground_truth_xy_1050.npy'))
-    unnorm_gt = torch.tensor(np.load('/home/shshin/Scalable-Hyperspectral-3D-Imaging/prediction/ground_truth_xy_real_150.npy'))
-    cam_coord = create_data(arg, 'coord', pixel_num, random = False).create().unsqueeze(dim = 0)
+    x_proj = torch.tensor(np.load('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/prediction/prediction_xy_750.npy'))
+    gt_proj = torch.tensor(np.load('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/prediction/ground_truth_xy_750.npy'))
+    # unnorm_gt = torch.tensor(np.load('/workspace/Scalable-Hyperspectral-3D-Imaging/prediction/ground_truth_xy_real_150.npy'))
+    cam_coord = create_data.createData(arg, 'coord', pixel_num, random = False).create().unsqueeze(dim = 0)
 
-    point3d_list, depth_error = depthReconstruction(arg).depth_reconstruction(x_proj, gt_proj, cam_coord, True)
+    point3d_list = depthReconstruction(arg).depth_reconstruction(x_proj, gt_proj, cam_coord, True)
     
     print('end')

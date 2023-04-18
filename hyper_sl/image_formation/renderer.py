@@ -1,6 +1,6 @@
 import numpy as np
 import torch, os, sys, cv2
-sys.path.append('/home/shshin/Scalable-Hyperspectral-3D-Imaging')
+sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging')
 
 from hyper_sl.utils import noise,normalize,load_data
 
@@ -214,10 +214,8 @@ class PixelRenderer():
             
             # multipy with occlusion
             illum_w_occ = illum_img*occ.unsqueeze(dim=1)
-                            
-            # final pattern
             illums_w_occ = illum_w_occ*shading 
-            illums_w_occ = illum_w_occ
+
             illums_w_occ = illums_w_occ.permute(0,1,3,2)
         
             cam_m_img = torch.zeros((self.batch_size, self.m_n, self.pixel_num, 3))
@@ -227,7 +225,6 @@ class PixelRenderer():
                 cam_m_img[:,k,...] = (hyp* (illums_w_occ[:,k,...] * self.dg_intensity[...,k,:].unsqueeze(dim=0))@ self.CRF_cam)
 
             cam_img = cam_m_img.sum(axis=1)
-            cam_img = cam_img * 7
             
             # rendering result, xy vproj return
             # Need Gaussian blur!!
@@ -368,8 +365,7 @@ class PixelRenderer():
         batch_samples = torch.linspace(0, self.batch_size-1, self.batch_size,device=self.device)
         wvl_samples = torch.linspace(0, self.wvls_n-1, self.wvls_n,device=self.device)
         m_samples = torch.linspace(0, self.m_n-1, self.m_n,device=self.device)
-        # r_samples = torch.linspace(0, self.cam_H-1, self.cam_H,device=self.device)
-        # c_samples = torch.linspace(0, self.cam_W-1, self.cam_W,device=self.device)
+
         pixel_samples = torch.linspace(0, self.pixel_num-1, self.pixel_num, device= self.device)
         grid_b, grid_m, grid_w, grid_pixel = torch.meshgrid(batch_samples,m_samples,wvl_samples,pixel_samples,indexing='ij')
 
@@ -396,7 +392,7 @@ if __name__ == "__main__":
     # 기존의 hyperpsectral 정보와 depth로 rendering 하는 코드
     create_data = create_data.createData
     
-    plane_XYZ = torch.tensor(loadmat('/home/shshin/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/rendering_prac/plane_XYZ.mat')['XYZ_q'])
+    plane_XYZ = torch.tensor(loadmat('C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/rendering_prac/plane_XYZ.mat')['XYZ_q'])
     plane_XYZ = crop.crop(plane_XYZ)
     
     

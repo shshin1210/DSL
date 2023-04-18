@@ -5,7 +5,7 @@ class Argument:
 	def __init__(self):
 		self.parser = argparse.ArgumentParser()
 
-		self.parser.add_argument('--device', type = str, default="cuda")
+		self.parser.add_argument('--device', type = str, default="cuda:0")
 
 		################## PATH
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
@@ -14,7 +14,7 @@ class Argument:
 		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
 		self.parser.add_argument('--dg_intensity_dir', type = str, default='./dataset/image_formation')
 		self.parser.add_argument('--dat_dir', type = str, default = './dataset/image_formation/dat')
-		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_360")
+		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
 		self.parser.add_argument('--illum_data_dir', type = str, default= "./dataset/image_formation/illum_data.npy")
 		self.parser.add_argument('--img_hyp_texture_dir', type = str, default="./dataset/image_formation/img_hyp_text")
 		self.parser.add_argument('--random_pixel_train_dir', type = str, default="./random_datasets/random_pixel_train")
@@ -42,7 +42,7 @@ class Argument:
 		self.parser.add_argument('--m_max', type = int, default= 1) 
 		self.parser.add_argument('--m_num', type = int, default=3)
 
-		self.parser.add_argument('--epoch_num', type = int, default= 10000)
+		self.parser.add_argument('--epoch_num', type = int, default= 2000)
 		# self.parser.add_argument('--cam_W', type = int, default= 2048//2)
 		# self.parser.add_argument('--cam_H', type = int, default= 1536//2)
 		self.parser.add_argument('--cam_W', type = int, default= 890)
@@ -51,18 +51,21 @@ class Argument:
 		self.parser.add_argument('--proj_H', type = int, default= 720//2)
 		self.parser.add_argument('--scene_train_num', type = int, default= 200) # 200
 		self.parser.add_argument('--scene_test_num', type = int, default= 20) # 20
-		self.parser.add_argument('--eval_num', type = int, default= 2)
+		self.parser.add_argument('--eval_num', type = int, default= 1)
 
 		self.parser.add_argument('--illum_num', type = int, default= 40)
 
-		self.parser.add_argument('--num_train_px_per_iter', type = int, default= 1000) # 400
-		self.parser.add_argument('--batch_size_train', type = int, default= 32) # 5
-		self.parser.add_argument('--batch_size_test', type = int, default= 16) # 4
+		self.parser.add_argument('--patch_pixel_num', type = int, default = 9)
+	
+		self.parser.add_argument('--num_train_px_per_iter', type = int, default= 9*500) # 400
+		self.parser.add_argument('--batch_size_train', type = int, default= 8) # 8
+		self.parser.add_argument('--batch_size_test', type = int, default= 4) # 4
 		self.parser.add_argument('--batch_size_eval', type = int, default= 1)
 
 		self.parser.add_argument('--model_lr', type = float, default= 5*1e-4) # 5*1e-4
+		# step size 300 -> 100 / 0.5 ->0.8
 		self.parser.add_argument('--model_step_size', type = int, default = 300)
-		self.parser.add_argument('--model_gamma', type= float, default=0.5)
+		self.parser.add_argument('--model_gamma', type= float, default=0.8)
   
 		self.parser.add_argument('--illum_lr', type = float, default= 5*1e-4)
 		self.parser.add_argument('--illum_step_size', type = int, default = 250)
