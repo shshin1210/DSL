@@ -64,6 +64,8 @@ class createData():
             min = 0.001
             max = -0.001
             
+            half = self.arg.patch_pixel_num // 2
+            
             # meter 단위 depth
             depth_min = 1.
             depth_max = 1.4
@@ -71,9 +73,9 @@ class createData():
             depth = (depth_max - depth_min)* torch.rand((pixel_num//self.arg.patch_pixel_num)) + depth_min
             depth = depth.repeat(9,1)
             
-            tmp = (max - min) * torch.rand(size = (4, pixel_num //self.arg.patch_pixel_num)) + min
-            depth[:4] = depth[:4] + tmp
-            depth[5:] = depth[5:] + tmp
+            tmp = (max - min) * torch.rand(size = (half, pixel_num //self.arg.patch_pixel_num)) + min
+            depth[:half] = depth[:half] + tmp
+            depth[half+1:] = depth[half+1:] + tmp
             
             depth = depth.T.reshape(-1,1).squeeze()
             
@@ -114,8 +116,10 @@ class createData():
             # depth 끼리 차이 1mm ~ -1mm
             min = 0.001
             max = -0.001
+            
+            half = self.arg.patch_pixel_num // 2
 
-            tmp = (max - min) * torch.rand(size = (4, 3, pixel_num //self.arg.patch_pixel_num)) + min
+            tmp = (max - min) * torch.rand(size = (half, 3, pixel_num //self.arg.patch_pixel_num)) + min
             
             normal = torch.zeros(size=(3, pixel_num//self.arg.patch_pixel_num))
             
@@ -126,8 +130,8 @@ class createData():
             normal = (normal_max - normal_min) * torch.rand(size = (3, pixel_num//self.arg.patch_pixel_num)) + normal_min
             normal = normal.repeat(9,1,1)
             
-            normal[:4] = normal[:4] + tmp
-            normal[5:] = normal[5:] + tmp
+            normal[:half] = normal[:half] + tmp
+            normal[half+1:] = normal[half+1:] + tmp
             
             normal = normal.permute(1,2,0).reshape(3,-1)
             
@@ -152,7 +156,9 @@ class createData():
             min = 0.001
             max = -0.001
             
-            tmp = (max - min) * torch.rand(size = (4, pixel_num //self.arg.patch_pixel_num, 25)) + min
+            half = self.arg.patch_pixel_num // 2
+            
+            tmp = (max - min) * torch.rand(size = (half, pixel_num //self.arg.patch_pixel_num, 25)) + min
             
             ran_idx = torch.randint(0, len(os.listdir(self.img_hyp_texture_dir)), (1,))
             hyp = self.load_data.load_hyp_img(ran_idx)
@@ -162,8 +168,8 @@ class createData():
             hyp = hyp[pixel_idx]
             hyp = hyp.repeat(self.arg.patch_pixel_num,1,1)
             
-            hyp[:4] = hyp[:4] + tmp
-            hyp[5:] = hyp[5:] + tmp
+            hyp[:half] = hyp[:half] + tmp
+            hyp[half+1:] = hyp[half+1:] + tmp
             
             hyp = hyp.permute(1,0,2).reshape(-1,25)
   
