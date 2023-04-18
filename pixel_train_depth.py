@@ -60,9 +60,7 @@ def train(arg, epochs, cam_crf):
     for epoch in range(epochs):
         model.train()
         
-        losses_total = []
         losses_depth = []
-        # losses_hyp = []
         total_iter = 0
         
         for i, data in enumerate(train_loader):
@@ -108,28 +106,7 @@ def train(arg, epochs, cam_crf):
             loss_depth = loss_fn(gt_xy, pred_xy)
             
             pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
-            
-            # HYPERSPECTRAL ESTIMATION
-            # hyp datas reshape
-            
-            # image formation with predicted depth
-            # N3_arr, gt_xy, _, illum_data, shading  = pixel_renderer.render(depth = pred_depth, 
-            #                                             normal = normal, hyp = hyp, occ = occ, 
-            #                                             cam_coord = cam_coord, eval = False)
-            
-            illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29            
-            I = I.reshape(-1, 1)
-            hyp = hyp.reshape(-1, arg.wvl_num) # M, 29
-            hyp = hyp.reshape(-1, 1)
-            
-            # hyp gt data
-            shading_term = shading[:,0,:,:].permute(0,2,1).reshape(-1,1) # 29M, 1
-            x_gt = shading_term * hyp
-            
-            # hyp lstsq
-            # x = compute_hyp(arg, illum, cam_crf, I, batch_size)
-            # loss_hyp = diff_hyp(arg, x, x_gt, batch_size)
-
+    
             # save last epoch training set
             if epoch == arg.epoch_num -1 :
                 torch.save(N3_arr, os.path.join(arg.output_dir, f'N3_arr_{epoch}.pt'))
@@ -150,25 +127,16 @@ def train(arg, epochs, cam_crf):
             
         scheduler.step()
         epoch_train_depth_px = (sum(losses_depth)/total_iter) / (1/arg.proj_H)
-        # epoch_total_loss = (sum(losses_total)/ total_iter)
-        # epoch_train_depth = (sum(losses_depth)/total_iter) * 10 
-        # epoch_train_hyp = (sum(losses_hyp)/total_iter)
         
         print("{%dth epoch} Train depth Loss: "%(epoch), epoch_train_depth_px)
         writer.add_scalar("Training Depth", epoch_train_depth_px, epoch)
-        # writer.add_scalars("Training Depth", {'depth_loss' : epoch_train_depth, 'weight_loss': epoch_total_loss}, epoch)
-
-        # print("{%dth epoch} Train Hyp Error: "%(epoch), epoch_train_hyp)
-        # writer.add_scalars("Training Hyp", {'hyp_loss' : epoch_train_hyp, 'weight_loss' : epoch_total_loss}, epoch)
         
         # evaluation
         model.eval()
         
         with torch.no_grad():
-            
-            losses_total = []
+
             losses_depth = []
-            # losses_hyp = []
             total_iter = 0
             
             for i, data in enumerate(test_loader):   
@@ -209,35 +177,11 @@ def train(arg, epochs, cam_crf):
                 
                 pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
                 
-                # HYPERSPECTRAL ESTIMATION
-                # hyp datas
-                
-                # image formation with predicted depth
-                # N3_arr, gt_xy, _, illum_data, shading  = pixel_renderer.render(depth = pred_depth, 
-                #                                             normal = normal, hyp = hyp, occ = occ, 
-                #                                             cam_coord = cam_coord, eval = False)
-                
-            
-                illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29            
-                I = I.reshape(-1, 1)
-                hyp = hyp.reshape(-1, arg.wvl_num) # M, 29
-                hyp = hyp.reshape(-1, 1)
-                
-                # hyp gt data
-                shading_term = shading[:,0,:,:].permute(0,2,1).reshape(-1,1) # 29M, 1
-                x_gt = shading_term * hyp
-                
-                # hyp lstsq
-                # x = compute_hyp(arg, illum, cam_crf, I, batch_size)
-                # loss_hyp = diff_hyp(arg, x, x_gt, batch_size)
-
                 # loss
                 losses_depth.append(loss_depth.item())
-                # losses_hyp.append(loss_hyp)
                 
                 loss = (loss_depth / (1/arg.proj_H)) * arg.weight_depth
-                # loss = (loss_depth / (1/arg.proj_H)) * arg.weight_depth + loss_hyp * arg.weight_hyp
-                # loss = (loss_depth * 10 ) * arg.weight_depth + loss_hyp * arg.weight_hyp
+
                 losses_total.append(loss.item())
             
                 total_iter += 1
@@ -249,17 +193,10 @@ def train(arg, epochs, cam_crf):
                     torch.save(model.state_dict(), os.path.join(arg.model_dir, 'model_coord_%05d.pth'%epoch))
                                         
             epoch_valid_depth_px = (sum(losses_depth)/ total_iter) / (1/arg.proj_H)
-            # epoch_total_loss = (sum(losses_total)/ total_iter)
-            # epoch_valid_depth = (sum(losses_depth)/ total_iter) * 10 
-            # epoch_valid_hyp = (sum(losses_hyp)/total_iter)
                 
             print("{%dth epoch} Valid loss :"  %(epoch), epoch_valid_depth_px)
             writer.add_scalar("Valid Depth", epoch_valid_depth_px, epoch)
-            # writer.add_scalars("Valid Depth",  {'depth_loss' : epoch_valid_depth_px, 'weight_loss': epoch_total_loss}, epoch)
 
-            # print("{%dth epoch} Valid Hyp Error: "%(epoch), epoch_valid_hyp)
-            # writer.add_scalars("Valid Hyp", {'hyp_loss' : epoch_valid_hyp, 'weight_loss' : epoch_total_loss}, epoch)
-            
             if epoch % 30 == 0:
                 
                 losses_total = []
@@ -305,36 +242,10 @@ def train(arg, epochs, cam_crf):
                     check = torch.where(torch.isnan(pred_xy) == False)
                     pred_xy_loss = pred_xy[check]
                     gt_xy_loss = gt_xy[check]
-                    
-                    # HYPERSPECTRAL ESTIMATION
-                    # hyp datas
-                    
-                    # image formation with predicted depth
-                    # N3_arr, gt_xy, _, illum_data, shading  = pixel_renderer.render(depth = pred_depth, 
-                    #                                             normal = normal, hyp = hyp, occ = occ, 
-                    #                                             cam_coord = cam_coord, eval = False)
-                    
-                    illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29
-                    I = I.reshape(-1,1)
-                    hyp = hyp.reshape(-1, arg.wvl_num) # M, 29
-                    hyp = hyp.reshape(-1, 1)
-                    
-                    # hyp gt data
-                    shading_term = shading[:,0,:,:].permute(0,2,1).reshape(-1,1) #29M, 1
-                    x_gt = shading_term * hyp # 25M, 1
 
-                    # list_A = list(A)
-                    # block = torch.block_diag(*list_A)
-                    
-                    # x = torch.linalg.lstsq(block, I)
-                    # x = x.solution
-                    # diff = abs(x-x_gt).sum() / (arg.wvl * arg.num_train_px_per_iter)
-                    
-                    # loss
                     loss_depth = loss_fn(gt_xy_loss, pred_xy_loss)
                     losses_depth.append(loss_depth.item())
-                    # diffs.append(diff)
-                    
+
                     total_iter +=1
                     
                     # Nan 처리
@@ -348,12 +259,10 @@ def train(arg, epochs, cam_crf):
                     np.save(f"./prediction/ground_truth_xy_real_{epoch}.npy", xy_real.detach().cpu().numpy()) 
                 
                 epoch_eval_depth_px = (sum(losses_depth)/ total_iter) / (1/arg.proj_H)
-                # epoch_eval_depth = (sum(losses_depth)/ total_iter) * 10 
                 
                 print("{%dth epoch} Evaluation loss :"  %(epoch), epoch_eval_depth_px)
                 writer.add_scalar("eval_loss", epoch_eval_depth_px, epoch)
-                # writer.add_image("eval predicted proj x", img[0], dataformats='HW')
-                # print("{%dth epoch} Evaluation Hyp Error: "%(epoch), epoch_diff)
+
                 
                 torch.cuda.empty_cache()
     writer.flush()
