@@ -89,7 +89,7 @@ class Argument:
 		self.parser.add_argument('--mat_path', type=str, default= "./dataset/m_files/")
   		# for Camera calibaration
 		self.parser.add_argument('--fov', type=float, default=30.3) # 30.3d
-		self.parser.add_argument('--focal_length', type=float, default= 12) # 16mm
+		self.parser.add_argument('--focal_length', type=float, default= 12.) # 16mm
 
 
 		self.parser.add_argument('--param_path', type = str, default="./calibration/parameters")
@@ -102,8 +102,11 @@ class Argument:
 
 		# projector
 		self.parser.add_argument('--sensor_diag_proj',  type = float, default= 5.842) # 5.842mm
-		self.parser.add_argument('--focal_length_proj', type = float, default= 8) # 8mm
+		self.parser.add_argument('--focal_length_proj', type = float, default= 8.) # 8mm
 		
+		# f?
+		# self.parser.add_argument('-f', '--fff', help = 'jupyter notebook error fix', default='1')
+  
 	def parse(self):
 		arg = self.parser.parse_args()
 		arg.wvls = torch.linspace(arg.wvl_min, arg.wvl_max, arg.wvl_num)
