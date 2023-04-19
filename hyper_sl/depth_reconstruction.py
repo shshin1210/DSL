@@ -65,6 +65,8 @@ class depthReconstruction():
         point3d_list = self.point3d(center_world, center_proj, cam_dir, proj_dir)
         point3d_list = point3d_list.reshape(-1, self.pixel_num, 3)
         
+        error = self.depth_error(point3d_list, 0)
+        
         return point3d_list
 
     def xy_proj_world(self, xy_proj_unnorm):
@@ -150,20 +152,18 @@ class depthReconstruction():
         
         return point
     
-    def depth_error(self, point3d_list, eval):
-        if eval == True:
-            # load data
-            data_num = 1
-            occ = self.load_data.load_occ(data_num)
-            real_depth = self.load_data.load_depth(data_num)
+    def depth_error(self, point3d_list, i):
+        # load data
+        data_num = i
         
-            pred_depth = point3d_list[...,2].reshape(self.cam_H, self.cam_W)
-            depth_error = abs(real_depth*occ - pred_depth*occ)
-            
-        else:
-            pred_depth = point3d_list[...,2].reshape(self.cam_H, self.cam_W)
-            depth_error = abs(real_depth*occ - pred_depth*occ)
-            
+        occ = self.load_data.load_occ(data_num)
+        dilated_occ = data_process.dilation(occ)
+        
+        real_depth = self.load_data.load_depth(data_num)
+    
+        pred_depth = point3d_list[...,2].reshape(self.cam_H, self.cam_W)
+        depth_error = abs(real_depth*dilated_occ - pred_depth.detach().cpu().numpy()*dilated_occ)
+
         return depth_error
     
 if __name__ == "__main__":
