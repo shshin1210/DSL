@@ -29,8 +29,10 @@ class Argument:
 		self.parser.add_argument('--random_pixel_hyp_norm', type = str, default="hyp_norm.pt")
 		self.parser.add_argument('--random_pixel_illum', type = str, default="illum.pt")
 		self.parser.add_argument('--random_pixel_hyp_gt', type = str, default="hyp_gt.pt")
-  
-		################## TRAINING & TESTING
+		self.parser.add_argument('--real_data_dir', type=str, default="./dataset/data/real_data")
+		
+  		################## TRAINING & TESTING
+		self.parser.add_argument('--real_data_scene', type = bool, default= True)
 		self.parser.add_argument('--feature_num', type = int, default=100)
 		self.parser.add_argument('--load_dataset', action='store_true', default=False)
 		self.parser.add_argument('--wvl_min', type = float, default= 420e-9) 
@@ -51,7 +53,8 @@ class Argument:
 		self.parser.add_argument('--proj_H', type = int, default= 720//2)
 		self.parser.add_argument('--scene_train_num', type = int, default= 1) # 200
 		self.parser.add_argument('--scene_test_num', type = int, default= 1) # 20
-		self.parser.add_argument('--eval_num', type = int, default= 1)
+		self.parser.add_argument('--scene_eval_num', type = int, default= 1)
+		self.parser.add_argument('--scene_real_num', type = int, default= 1)
 
 		self.parser.add_argument('--illum_num', type = int, default= 40)
 
@@ -61,9 +64,10 @@ class Argument:
 		self.parser.add_argument('--batch_size_train', type = int, default= 1) # 8
 		self.parser.add_argument('--batch_size_test', type = int, default= 1) # 4
 		self.parser.add_argument('--batch_size_eval', type = int, default= 1)
+		self.parser.add_argument('--batch_size_real', type = int, default= 1)
 
 		self.parser.add_argument('--model_lr', type = float, default= 5*1e-4) # 5*1e-4
-		# step size 300 -> 100 / 0.5 ->0.8
+		# step size 300 -> 100 / 0.5 -> 0.8
 		self.parser.add_argument('--model_step_size', type = int, default = 300)
 		self.parser.add_argument('--model_gamma', type= float, default=0.8)
   
