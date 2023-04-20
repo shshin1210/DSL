@@ -1,9 +1,8 @@
-import numpy as np
-import torch, os
-import scipy.io as sci
+import torch, os, cv2
 
 from hyper_sl.utils.ArgParser import Argument
 from hyper_sl.utils.load_data import load_data
+from hyper_sl.utils import data_process
 
 class createData():
     def __init__(self, arg, data_type, pixel_num, random = True, i = 0):
@@ -12,6 +11,7 @@ class createData():
         self.mat_dir = arg.img_hyp_texture_dir
         self.output_dir = arg.output_dir
         self.img_hyp_texture_dir = arg.img_hyp_texture_dir
+        self.real_data_dir = arg.real_data_dir
         
         # arguments
         self.data_type = data_type
@@ -22,6 +22,7 @@ class createData():
         
         # params
         self.cam_H, self.cam_W = arg.cam_H, arg.cam_W
+        self.illum_num = arg.illum_num
         self.cam_focal_length = arg.focal_length * 1e-3
         self.cam_sensor_width = arg.sensor_width *1e-3
         self.wvls_n = arg.wvl_num
@@ -49,8 +50,11 @@ class createData():
 
         elif self.data_type == 'normal':
             normal = self.createNormal(self.pixel_num, self.random, self.i)
-            
             return normal
+        
+        else:
+            N3_arr, illum_data = self.createReal(self.i)
+            return N3_arr, illum_data
         
     def createDepth(self, pixel_num, random, i):
         """ Create Depth for each pixels
@@ -200,6 +204,23 @@ class createData():
 
         else:
             return rc1_c
+        
+    def createReal(self, i):
+        scene_i_dir = os.path.join(self.real_data_dir, 'scene%04d'%i)
+        scene_files = os.listdir(scene_i_dir)
+        
+        N3_arr = torch.zeros(size=(self.cam_H*self.cam_W, self.illum_num, 3))
+        
+        for idx, fn in enumerate(scene_files):
+            real_img = cv2.imread(os.path.join(scene_i_dir, fn))
+            real_img = data_process.crop(real_img)
+            real_img = torch.tensor(cv2.cvtColor(real_img, cv2.COLOR_BGR2RGB).reshape(self.cam_H*self.cam_W,-1))
+            
+            N3_arr[:,idx] = real_img
+
+        illum_data = torch.zeros(size=(self.cam_H*self.cam_W, self.illum_num, self.wvls_n))
+        
+        return N3_arr, illum_data
         
 if __name__ == "__main__":
     
