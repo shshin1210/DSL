@@ -34,7 +34,7 @@ class depthReconstruction():
         self.proj_H, self.proj_W = arg.proj_H, arg.proj_W
         self.extrinsic_proj_real = self.proj.extrinsic_proj_real()
     
-    def depth_reconstruction(self, pred_xy, gt_xy, cam_coord, eval):
+    def depth_reconstruction(self, pred_xy, cam_coord, eval):
         # pixel num
         if eval == False:
             self.pixel_num = self.arg.num_train_px_per_iter // self.arg.patch_pixel_num
@@ -45,11 +45,9 @@ class depthReconstruction():
         
         # reshape
         pred_xy = pred_xy.reshape(-1, self.pixel_num, 2) # B, # pixel num, 2
-        gt_xy = gt_xy.reshape(-1, self.pixel_num, 2) # B, # pixel num, 2
          
         # unnormalized gt proj xy
         pred_xy_unnorm = self.normalize.un_normalization(pred_xy)
-        gt_xy_unnorm = self.normalize.un_normalization(gt_xy)
         
         # predicted xy proj to world coord
         # B, xyz, #pixel/ 4,1 / 4,1
@@ -89,7 +87,7 @@ class depthReconstruction():
         
     def camera_plane_coord(self, cam_coord, eval):
         if eval == False:
-            cam_coord = cam_coord.reshape(-1, self.pixel_num, self.arg.patch_pixel_num, 3)[...,4,:]
+            cam_coord = cam_coord.reshape(-1, self.pixel_num, self.arg.patch_pixel_num, 3)[...,self.arg.patch_pixel_num // 2,:]
 
         cr1_r = cam_coord.reshape(-1, self.pixel_num, 3).permute(0,2,1)
         
