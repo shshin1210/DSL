@@ -10,8 +10,14 @@ import hyper_sl.datatools as dtools
 from hyper_sl.image_formation import renderer
 from hyper_sl.hyp_reconstruction import compute_hyp, diff_hyp, cal_A
 from hyper_sl.depth_reconstruction import depthReconstruction
- 
+from hyper_sl.utils import data_process
+
 from torch.utils.tensorboard import SummaryWriter
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+print('cuda visible device count :',torch.cuda.device_count())
+print('current device number :', torch.cuda.current_device())
+
 
 def train(arg, epochs, cam_crf):
     writer = SummaryWriter(log_dir=arg.log_dir)
@@ -26,12 +32,14 @@ def train(arg, epochs, cam_crf):
     eval_loader = DataLoader(eval_dataset, batch_size= arg.batch_size_eval, shuffle=True)
 
     # bring model MLP
-    model = mlp_depth(input_dim = arg.illum_num*3, output_dim = 2).to(device=arg.device)
+    model = mlp_depth(input_dim = arg.patch_pixel_num * arg.illum_num*3, output_dim = 2).to(device=arg.device)
+    model.load_state_dict(torch.load('./result/model_noise/model_depth_01140.pth', map_location=arg.device))
+    
     model_hyp = mlp_hyp(input_dim = arg.illum_num*3*(arg.wvl_num + 1), output_dim=arg.wvl_num, fdim = 1000).to(device=arg.device)
     
     # optimizer, schedular, loss function
-    optimizer = torch.optim.Adam(list(model.parameters()), lr= arg.model_lr)
-    scheduler = torch.optim.lr_scheduler.StepLR((optimizer), step_size= arg.model_step_size, gamma= arg.model_gamma)
+    # optimizer = torch.optim.Adam(list(model.parameters()), lr= arg.model_lr)
+    # scheduler = torch.optim.lr_scheduler.StepLR((optimizer), step_size= arg.model_step_size, gamma= arg.model_gamma)
     optimizer_hyp = torch.optim.Adam(list(model_hyp.parameters()), lr= arg.model_lr)
     scheduler_hyp = torch.optim.lr_scheduler.StepLR((optimizer_hyp), step_size= arg.model_step_size, gamma= arg.model_gamma)
     
@@ -58,10 +66,8 @@ def train(arg, epochs, cam_crf):
     cam_crf = cam_crf[None,:,:].unsqueeze(dim = 2)
     
     for epoch in range(epochs):
-        model.train()
         model_hyp.train()
         
-        losses_total = []
         losses_depth = []
         losses_hyp = []
         total_iter = 0
@@ -71,9 +77,9 @@ def train(arg, epochs, cam_crf):
             depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
             
             # image formation for # of pixels
-            N3_arr, gt_xy, _, illum_data, shading  = pixel_renderer.render(depth = depth, 
+            N3_arr, gt_xy, illum_data, shading  = pixel_renderer.render(depth = depth, 
                                                         normal = normal, hyp = hyp, occ = occ, 
-                                                        cam_coord = cam_coord, eval = False, render_shading=True)
+                                                        cam_coord = cam_coord, eval = False)
             
             # batch size
             batch_size = N3_arr.shape[0]
@@ -91,18 +97,29 @@ def train(arg, epochs, cam_crf):
             
             # normalization of N3_arr
             N3_arr_normalized = normalize.N3_normalize(N3_arr, arg.illum_num)
+            N3_arr_normalized = N3_arr_normalized.reshape(-1, 1, arg.patch_pixel_num, arg.illum_num, 3)
 
             # model coord
             pred_xy = model(N3_arr_normalized)
+            gt_xy = data_process.mid_pixel(arg, gt_xy, 'gt_xy')
             loss_depth = loss_fn(gt_xy, pred_xy)
             
-            # pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
+            pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, False)[...,2].detach().cpu()
             
             # HYPERSPECTRAL ESTIMATION            
             # image formation with predicted depth
-            N3_arr, gt_xy, _, illum_data, shading  = pixel_renderer.render(depth = depth, 
+            normal = data_process.mid_pixel(arg, normal, 'normal')
+            hyp = data_process.mid_pixel(arg, hyp, 'hyp')
+            cam_coord = data_process.mid_pixel(arg, cam_coord, 'cam_coord')
+            occ = data_process.mid_pixel(arg, occ, 'occ')
+
+            N3_arr, gt_xy, illum_data, shading  = pixel_renderer.render(depth = pred_depth, 
                                                         normal = normal, hyp = hyp, occ = occ, 
-                                                        cam_coord = cam_coord, eval = False, render_shading = False)
+                                                        cam_coord = cam_coord, eval = False)
+            
+            # batch size
+            batch_size = N3_arr.shape[0]
+            pixel_num = N3_arr.shape[1]
             
             # to device
             N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
@@ -114,7 +131,6 @@ def train(arg, epochs, cam_crf):
             hyp = hyp.reshape(-1, arg.wvl_num) # M, 29
             shading_term = shading[:,0,:,:].permute(0,2,1).reshape(-1, arg.wvl_num) # 29M, 1
             gt_reflectance = shading_term * hyp
-            # gt_reflectance = gt_reflectance.reshape(-1,1)/
             
             # Ax = b 에서 A
             illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29            
@@ -129,43 +145,35 @@ def train(arg, epochs, cam_crf):
                 torch.save(N3_arr, os.path.join(arg.output_dir, f'N3_arr_{epoch}.pt'))
                 torch.save(pred_xy, os.path.join(arg.output_dir, f'pred_xy_{epoch}.pt'))
             
+            loss = loss_hyp * 10
+            
             losses_depth.append(loss_depth.item())
-            losses_hyp.append(loss_hyp.item())
-            
-            # loss = (loss_depth / (1/arg.proj_H)) * arg.weight_depth
-            # loss = (loss_depth / (1/arg.proj_H)) * arg.weight_depth + loss_hyp * arg.weight_hyp
-            loss = (loss_depth * 10) * arg.weight_depth + loss_hyp * arg.weight_hyp
-            losses_total.append(loss.item())
-            
-            optimizer.zero_grad()            
+            losses_hyp.append(loss_hyp.item() * 10)
+                        
+            # optimizer.zero_grad()            
             optimizer_hyp.zero_grad()
             loss.backward()
-            optimizer.step()
+            # optimizer.step()
             optimizer_hyp.step()
             total_iter += 1
             
-        scheduler.step()
+        # scheduler.step()
         scheduler_hyp.step()
         epoch_train_depth_px = (sum(losses_depth)/total_iter) / (1/arg.proj_H)
-        epoch_total_loss = (sum(losses_total)/ total_iter)
-        epoch_train_depth = (sum(losses_depth)/total_iter) * 10 
         epoch_train_hyp = (sum(losses_hyp)/total_iter)
         
         print("{%dth epoch} Train depth Loss: "%(epoch), epoch_train_depth_px)
-        # writer.add_scalar("Training Depth", epoch_train_depth_px, epoch)
-        writer.add_scalars("Training Depth", {'depth_loss' : epoch_train_depth, 'weight_loss': epoch_total_loss}, epoch)
+        writer.add_scalar("Training Depth", epoch_train_depth_px, epoch)
 
         print("{%dth epoch} Train Hyp Error: "%(epoch), epoch_train_hyp)
-        writer.add_scalars("Training Hyp", {'hyp_loss' : epoch_train_hyp, 'weight_loss' : epoch_total_loss}, epoch)
+        writer.add_scalar("Training Hyp", epoch_train_hyp ,epoch)
         torch.cuda.empty_cache()
         
         # evaluation
-        model.eval()
         model_hyp.eval()
         
         with torch.no_grad():
             
-            losses_total = []
             losses_depth = []
             losses_hyp = []
             total_iter = 0
@@ -175,9 +183,9 @@ def train(arg, epochs, cam_crf):
                 depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
                 print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
                 # image formation
-                N3_arr, gt_xy, _ , illum_data, shading = pixel_renderer.render(depth = depth, 
+                N3_arr, gt_xy, illum_data, shading = pixel_renderer.render(depth = depth, 
                                                             normal = normal, hyp = hyp, occ = occ, 
-                                                            cam_coord = cam_coord, eval = False, render_shading=True)
+                                                            cam_coord = cam_coord, eval = False)
                 
                 # batch size
                 batch_size = N3_arr.shape[0]
@@ -198,14 +206,25 @@ def train(arg, epochs, cam_crf):
 
                 # model coordinate
                 pred_xy = model(N3_arr_normalized)
+                gt_xy = data_process.mid_pixel(arg, gt_xy, 'gt_xy')
                 loss_depth = loss_fn(gt_xy, pred_xy)
                 
-                # pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
+                pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, False)[...,2].detach().cpu()
                 
                 # HYPERSPECTRAL ESTIMATION
-                N3_arr, gt_xy, _, illum_data, shading  = pixel_renderer.render(depth = depth, 
+                normal = data_process.mid_pixel(arg, normal, 'normal')
+                hyp = data_process.mid_pixel(arg, hyp, 'hyp')
+                cam_coord = data_process.mid_pixel(arg, cam_coord, 'cam_coord')
+                occ = data_process.mid_pixel(arg, occ, 'occ')
+                
+                N3_arr, gt_xy, illum_data, shading  = pixel_renderer.render(depth = pred_depth, 
                                                             normal = normal, hyp = hyp, occ = occ, 
-                                                            cam_coord = cam_coord, eval = False, render_shading=False)
+                                                            cam_coord = cam_coord, eval = False)
+                
+                # batch size
+                batch_size = N3_arr.shape[0]
+                pixel_num = N3_arr.shape[1]
+                
                 # to device
                 N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
                 illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
@@ -225,14 +244,11 @@ def train(arg, epochs, cam_crf):
                 pred_reflectance = model_hyp(A, I)
                 loss_hyp = loss_fn_hyp(gt_reflectance, pred_reflectance)           
 
+                loss = loss_hyp * 10 
+                
                 # loss
                 losses_depth.append(loss_depth.item())
-                losses_hyp.append(loss_hyp.item())
-                
-                # loss = (loss_depth / (1/arg.proj_H)) * arg.weight_depth
-                # loss = (loss_depth / (1/arg.proj_H)) * arg.weight_depth + loss_hyp * arg.weight_hyp
-                loss = (loss_depth * 10 ) * arg.weight_depth + loss_hyp * arg.weight_hyp
-                losses_total.append(loss.item())
+                losses_hyp.append(loss_hyp.item() * 10 )
             
                 total_iter += 1
                 
@@ -240,24 +256,20 @@ def train(arg, epochs, cam_crf):
                 if (epoch%10 == 0) or (epoch == arg.epoch_num-1):
                     if not os.path.exists(arg.model_dir):
                         os.mkdir(arg.model_dir)
-                    torch.save(model.state_dict(), os.path.join(arg.model_dir, 'model_coord_%05d.pth'%epoch))
+                    torch.save(model_hyp.state_dict(), os.path.join(arg.model_dir, 'model_hyp_%05d.pth'%epoch))
                                         
             epoch_valid_depth_px = (sum(losses_depth)/ total_iter) / (1/arg.proj_H)
-            epoch_total_loss = (sum(losses_total)/ total_iter)
-            epoch_valid_depth = (sum(losses_depth)/ total_iter) * 10 
             epoch_valid_hyp = (sum(losses_hyp)/total_iter)
                 
             print("{%dth epoch} Valid loss :"  %(epoch), epoch_valid_depth_px)
-            # writer.add_scalar("Valid Depth", epoch_valid_depth, epoch)
-            writer.add_scalars("Valid Depth",  {'depth_loss' : epoch_valid_depth, 'weight_loss': epoch_total_loss}, epoch)
+            writer.add_scalar("Valid Depth", epoch_valid_depth_px, epoch)
 
             print("{%dth epoch} Valid Hyp Error: "%(epoch), epoch_valid_hyp)
-            writer.add_scalars("Valid Hyp", {'hyp_loss' : epoch_valid_hyp, 'weight_loss' : epoch_total_loss}, epoch)
+            writer.add_scalar("Valid Hyp", epoch_valid_hyp, epoch)
             torch.cuda.empty_cache()
             
             if epoch % 30 == 0:
-                
-                losses_total = []
+
                 losses_depth = []
                 losses_hyp = []
                 total_iter = 0
@@ -267,9 +279,9 @@ def train(arg, epochs, cam_crf):
                     depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
                     print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
                     # image formation
-                    N3_arr, gt_xy, xy_real, illum_data, shading = pixel_renderer.render(depth = depth, 
+                    N3_arr, gt_xy, illum_data, shading = pixel_renderer.render(depth = depth, 
                                                                 normal = normal, hyp = hyp, occ = occ, 
-                                                                cam_coord = cam_coord, eval = True, render_shading=True)
+                                                                cam_coord = cam_coord, eval = True)
                     # batch size
                     batch_size = N3_arr.shape[0]
                     pixel_num = N3_arr.shape[1]
@@ -283,13 +295,16 @@ def train(arg, epochs, cam_crf):
                     N3_arr = N3_arr.unsqueeze(dim = 1)
                     gt_xy = gt_xy.reshape(-1,2)
                     
+                    # N3_arr padding
+                    N3_arr = data_process.to_patch(arg, N3_arr)
+                    
                     # normalization of N3_arr
                     N3_arr_normalized = normalize.N3_normalize(N3_arr, arg.illum_num)
-
-                    # model coord
-                    pred_xy = model(N3_arr_normalized) # B * # of pixel, 2
+                    N3_arr_normalized = N3_arr_normalized.reshape(-1, 1, arg.patch_pixel_num, arg.illum_num, 3)
                     
-                    # pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, True)[...,2]
+                    # model coord
+                    pred_xy = model(N3_arr_normalized) # B * # of pixel, 2                    
+                    pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, True)[...,2].detach().cpu()
 
                     # Nan indexing
                     check = torch.where(torch.isnan(pred_xy) == False)
@@ -297,10 +312,14 @@ def train(arg, epochs, cam_crf):
                     gt_xy_loss = gt_xy[check]
                     loss_depth = loss_fn(gt_xy_loss, pred_xy_loss)
                     
-                    # HYPERSPECTRAL ESTIMATION
-                    N3_arr, gt_xy, _, illum_data, shading  = pixel_renderer.render(depth = depth, 
+                    # nan 처리하기
+                    pred_depth[torch.isnan(pred_depth) == True] = 0.
+                    
+                    # HYPERSPECTRAL ESTIMATION                    
+                    N3_arr, gt_xy, illum_data, shading  = pixel_renderer.render(depth = pred_depth, 
                                                                 normal = normal, hyp = hyp, occ = occ, 
-                                                                cam_coord = cam_coord, eval = False, render_shading=False)
+                                                                cam_coord = cam_coord, eval = False)
+
                     
                     # to device
                     N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
@@ -323,10 +342,9 @@ def train(arg, epochs, cam_crf):
             
                     # loss
                     losses_depth.append(loss_depth.item())
-                    losses_hyp.append(loss_hyp.item())
+                    losses_hyp.append(loss_hyp.item()* 10)
 
-                    loss = (loss_depth * 10) * arg.weight_depth + loss_hyp * arg.weight_hyp
-                    losses_total.append(loss.item())
+                    loss = loss_hyp * 10
             
                     total_iter +=1
                     
@@ -335,21 +353,17 @@ def train(arg, epochs, cam_crf):
                     
                     np.save(f"./prediction/prediction_xy_{epoch}.npy", pred_xy.detach().cpu().numpy())
                     np.save(f"./prediction/ground_truth_xy_{epoch}.npy", gt_xy.detach().cpu().numpy()) 
-                    np.save(f"./prediction/ground_truth_xy_real_{epoch}.npy", xy_real.detach().cpu().numpy()) 
                     np.save(f"./prediction/ground_truth_hyp_{epoch}.npy", gt_reflectance.detach().cpu().numpy()) 
                     np.save(f"./prediction/prediction_hyp_{epoch}.npy", pred_reflectance.detach().cpu().numpy()) 
 
                 epoch_eval_depth_px = (sum(losses_depth)/ total_iter) / (1/arg.proj_H)
-                epoch_total_loss = (sum(losses_total)/ total_iter)
-                epoch_eval_depth = (sum(losses_depth)/ total_iter) * 10 
                 epoch_eval_hyp = (sum(losses_hyp)/total_iter)
                 
                 print("{%dth epoch} Eval loss :"  %(epoch), epoch_eval_depth_px)
-                # writer.add_scalar("eval_loss", epoch_eval_depth_px, epoch)
-                writer.add_scalars("Eval Depth",  {'depth_loss' : epoch_eval_depth, 'weight_loss': epoch_total_loss}, epoch)
+                writer.add_scalar("Eval Depth", epoch_eval_depth_px, epoch)
                 
                 print("{%dth epoch} Eval Hyp Error: "%(epoch), epoch_eval_hyp)
-                writer.add_scalars("Eval Hyp", {'hyp_loss' : epoch_eval_hyp, 'weight_loss' : epoch_total_loss}, epoch)
+                writer.add_scalar("Eval Hyp", epoch_eval_hyp, epoch)
                 torch.cuda.empty_cache()
     writer.flush()
     

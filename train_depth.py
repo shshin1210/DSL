@@ -68,7 +68,7 @@ def train(arg, epochs, cam_crf):
             depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
             
             # image formation for # of pixels
-            N3_arr, gt_xy, _, illum_data, shading  = pixel_renderer.render(depth = depth, 
+            N3_arr, gt_xy, illum_data, shading  = pixel_renderer.render(depth = depth, 
                                                         normal = normal, hyp = hyp, occ = occ, 
                                                         cam_coord = cam_coord, eval = False)
             
@@ -105,7 +105,7 @@ def train(arg, epochs, cam_crf):
             gt_xy = gt_xy.reshape(-1, 1, arg.patch_pixel_num, 2)[...,4,:].squeeze()
             loss_depth = loss_fn(gt_xy, pred_xy)
             
-            pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
+            pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, False)[...,2]
     
             # save last epoch training set
             if epoch == arg.epoch_num -1 :
@@ -144,7 +144,7 @@ def train(arg, epochs, cam_crf):
                 depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
                 print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
                 # image formation
-                N3_arr, gt_xy, _ , illum_data, shading = pixel_renderer.render(depth = depth, 
+                N3_arr, gt_xy, illum_data, shading = pixel_renderer.render(depth = depth, 
                                                             normal = normal, hyp = hyp, occ = occ, 
                                                             cam_coord = cam_coord, eval = False)
                 
@@ -175,7 +175,7 @@ def train(arg, epochs, cam_crf):
                 gt_xy = gt_xy.reshape(-1, 1, arg.patch_pixel_num, 2)[...,4,:].squeeze()
                 loss_depth = loss_fn(gt_xy, pred_xy)
                 
-                pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, False)[...,2]
+                pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, False)[...,2]
                 
                 # loss
                 losses_depth.append(loss_depth.item())
@@ -209,7 +209,7 @@ def train(arg, epochs, cam_crf):
                     depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
                     print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
                     # image formation
-                    N3_arr, gt_xy, xy_real, illum_data, shading = pixel_renderer.render(depth = depth, 
+                    N3_arr, gt_xy, illum_data, shading = pixel_renderer.render(depth = depth, 
                                                                 normal = normal, hyp = hyp, occ = occ, 
                                                                 cam_coord = cam_coord, eval = True)
                     # batch size
@@ -236,7 +236,7 @@ def train(arg, epochs, cam_crf):
                     N3_arr_normalized = N3_arr_normalized.reshape(-1, 1, arg.patch_pixel_num, arg.illum_num, 3)
                     
                     pred_xy = model(N3_arr_normalized) # B * # of pixel, 2                    
-                    pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, True)[...,2]
+                    pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, True)[...,2]
                     
                     # Nan indexing
                     check = torch.where(torch.isnan(pred_xy) == False)
@@ -256,7 +256,6 @@ def train(arg, epochs, cam_crf):
                     
                     np.save(f"./prediction/prediction_xy_{epoch}.npy", pred_xy.detach().cpu().numpy())
                     np.save(f"./prediction/ground_truth_xy_{epoch}.npy", gt_xy.detach().cpu().numpy()) 
-                    np.save(f"./prediction/ground_truth_xy_real_{epoch}.npy", xy_real.detach().cpu().numpy()) 
                 
                 epoch_eval_depth_px = (sum(losses_depth)/ total_iter) / (1/arg.proj_H)
                 
