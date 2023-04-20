@@ -201,5 +201,5 @@ if __name__ == "__main__":
     cam_crf = torch.tensor(cam_crf, device= arg.device).T
 
     # training
-    test(arg, cam_crf, arg.model_dir, 1000)
+    test(arg, cam_crf, arg.model_dir, 1140)
     
