@@ -3,6 +3,8 @@ import torch, os, cv2
 from hyper_sl.utils.ArgParser import Argument
 from hyper_sl.utils.load_data import load_data
 from hyper_sl.utils import data_process
+from scipy.interpolate import interp1d
+import numpy as np
 
 class createData():
     def __init__(self, arg, data_type, pixel_num, random = True, i = 0):
@@ -71,8 +73,8 @@ class createData():
             half = self.arg.patch_pixel_num // 2
             
             # meter 단위 depth
-            depth_min = 1.
-            depth_max = 1.4
+            depth_min = 0.6
+            depth_max = 1.
             
             depth = (depth_max - depth_min)* torch.rand((pixel_num//self.arg.patch_pixel_num)) + depth_min
             depth = depth.repeat(9,1)
@@ -87,6 +89,9 @@ class createData():
             
         else:
             depth = self.load_data.load_depth(i)
+            map_scale = interp1d([depth.min(), depth.max()], [0.6, 1.])
+            depth = torch.tensor(map_scale(depth).astype(np.float32))
+            
             depth = depth.reshape(self.cam_W * self.cam_H)
             
         return depth
