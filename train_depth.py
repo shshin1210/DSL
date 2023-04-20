@@ -115,10 +115,7 @@ def train(arg, epochs, cam_crf):
             losses_depth.append(loss_depth.item())
             # losses_hyp.append(loss_hyp)
             
-            loss = (loss_depth / (1/arg.proj_H)) * arg.weight_depth
-            # loss = (loss_depth / (1/arg.proj_H)) * arg.weight_depth + loss_hyp * arg.weight_hyp
-            # loss = (loss_depth * 10) * arg.weight_depth + loss_hyp * arg.weight_hyp
-            losses_total.append(loss.item())
+            loss = loss_depth
             
             optimizer.zero_grad()
             loss.backward()
@@ -179,10 +176,6 @@ def train(arg, epochs, cam_crf):
                 
                 # loss
                 losses_depth.append(loss_depth.item())
-                
-                loss = (loss_depth / (1/arg.proj_H)) * arg.weight_depth
-
-                losses_total.append(loss.item())
             
                 total_iter += 1
                 
