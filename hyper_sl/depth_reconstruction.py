@@ -63,7 +63,7 @@ class depthReconstruction():
         point3d_list = self.point3d(center_world, center_proj, cam_dir, proj_dir)
         point3d_list = point3d_list.reshape(-1, self.pixel_num, 3)
         
-        error = self.depth_error(point3d_list, 0)
+        # error = self.depth_error(point3d_list, 0)
         
         return point3d_list
 
