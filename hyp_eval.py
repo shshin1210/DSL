@@ -36,7 +36,7 @@ class hyperspectral_evaluation():
                     plt.colorbar()
         plt.colorbar()
         plt.show()
-    
+
 
     def hyp_evaluation(self, pred_hyp, gt_hyp, eval_type, i, eval_range = "25"):
         # reshaping

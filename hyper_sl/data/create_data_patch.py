@@ -220,6 +220,7 @@ class createData():
             real_img = cv2.imread(os.path.join(scene_i_dir, fn))
             real_img = data_process.crop(real_img)
             real_img = torch.tensor(cv2.cvtColor(real_img, cv2.COLOR_BGR2RGB).reshape(self.cam_H*self.cam_W,-1))
+            real_img = real_img / 255.
             
             N3_arr[:,idx] = real_img
 

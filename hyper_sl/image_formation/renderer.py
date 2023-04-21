@@ -59,7 +59,7 @@ class PixelRenderer():
         # dg intensity
         self.dg_intensity = torch.tensor(self.proj.get_dg_intensity(), device=self.device).unsqueeze(dim=0).float()
         # blur
-        self.gaussian_blur = tf.GaussianBlur(kernel_size=(5,5), sigma=(0.1,0.2))
+        self.gaussian_blur = tf.GaussianBlur(kernel_size=(11,11), sigma=(3.5,3.5))
         
         # path
         self.dat_dir = arg.dat_dir
@@ -193,16 +193,13 @@ class PixelRenderer():
         
         for j in range(self.n_illum):
         # for j in range(1):
-            # if illum_opt == False:
             # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/MicrosoftTeams-image (11).png").astype(np.float32)
             # illum = cv2.cvtColor(illum, cv2.COLOR_BGR2RGB)
             # illum = illum / 255.
             # illum = torch.tensor(illum, device='cuda').unsqueeze(dim = 0)
             
             illum = self.load_data.load_illum(j).to(self.device)  # TODO: load this at the initialization and define it as the member variable for optimization
-            # else:
-            #     illum = torch.tensor(pattern, device = self.device)
-            
+    
             illum_img = torch.zeros(self.batch_size, self.m_n, self.wvls_n, self.pixel_num, device= self.device).flatten()
 
             illum_hyp = illum.reshape((self.proj_H*self.proj_W, 3))@((self.CRF_proj.T).type(torch.float32))
@@ -230,11 +227,17 @@ class PixelRenderer():
             
             # m order에 따른 cam img : cam_m_img
             for k in range(self.m_n): 
-                cam_m_img[:,k,...] = (hyp* (illums_w_occ[:,k,...] * self.dg_intensity[...,k,:].unsqueeze(dim=0))@ self.CRF_cam)
+                cam_m_img[:,k,...] = 0.5*(hyp* (illums_w_occ[:,k,...] * self.dg_intensity[...,k,:].unsqueeze(dim=0))@ self.CRF_cam)
 
             cam_img = cam_m_img.sum(axis=1)
 
-            cam_N_img[...,j,:] = torch.clamp(self.gaussian_blur(cam_img), 0, 1)
+            # gaussian blur
+            if eval == True:
+                cam_img = cam_img.reshape(-1, self.cam_H, self.cam_W, 3).permute(0,3,1,2)
+                cam_N_img[...,j,:] = torch.clamp(self.gaussian_blur(cam_img), 0, 1).permute(0,2,3,1).reshape(-1, self.pixel_num, 3)
+            else:
+                cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)
+            illum_data[:,:,j,:] = illums_m_img
             illum_data[:,:,j,:] = illums_m_img
 
         if eval == False:

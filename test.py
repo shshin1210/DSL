@@ -2,15 +2,21 @@ import torch
 from torch.utils.data import DataLoader
 import numpy as np
 
-import os
+import os, cv2
 from hyper_sl.utils.ArgParser import Argument
 
 from hyper_sl.mlp import mlp_depth, mlp_hyp
 import hyper_sl.datatools as dtools 
 from hyper_sl.image_formation import renderer
-from hyper_sl.hyp_reconstruction import compute_hyp, diff_hyp, cal_A
+from hyper_sl.hyp_reconstruction import cal_A
 from hyper_sl.depth_reconstruction import depthReconstruction
 from hyper_sl.utils import data_process
+
+from scipy.io import loadmat
+
+from hyper_sl.data import create_data_patch
+import matplotlib.pyplot as plt
+
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 print('cuda visible device count :',torch.cuda.device_count())
@@ -65,7 +71,9 @@ def test(arg, cam_crf, model_path, model_num):
                 
                 # to device
                 N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
-            
+
+                vis(N3_arr.reshape(580,890,40,3).detach().cpu().numpy())
+                
                 # DEPTH ESTIMATION
                 N3_arr = N3_arr.reshape(-1,arg.illum_num, 3).unsqueeze(dim = 1)          
                 
@@ -83,15 +91,15 @@ def test(arg, cam_crf, model_path, model_num):
                 
                 # HYPERSPECTRAL ESTIMATION                    
                 # to device
-                N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
-                illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
+                # N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
+                # illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
                 
-                # Ax = b 에서 A
-                illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29
-                A = cal_A(arg, illum, cam_crf, batch_size, pixel_num)
-                I = N3_arr.reshape(-1, arg.illum_num * 3).unsqueeze(dim = 2)
+                # # Ax = b 에서 A
+                # illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29
+                # A = cal_A(arg, illum, cam_crf, batch_size, pixel_num)
+                # I = N3_arr.reshape(-1, arg.illum_num * 3).unsqueeze(dim = 2)
 
-                pred_reflectance = model_hyp(A, I)
+                # pred_reflectance = model_hyp(A, I)
             
         
     else:
@@ -104,6 +112,35 @@ def test(arg, cam_crf, model_path, model_num):
             for i, data in enumerate(eval_loader):
                 # datas
                 depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
+    
+                create_data = create_data_patch.createData
+                
+                pixel_num = arg.cam_H * arg.cam_W
+                random = False
+                index = 0
+                plane_XYZ = torch.tensor(loadmat('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/hyper_sl/image_formation/rendering_prac/plane_XYZ.mat')['XYZ_q'])
+                
+                depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                depth = torch.zeros_like(depth)
+                depth = depth.reshape(-1,580,890)
+                depth_linespace = torch.linspace(0.9, 1.0, 890)
+                depth_repeat = depth_linespace.repeat(580,1)
+                depth[0] = depth_repeat
+                # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
+                depth = depth.reshape(-1, 580*890)
+                
+                normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                normal = torch.ones_like(normal)
+                
+                hyp = create_data(arg, 'hyp', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                hyp = torch.ones_like(hyp)
+                
+                occ = create_data(arg, 'occ', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                occ = torch.ones_like(occ)
+                
+                cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0)
+    
+                
                 print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
                 # image formation
                 N3_arr, gt_xy, illum_data, shading = pixel_renderer.render(depth = depth, 
@@ -115,6 +152,9 @@ def test(arg, cam_crf, model_path, model_num):
                 
                 # to device
                 N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
+                
+                vis(N3_arr.reshape(580,890,40,3).detach().cpu().numpy())
+                
                 gt_xy = gt_xy.to(arg.device) # B, # pixel, 2
             
                 # DEPTH ESTIMATION
@@ -130,7 +170,7 @@ def test(arg, cam_crf, model_path, model_num):
                 
                 # model coord
                 pred_xy = model(N3_arr_normalized) # B * # of pixel, 2                    
-                pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, gt_xy, cam_coord, True)[...,2].detach().cpu()
+                pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, True)[...,2].detach().cpu()
 
                 # Nan indexing
                 check = torch.where(torch.isnan(pred_xy) == False)
@@ -188,7 +228,29 @@ def test(arg, cam_crf, model_path, model_num):
             
             torch.cuda.empty_cache()
     
+def vis(data):
+    illum_num = 40
+    max_images_per_column = 5
+    num_columns = (illum_num + max_images_per_column - 1) // max_images_per_column
+    plt.figure(figsize=(10, 3*num_columns))
 
+    for c in range(num_columns):
+        start_index = c * max_images_per_column
+        end_index = min(start_index + max_images_per_column, illum_num)
+        num_images = end_index - start_index
+                
+        for i in range(num_images):
+            plt.subplot(num_columns, num_images, i + c * num_images + 1)
+            plt.imshow(data[:, :, i + start_index], vmin=0., vmax=1.)
+            plt.axis('off')
+            plt.title(f"Image {i + start_index}")
+            # cv2.imwrite(f'{i+start_index}_img.png', data[:, :, i + start_index, ::-1]*255.)
+                    
+            if i + start_index == illum_num - 1:
+                plt.colorbar()
+
+    plt.show()
+    
 if __name__ == "__main__":
 
     argument = Argument()
@@ -201,5 +263,5 @@ if __name__ == "__main__":
     cam_crf = torch.tensor(cam_crf, device= arg.device).T
 
     # training
-    test(arg, cam_crf, arg.model_dir, 1140)
+    test(arg, cam_crf, arg.model_dir, 1150)
     

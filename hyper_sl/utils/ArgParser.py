@@ -54,7 +54,7 @@ class Argument:
 		self.parser.add_argument('--scene_train_num', type = int, default= 200) # 200
 		self.parser.add_argument('--scene_test_num', type = int, default= 20) # 20
 		self.parser.add_argument('--scene_eval_num', type = int, default= 1)
-		self.parser.add_argument('--scene_real_num', type = int, default= 2)
+		self.parser.add_argument('--scene_real_num', type = int, default= 1)
 
 		self.parser.add_argument('--illum_num', type = int, default= 40)
 
