@@ -6,14 +6,14 @@ import cv2
 
 # import hdr #for testing
 # register
-from logger import *
+# from logger import *
 import matplotlib.pyplot as plt
 import concurrent.futures as futures
 
 # exposure = shutter
 
-def configure_cam(cam, pixel_format, exposure_time_to_set_us, roi=None):
-    # pixel_format: 'Mono16'
+def configure_cam(cam, pixel_format, exposure_time_to_set_us,binning_radius, roi=None):
+    # pixel_format: 'bayer gb16'
     # roi [ x, w, y, h ] -> [x, y, w, h]
     if roi is not None:
         w = roi[1]
@@ -43,6 +43,46 @@ def configure_cam(cam, pixel_format, exposure_time_to_set_us, roi=None):
     else:
         print('Pixel format not available...')
 
+    # White balancing    
+    # Auto off
+    cam.BalanceWhiteAuto.SetValue(PySpin.BalanceWhiteAuto_Off)
+    
+    node_white_balance_format = PySpin.CEnumerationPtr(nodemap.GetNode('BalanceRatioSelector'))
+    balance_ratio_node = PySpin.CFloatPtr(nodemap.GetNode('BalanceRatio'))
+    
+    # Blue
+    if PySpin.IsAvailable(node_white_balance_format) and PySpin.IsWritable(node_white_balance_format):
+        # Retrieve the desired entry node from the enumeration node
+        node_white_balance_format_cur = PySpin.CEnumEntryPtr(node_white_balance_format.GetEntryByName("Blue")) 
+        if PySpin.IsAvailable(node_white_balance_format_cur) and PySpin.IsReadable(node_white_balance_format_cur):
+            # Retrieve the integer value from the entry node
+            # Set integer as new value for enumeration node
+            balance_ratio_node.SetValue(1.0)
+            print('WB blue set to %s...' % balance_ratio_node.GetValue())
+        else:
+            print('WB %s not available...'%("blue"))
+    else:
+        print('WB not available...')
+        
+    
+    # Red
+    # cam.BalanceWhiteAuto.SetValue(PySpin.BalanceWhiteAuto_Off)
+    
+    node_white_balance_format = PySpin.CEnumerationPtr(nodemap.GetNode('BalanceRatioSelector'))
+    if PySpin.IsAvailable(node_white_balance_format) and PySpin.IsWritable(node_white_balance_format):
+        # Retrieve the desired entry node from the enumeration node
+        node_white_balance_format_cur = PySpin.CEnumEntryPtr(node_white_balance_format.GetEntryByName("Red"))  
+        if PySpin.IsAvailable(node_white_balance_format_cur) and PySpin.IsReadable(node_white_balance_format_cur):
+            # Retrieve the integer value from the entry node
+            # Set integer as new value for enumeration node
+            balance_ratio_node.SetValue(1.0)
+            print('WB red set to %s...' % balance_ratio_node.GetValue())
+        else:
+            print('WB %s not available...'%("red"))
+    else:
+        print('WB not available...')
+
+    
     # Set ROI first if applicable (framerate limits depend on it)
     # try:
     # Note set width/height before x/y offset because upon
@@ -77,6 +117,7 @@ def configure_cam(cam, pixel_format, exposure_time_to_set_us, roi=None):
     node_gainauto_mode_off = node_gainauto_mode.GetEntryByName("Off")
     node_gainauto_mode.SetIntValue(node_gainauto_mode_off.GetValue())
 
+
     # Set gain to 0 dB
     node_iGain_float = PySpin.CFloatPtr(nodemap.GetNode("Gain"))
     node_iGain_float.SetValue(0)
@@ -94,15 +135,21 @@ def configure_cam(cam, pixel_format, exposure_time_to_set_us, roi=None):
     if cam.ExposureAuto.GetAccessMode() != PySpin.RW:
         print('Unable to disable automatic exposure. Aborting...')
         return False
-
+    
     cam.ExposureAuto.SetValue(PySpin.ExposureAuto_Off)
     # Set exposure time manually; exposure time recorded in microseconds
     if cam.ExposureTime.GetAccessMode() != PySpin.RW:
         print('Unable to set exposure time. Aborting...')
         return False
 
+    # set binning
+    node_binning_vertical = PySpin.CIntegerPtr(nodemap.GetNode('BinningVertical'))
+    node_binning_vertical.SetValue(binning_radius)
+
+
     # Ensure desired exposure time does not exceed the maximum
     exposure_time_to_set = min(cam.ExposureTime.GetMax(), exposure_time_to_set_us)
+    # exposure_time_to_set = max(cam.ExposureTime.GetMax(), exposure_time_to_set_us)
     cam.ExposureTime.SetValue(exposure_time_to_set)
     print('Shutter time set to %s ms...\n' % (exposure_time_to_set/1e3))
 
@@ -123,6 +170,7 @@ def configure_cam(cam, pixel_format, exposure_time_to_set_us, roi=None):
     node_trigger_mode.SetIntValue(node_trigger_mode_off.GetValue())
 
     print('Trigger mode disabled...')
+    
 
     # Set TriggerSelector to FrameStart
     # For this example, the trigger selector should be set to frame start.

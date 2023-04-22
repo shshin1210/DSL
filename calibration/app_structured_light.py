@@ -17,7 +17,7 @@ import PySpin
 
 # thread for capture image
 class CaptureThread(QThread):
-    '''
+    '''        
     Thread that projects a pattern, captures and save an image
     '''
     number_changed = pyqtSignal(int)
@@ -27,7 +27,7 @@ class CaptureThread(QThread):
         QThread.__init__(self)
         self.runs = True
         self.scene_name = scene_name
-        self.output_dir = '%s/%s/' % (constants.SCENE_PATH, self.scene_name)
+        self.output_dir = '%s/%s/' % (constants.SCENE_PATH, self.scene_name) # experiments/test/
         self.is_finished = False
 
     def stop(self):
@@ -48,14 +48,18 @@ class CaptureThread(QThread):
         self.image_changed.emit(pattern)
         global camera, pixel_format
         
-        time.sleep(constants.CAPTURE_WAIT_TIME)
+        time.sleep(constants.CAPTURE_WAIT_TIME) # 300 ms
         im = cam_pyspin.capture_im(camera, pixel_format)
-        time.sleep(constants.CAPTURE_WAIT_TIME)
-        #cv_image = (im*65535).astype(np.uint16)
-        cv_image = (im*256).astype(np.uint8)
+        time.sleep(constants.CAPTURE_WAIT_TIME) 
+        cv_image = (im*65535).astype(np.uint16)
+        
+        #cv_image = (im*256).astype(np.uint8)
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
-        cv2.imwrite("%s/capture_%04d.png" % (self.output_dir, i + 1), cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR))
+        # =================================================== NAME OF FILE ====================================================
+        # cv2.imwrite("%s/pattern_%04d_capture_%04d.png" % (self.output_dir, i, i + 1), cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR))
+        cv2.imwrite("%s/capture_%04d.png" % (self.output_dir, i), cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR))
+
         # captured_images.append(cv_image)
 
 
@@ -267,7 +271,7 @@ class CaptureHandler:
 # cameara
 # ===========================================================
 # camera = cam_pyspin.get_cam()
-
+ 
 # initialize camera
 # singleton reference to system obj
 system = PySpin.System.GetInstance()
@@ -284,13 +288,14 @@ print(camera.DeviceModelName())
 pixel_format = 'BayerGB16'
 
 # setup camera
-cam_pyspin.configure_cam(camera, pixel_format, constants.SHUTTER_TIME*1e3, roi = None)
+ 
+cam_pyspin.configure_cam(camera, pixel_format, constants.SHUTTER_TIME*1e3, constants.BINNING_RADIUS, roi = None)
 
-# Begin acquiring images/ capturing images
+# Begin acquiring images/ capturing images 
 camera.BeginAcquisition()
     
 # load patterns
-patterns = pattern_utils.prepare_pattern_list(mode = 3) # mode 1,2,3 (patterns)
+patterns = pattern_utils.prepare_pattern_list(mode = 3) # mode 1,2,3,4,5 (patterns) # mode 4 : radiometric calibration pattern gray channel / mode 5 : rgb pattern
 
 # list for captured images
 palette = QPalette()

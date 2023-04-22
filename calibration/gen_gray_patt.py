@@ -12,8 +12,9 @@ CAPTUREDDIR = './capture_*'
 def main():
 
     step = 1
-    height = 360
-    width = 640
+    binning = 2
+    height = 720//binning
+    width = 1280//binning
     gc_height = int((height-1)/step)+1
     gc_width = int((width-1)/step)+1
 
@@ -22,7 +23,8 @@ def main():
     
     patterns = graycode.generate()[1]
     
-    cv2.pattern
+    print(len(patterns))
+    # cv2.pattern
     # expand image size
     exp_patterns = []
     for pat in patterns:
