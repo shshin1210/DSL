@@ -15,4 +15,3 @@ logs/
 *.pth
 *.zip
 dataset/image_formation/dat_dispersion_coord.zip
-*.zip
