@@ -105,7 +105,7 @@ def test(arg, cam_crf, model_path, model_num):
                 # to device
                 N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
                 
-                _, xy_proj_real_norm, illum_data, _ =pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
+                _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
                 
                 illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
                 
