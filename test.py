@@ -111,7 +111,13 @@ def test(arg, cam_crf, model_path, model_num):
                 
                 _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
                 N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
+<<<<<<< HEAD
                                 
+=======
+                
+                _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
+                
+>>>>>>> 46fe5894b8ada95dd4d4aaf96f50cd7c0c7ab3ef
                 illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
                 
                 # Ax = b 에서 A
