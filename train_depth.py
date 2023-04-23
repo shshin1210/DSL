@@ -17,7 +17,7 @@ from hyper_sl.image_formation import camera
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 print('cuda visible device count :',torch.cuda.device_count())
 print('current device number :', torch.cuda.current_device())
 

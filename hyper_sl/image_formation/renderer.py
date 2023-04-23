@@ -138,6 +138,19 @@ class PixelRenderer():
         self.p_list = self.p_list.to(device=self.device)
 
     def render(self, depth, normal, hyp, occ, cam_coord, eval, illum_opt = None, illum_only=False):
+        
+        """
+            input   
+                depth : B, # pixel
+                normal : : B, 3(xyz), # pixel
+                hyp : B, # pixel, 25
+                occ : B, # pixel
+                cam_coord : B, # pixel, 2 (xy)
+                illum_opt : optimized illumination
+                illum_only : outputs only illumination data
+        
+        """
+        
         print('rendering start')
         render_start = time.time()
         math.factorial(100000)

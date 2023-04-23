@@ -18,7 +18,7 @@ from hyper_sl.data import create_data_patch
 import matplotlib.pyplot as plt
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 print('cuda visible device count :',torch.cuda.device_count())
 print('current device number :', torch.cuda.current_device())
 
@@ -72,7 +72,7 @@ def test(arg, cam_crf, model_path, model_num):
                 # intensity check
                 illum = np.zeros(shape = (360, 640, 40, 3))
                 for i in range(arg.illum_num):
-                    illum[:,:,i] = cv2.imread("/home/shshin/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/graycode_pattern/pattern_%02d.png"%i)/255.
+                    illum[:,:,i] = cv2.imread("./dataset/image_formation/illum/graycode_pattern/pattern_%02d.png"%i)/255.
                 illum_intensity_g = illum[116, 221,:,1]
 
                 # batch size
@@ -99,7 +99,7 @@ def test(arg, cam_crf, model_path, model_num):
                 pred_XYZ = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, True)
                 pred_depth = pred_XYZ[...,2].detach().cpu()
                 
-                pred_depth = np.load("/home/shshin/Scalable-Hyp-3D-Imaging/calibration/gray_code_depth_estimation.npy")
+                pred_depth = np.load("./calibration/gray_code_depth_estimation.npy")
                 pred_depth = torch.tensor(pred_depth[...,2]).reshape(arg.cam_H*arg.cam_W).unsqueeze(dim = 0).type(torch.float32) #.to(arg.device)
                 
                 print('depth_pred_finished')
@@ -111,9 +111,7 @@ def test(arg, cam_crf, model_path, model_num):
                 
                 _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
                 N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
-                
-                _, xy_proj_real_norm, illum_data, _ =pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
-                
+                                
                 illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
                 
                 # Ax = b 에서 A
@@ -283,7 +281,7 @@ def vis(data):
             plt.imshow(data[:, :, i + start_index], vmin=0., vmax=1.)
             plt.axis('off')
             plt.title(f"Image {i + start_index}")
-            cv2.imwrite('spectralon_simulation_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
+            # cv2.imwrite('spectralon_simulation_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
                     
             if i + start_index == illum_num - 1:
                 plt.colorbar()
@@ -301,7 +299,7 @@ if __name__ == "__main__":
     cam_crf = camera.Camera(arg).get_CRF()
     cam_crf = torch.tensor(cam_crf, device= arg.device).T
 
-    model_dir = "/home/shshin/Scalable-Hyperspectral-3D-Imaging/result/model_graycode"
+    model_dir = arg.model_dir
     # training
     test(arg, cam_crf, model_dir, 1999)
     

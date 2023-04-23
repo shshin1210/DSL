@@ -10,7 +10,7 @@ class Argument:
 		################## PATH
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
 		# self.parser.add_argument('--model_dir', type = str, default="./result/model_line/")
-		self.parser.add_argument('--model_dir', type = str, default="./result/model_graycode/")
+		self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
 		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
 		self.parser.add_argument('--dg_intensity_dir', type = str, default='./dataset/image_formation')
@@ -34,7 +34,7 @@ class Argument:
 		self.parser.add_argument('--real_data_dir', type=str, default="./dataset/data/real_data")
 
 		################## TRAINING & TESTING
-		self.parser.add_argument('--real_data_scene', type = bool, default= False)
+		self.parser.add_argument('--real_data_scene', type = bool, default= True)
 		self.parser.add_argument('--feature_num', type = int, default=100)
 		self.parser.add_argument('--load_dataset', action='store_true', default=False)
 		self.parser.add_argument('--wvl_min', type = float, default= 420e-9) 
