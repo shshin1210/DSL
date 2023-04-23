@@ -27,7 +27,7 @@ def test(arg, cam_crf, model_path, model_num):
 
     # bring model MLP
     model = mlp_depth(input_dim = arg.patch_pixel_num * arg.illum_num*3, output_dim = 2).to(device=arg.device)
-    model.load_state_dict(torch.load(os.path.join(model_path, 'model_depth_%05d.pth' %model_num), map_location=arg.device))
+    model.load_state_dict(torch.load(os.path.join(model_path, 'model_depth_newcal_%05d.pth' %model_num), map_location=arg.device))
     
     model_hyp = mlp_hyp(input_dim = arg.illum_num*3*(arg.wvl_num + 1), output_dim=arg.wvl_num, fdim = 1000).to(device=arg.device)
     # model_hyp.load_state_dict(torch.load(os.path.join(model_path, 'model_hyp_%05d.pth' %model_num), map_location=arg.device))
@@ -65,6 +65,16 @@ def test(arg, cam_crf, model_path, model_num):
                 # datas
                 N3_arr, illum_data, cam_coord = data[0], data[1], data[2]
                 
+                # intensity check
+                N3_arr = N3_arr.reshape(580,890,40,3)
+                img_intensity_g = N3_arr[200,350,:,1]
+
+                # intensity check
+                illum = np.zeros(shape = (360, 640, 40, 3))
+                for i in range(arg.illum_num):
+                    illum[:,:,i] = cv2.imread("/home/shshin/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/graycode_pattern/pattern_%02d.png"%i)/255.
+                illum_intensity_g = illum[116, 221,:,1]
+
                 # batch size
                 batch_size = N3_arr.shape[0]
                 pixel_num = N3_arr.shape[1]
@@ -89,6 +99,7 @@ def test(arg, cam_crf, model_path, model_num):
                 pred_XYZ = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, True)
                 pred_depth = pred_XYZ[...,2].detach().cpu()
                 
+                print('depth_pred_finished')
                 # HYPERSPECTRAL ESTIMATION                    
                 # to device
                 # N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
@@ -113,32 +124,31 @@ def test(arg, cam_crf, model_path, model_num):
                 # datas
                 depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
     
-                create_data = create_data_patch.createData
+                # create_data = create_data_patch.createData
                 
-                pixel_num = arg.cam_H * arg.cam_W
-                random = False
-                index = 0
-                plane_XYZ = torch.tensor(loadmat('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/hyper_sl/image_formation/rendering_prac/plane_XYZ.mat')['XYZ_q'])
+                # pixel_num = arg.cam_H * arg.cam_W
+                # random = False
+                # index = 0
+
+                # depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                # depth = torch.zeros_like(depth)
+                # depth = depth.reshape(-1,580,890)
+                # depth_linespace = torch.linspace(0.6, 0.8, 890)
+                # depth_repeat = depth_linespace.repeat(580,1)
+                # depth[0] = depth_repeat
+                # # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
+                # depth = depth.reshape(-1, 580*890)
                 
-                depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-                depth = torch.zeros_like(depth)
-                depth = depth.reshape(-1,580,890)
-                depth_linespace = torch.linspace(0.9, 1.0, 890)
-                depth_repeat = depth_linespace.repeat(580,1)
-                depth[0] = depth_repeat
-                # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
-                depth = depth.reshape(-1, 580*890)
+                # normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                # normal = torch.ones_like(normal)
                 
-                normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-                normal = torch.ones_like(normal)
+                # hyp = create_data(arg, 'hyp', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                # hyp = torch.ones_like(hyp)
                 
-                hyp = create_data(arg, 'hyp', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-                hyp = torch.ones_like(hyp)
+                # occ = create_data(arg, 'occ', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                # occ = torch.ones_like(occ)
                 
-                occ = create_data(arg, 'occ', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-                occ = torch.ones_like(occ)
-                
-                cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0)
+                # cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0)
     
                 
                 print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
@@ -161,8 +171,14 @@ def test(arg, cam_crf, model_path, model_num):
                 N3_arr = N3_arr.reshape(-1,arg.illum_num, 3).unsqueeze(dim = 1)           
                 gt_xy = gt_xy.reshape(-1,2)
                 
+                # intensity check
+                illum = np.zeros(shape = (360, 640, 40, 3))
+                for i in range(arg.illum_num):
+                    illum[:,:,i] = cv2.imread("/home/shshin/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/graycode_pattern/pattern_%02d.png"%i)/255.
+
                 # N3_arr padding
                 N3_arr = data_process.to_patch(arg, N3_arr)
+                
                 
                 # normalization of N3_arr
                 N3_arr_normalized = normalize.N3_normalize(N3_arr, arg.illum_num)
@@ -244,7 +260,7 @@ def vis(data):
             plt.imshow(data[:, :, i + start_index], vmin=0., vmax=1.)
             plt.axis('off')
             plt.title(f"Image {i + start_index}")
-            # cv2.imwrite(f'{i+start_index}_img.png', data[:, :, i + start_index, ::-1]*255.)
+            # cv2.imwrite('%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
                     
             if i + start_index == illum_num - 1:
                 plt.colorbar()
@@ -262,6 +278,7 @@ if __name__ == "__main__":
     cam_crf = camera.Camera(arg).get_CRF()
     cam_crf = torch.tensor(cam_crf, device= arg.device).T
 
+    model_dir = "/home/shshin/Scalable-Hyperspectral-3D-Imaging/result/model_graycode"
     # training
-    test(arg, cam_crf, arg.model_dir, 1150)
+    test(arg, cam_crf, model_dir, 1999)
     

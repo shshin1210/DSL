@@ -6,6 +6,7 @@ from hyper_sl.utils import data_process
 from scipy.interpolate import interp1d
 import numpy as np
 
+
 class createData():
     def __init__(self, arg, data_type, pixel_num, random = True, i = 0):
         
@@ -212,15 +213,19 @@ class createData():
         
     def createReal(self, i):
         scene_i_dir = os.path.join(self.real_data_dir, 'scene%04d'%i)
-        scene_files = os.listdir(scene_i_dir)
+        scene_files = sorted(os.listdir(scene_i_dir))
         
         N3_arr = torch.zeros(size=(self.cam_H*self.cam_W, self.illum_num, 3))
         
         for idx, fn in enumerate(scene_files):
-            real_img = cv2.imread(os.path.join(scene_i_dir, fn))
-            real_img = data_process.crop(real_img)
-            real_img = torch.tensor(cv2.cvtColor(real_img, cv2.COLOR_BGR2RGB).reshape(self.cam_H*self.cam_W,-1))
-            real_img = real_img / 255.
+            # Camera Undistortion 넣기
+            
+            real_img = cv2.imread(os.path.join(scene_i_dir, fn), -1) / 255.
+            # real_img = data_process.crop(real_img)
+            # cv2.imwrite('%s_img.png'%(fn[:-4]), real_img*255.)
+            
+            # real_img = torch.tensor(cv2.cvtColor(real_img, cv2.COLOR_BGR2RGB).reshape(self.cam_H*self.cam_W,-1))
+            real_img = torch.tensor(real_img.reshape(self.cam_H*self.cam_W,-1))
             
             N3_arr[:,idx] = real_img
 
