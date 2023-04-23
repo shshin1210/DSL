@@ -67,6 +67,13 @@ def test(arg, cam_crf, model_path, model_num):
                 
                 # intensity check
                 N3_arr = N3_arr.reshape(580,890,40,3)
+                img_intensity_g = N3_arr[200,350,:,1]
+
+                # intensity check
+                illum = np.zeros(shape = (360, 640, 40, 3))
+                for i in range(arg.illum_num):
+                    illum[:,:,i] = cv2.imread("./dataset/image_formation/illum/graycode_pattern/pattern_%02d.png"%i)/255.
+                illum_intensity_g = illum[116, 221,:,1]
 
                 # batch size
                 batch_size = N3_arr.shape[0]
@@ -92,13 +99,25 @@ def test(arg, cam_crf, model_path, model_num):
                 pred_XYZ = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, True)
                 pred_depth = pred_XYZ[...,2].detach().cpu()
                 
+                pred_depth = np.load("./calibration/gray_code_depth_estimation.npy")
+                pred_depth = torch.tensor(pred_depth[...,2]).reshape(arg.cam_H*arg.cam_W).unsqueeze(dim = 0).type(torch.float32) #.to(arg.device)
+                
+                print('depth_pred_finished')
+                
                 # HYPERSPECTRAL ESTIMATION                    
                 # to device
                 N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
+                # cam_coord = cam_coord.to(arg.device)
                 
                 _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
                 N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
+<<<<<<< HEAD
                                 
+=======
+                
+                _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
+                
+>>>>>>> 46fe5894b8ada95dd4d4aaf96f50cd7c0c7ab3ef
                 illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
                 
                 # Ax = b 에서 A
@@ -127,6 +146,37 @@ def test(arg, cam_crf, model_path, model_num):
             for i, data in enumerate(eval_loader):
                 # datas
                 depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
+    
+                create_data = create_data_patch.createData
+                
+                pixel_num = arg.cam_H * arg.cam_W
+                random = False
+                index = 0
+
+                # depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                # depth = torch.zeros_like(depth)
+                # depth = depth.reshape(-1,580,890)
+                # depth_linespace = torch.linspace(0.6, 0.8, 890)
+                # depth_repeat = depth_linespace.repeat(580,1)
+                # depth[0] = depth_repeat
+                # # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
+                # depth = depth.reshape(-1, 580*890)
+                
+                depth = np.load("/home/shshin/Scalable-Hyp-3D-Imaging/calibration/gray_code_depth_estimation.npy")
+                depth = torch.tensor(depth[...,2]).reshape(arg.cam_H*arg.cam_W).unsqueeze(dim = 0).type(torch.float32) #.to(arg.device)
+                
+                
+                normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                normal = torch.ones_like(normal)
+                
+                hyp = create_data(arg, 'hyp', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                hyp = torch.ones_like(hyp)
+                
+                occ = create_data(arg, 'occ', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                occ = torch.ones_like(occ)
+                
+                cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0)
+    
                 
                 print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
                 # image formation
@@ -147,10 +197,16 @@ def test(arg, cam_crf, model_path, model_num):
                 # DEPTH ESTIMATION
                 N3_arr = N3_arr.reshape(-1,arg.illum_num, 3).unsqueeze(dim = 1)           
                 gt_xy = gt_xy.reshape(-1,2)
+                
+                # intensity check
+                illum = np.zeros(shape = (360, 640, 40, 3))
+                for i in range(arg.illum_num):
+                    illum[:,:,i] = cv2.imread("/home/shshin/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/graycode_pattern/pattern_%02d.png"%i)/255.
 
                 # N3_arr padding
                 N3_arr = data_process.to_patch(arg, N3_arr)
-
+                
+                
                 # normalization of N3_arr
                 N3_arr_normalized = normalize.N3_normalize(N3_arr, arg.illum_num)
                 N3_arr_normalized = N3_arr_normalized.reshape(-1, 1, arg.patch_pixel_num, arg.illum_num, 3)

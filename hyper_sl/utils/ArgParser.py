@@ -10,12 +10,7 @@ class Argument:
 		################## PATH
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
 		# self.parser.add_argument('--model_dir', type = str, default="./result/model_line/")
-<<<<<<< HEAD
 		self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
-=======
-		self.parser.add_argument('--model_dir', type = str, default="./result/model_graycode/")
-		# self.parser.add_argument('--model_dir', type = str, default= "//bean.postech.ac.kr/log/suhyun/hyp-3d-imaging/result/model_graycode")
->>>>>>> 63ce8a58a77bde2b54394231f2d0570eb8b2185c
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
 		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
 		self.parser.add_argument('--dg_intensity_dir', type = str, default='./dataset/image_formation')
