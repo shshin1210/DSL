@@ -1,17 +1,17 @@
 import numpy as np
 import torch, os, sys, cv2
-sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
+sys.path.append('/home/shshin/Scalable-Hyperspectral-3D-Imaging')
 
 from hyper_sl.utils import noise,normalize,load_data
 
 from hyper_sl.image_formation.projector import Projector
 from hyper_sl.image_formation.camera import Camera
 from hyper_sl.image_formation import distortion
+import torchvision.transforms as tf
 
 from hyper_sl.data.create_data import createData
-import torchvision.transforms as tf
-import time, math
 
+import time, math
 
 class PixelRenderer():
     """ Render for a single scene 
@@ -58,7 +58,8 @@ class PixelRenderer():
 
         # dg intensity
         self.dg_intensity = torch.tensor(self.proj.get_dg_intensity(), device=self.device).unsqueeze(dim=0).float()
-        # blur
+        
+        # gaussian blur
         self.gaussian_blur = tf.GaussianBlur(kernel_size=(11,11), sigma=(3.5,3.5))
         
         # path
@@ -136,7 +137,7 @@ class PixelRenderer():
         self.p_list = self.dist.bring_distortion_coeff(arg, self.m_list, self.wvls, self.dat_dir)
         self.p_list = self.p_list.to(device=self.device)
 
-    def render(self, depth, normal, hyp, occ, cam_coord, eval):
+    def render(self, depth, normal, hyp, occ, cam_coord, eval, illum_opt = None):
         print('rendering start')
         render_start = time.time()
         math.factorial(100000)
@@ -159,9 +160,12 @@ class PixelRenderer():
         # depth2XYZ
         X, Y, Z = self.cam.unprojection(depth = depth, cam_coord = cam_coord)
         
+        # gt proj uv1
+        # gt_uv1 = self.proj.zero_order_projection(X,Y,Z)
+        
         # change XYZ to dg coord
         XYZ_dg = self.proj.XYZ_to_dg(X,Y,Z)
-        
+
         # shading term
         # B, m, 29, 3, # pixel
         illum_vec_unit = self.illum_unit(X,Y,Z, self.optical_center_virtual) 
@@ -193,13 +197,11 @@ class PixelRenderer():
         
         for j in range(self.n_illum):
         # for j in range(1):
-            # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/MicrosoftTeams-image (11).png").astype(np.float32)
-            # illum = cv2.cvtColor(illum, cv2.COLOR_BGR2RGB)
-            # illum = illum / 255.
-            # illum = torch.tensor(illum, device='cuda').unsqueeze(dim = 0)
+            if illum_opt == None:
+                illum = self.load_data.load_illum(j).to(self.device)  # TODO: load this at the initialization and define it as the member variable for optimization
+            else:
+                illum = illum_opt
             
-            illum = self.load_data.load_illum(j).to(self.device)  # TODO: load this at the initialization and define it as the member variable for optimization
-    
             illum_img = torch.zeros(self.batch_size, self.m_n, self.wvls_n, self.pixel_num, device= self.device).flatten()
 
             illum_hyp = illum.reshape((self.proj_H*self.proj_W, 3))@((self.CRF_proj.T).type(torch.float32))
@@ -230,7 +232,7 @@ class PixelRenderer():
                 cam_m_img[:,k,...] = 0.5*(hyp* (illums_w_occ[:,k,...] * self.dg_intensity[...,k,:].unsqueeze(dim=0))@ self.CRF_cam)
 
             cam_img = cam_m_img.sum(axis=1)
-
+            
             # gaussian blur
             if eval == True:
                 cam_img = cam_img.reshape(-1, self.cam_H, self.cam_W, 3).permute(0,3,1,2)
@@ -238,7 +240,7 @@ class PixelRenderer():
             else:
                 cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)
             illum_data[:,:,j,:] = illums_m_img
-            illum_data[:,:,j,:] = illums_m_img
+
 
         if eval == False:
             noise = self.noise.sample(cam_N_img.shape)
@@ -341,16 +343,16 @@ class PixelRenderer():
     
     def get_newidx(self, uv1):
         
-        r_proj, c_proj = uv1[:,:,:,0], uv1[:,:,:,1]
+        r_proj, c_proj = uv1[:,:,:,1], uv1[:,:,:,0]
 
-        rc_proj = torch.cat((r_proj.unsqueeze(dim = 3), c_proj.unsqueeze(dim =3)), dim = 3)
-        rc_proj = rc_proj.transpose(4,3).reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num, 2) 
-        rc_proj = rc_proj.to(self.device)  # TODO: do we need this?   
+        # rc_proj = torch.cat((r_proj.unsqueeze(dim = 3), c_proj.unsqueeze(dim =3)), dim = 3)
+        # rc_proj = rc_proj.transpose(4,3).reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num, 2) 
         
-        r_proj, c_proj = rc_proj[...,1], rc_proj[...,0]
+        # r_proj, c_proj = rc_proj[...,1], rc_proj[...,0]
 
-        cond = (0<= r_proj)*(r_proj < self.proj_H)*(0<=c_proj)*(c_proj< self.proj_W)
-
+        cond = (0<= r_proj)*(r_proj < self.proj_H)*(0<=c_proj)*(c_proj< self.proj_W) 
+        # cond[:] = True
+        
         r_proj_valid, c_proj_valid = r_proj[cond], c_proj[cond]
         r_proj_valid, c_proj_valid = torch.tensor(r_proj_valid), torch.tensor(c_proj_valid)  # TODO: do we need this? 
 
@@ -365,14 +367,18 @@ class PixelRenderer():
         grid_m_valid = grid_m.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
         grid_w_valid = grid_w.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
 
-        new_idx = self.m_n * self.wvls_n * self.proj_H * self.proj_W * grid_b_valid.long() + self.wvls_n * self.proj_H * self.proj_W * grid_m_valid.long() + self.proj_H * self.proj_W * grid_w_valid.long() + self.proj_W * r_proj_valid.long() + c_proj_valid.long()
+        new_idx = self.m_n * self.wvls_n * self.proj_H * self.proj_W * grid_b_valid.long() \
+                + self.wvls_n * self.proj_H * self.proj_W * grid_m_valid.long() \
+                + self.proj_H * self.proj_W * grid_w_valid.long() \
+                + self.proj_W * r_proj_valid.long() \
+                + c_proj_valid.long()
         
         return new_idx, cond
     
 if __name__ == "__main__":
    
     import torch, os, sys
-    sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
+    sys.path.append('/home/shshin/Scalable-Hyperspectral-3D-Imaging')
     from scipy.io import loadmat
     from hyper_sl.utils.ArgParser import Argument
     from hyper_sl.data import create_data_patch
@@ -384,7 +390,7 @@ if __name__ == "__main__":
     # 기존의 hyperpsectral 정보와 depth로 rendering 하는 코드
     create_data = create_data_patch.createData
     
-    plane_XYZ = torch.tensor(loadmat('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/hyper_sl/image_formation/rendering_prac/plane_XYZ.mat')['XYZ_q'])
+    plane_XYZ = torch.tensor(loadmat('/home/shshin/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/rendering_prac/plane_XYZ.mat')['XYZ_q'])
     plane_XYZ = data_process.crop(plane_XYZ)
     
     
@@ -409,14 +415,14 @@ if __name__ == "__main__":
     
     import cv2
     # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/grid.png").astype(np.float32)
-    illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/MicrosoftTeams-image (11).png").astype(np.float32)
+    illum = cv2.imread("/home/shshin/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/rendering_prac/MicrosoftTeams-image (11).png").astype(np.float32)
     # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/graycode_pattern/pattern_38.png").astype(np.float32)
     illum = cv2.cvtColor(illum, cv2.COLOR_BGR2RGB)
     illum = illum / 255.
     illum = torch.tensor(illum, device='cuda').unsqueeze(dim = 0)
 
     # n_scene, random, pixel_num, eval
-    cam_N_img, xy_proj_real_norm, illum_data, shading = PixelRenderer(arg).render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True)
-    # cam_N_img, xy_proj_real_norm, illum_data, shading = PixelRenderer(arg).render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True, illum_opt = False)
+    cam_N_img, xy_proj_real_norm, illum_data, shading = PixelRenderer(arg).render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True, illum_opt=illum)
+    # cam_N_img, xy_proj_real_norm, illum_data, shading = PixelRenderer(arg).render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True)
     
     print('end')

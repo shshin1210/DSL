@@ -5,15 +5,17 @@ import numpy as np
 import os
 from hyper_sl.utils.ArgParser import Argument
 
-from hyper_sl.mlp import mlp_hyp
+from hyper_sl.mlp import mlp_depth, mlp_hyp
 import hyper_sl.datatools as dtools 
 from hyper_sl.image_formation import renderer
-from hyper_sl.hyp_reconstruction import cal_A
+from hyper_sl.hyp_reconstruction import compute_hyp, diff_hyp, cal_A
+
+from hyper_sl.utils import data_process
 
 from torch.utils.tensorboard import SummaryWriter
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 print('cuda visible device count :',torch.cuda.device_count())
 print('current device number :', torch.cuda.current_device())
 
@@ -81,7 +83,6 @@ def train(arg, epochs, cam_crf):
             I = N3_arr.reshape(-1, arg.illum_num * 3).unsqueeze(dim = 2)
             
             pred_reflectance = model_hyp(A, I)
-
             loss_hyp = loss_fn_hyp(gt_reflectance, pred_reflectance)           
 
             # save last epoch training set
@@ -205,8 +206,6 @@ def train(arg, epochs, cam_crf):
             
                     # loss
                     losses_hyp.append(loss_hyp.item() * 10 )
-
-                    loss = loss_hyp * 10
             
                     total_iter +=1
                     

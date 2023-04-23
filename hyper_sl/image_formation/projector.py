@@ -25,12 +25,8 @@ class Projector():
             XYZ = torch.linalg.inv(proj_int)@xyz_p
             
         """
-        # intrinsic_proj_real = torch.tensor([[1.00093845e+03 ,0.00000000e+00, 2.97948385e+02],
-        #                                     [0.00000000e+00, 1.01013006e+03, 3.59948973e+02],
-        #                                     [0.00000000e+00 ,0.00000000e+00, 1.00000000e+00]])
-        
-        intrinsic_proj_real = torch.tensor([[1.01413202e+03, 0.00000000e+00, 3.01185491e+02],
-                                            [0.00000000e+00 ,1.01411098e+03 ,3.24341546e+02],
+        intrinsic_proj_real = torch.tensor([[1.0205325617292132e+03, 0.00000000e+00, 2.7398003835418473e+02],
+                                            [0.00000000e+00 ,1.0204965778160497e+03 ,3.2068450274841155e+02],
                                             [0.00000000e+00, 0.00000000e+00 ,1.00000000e+00]])
         
         
@@ -43,22 +39,13 @@ class Projector():
         
         """
         extrinsic_proj_real = torch.zeros((4,4)).to(self.device)
-        
+    
         # rotation
-        # extrinsic_proj_real[:3,:3] = torch.tensor([[ 0.99954079, -0.00161654 , 0.03025891],
-        #                                             [ 0.00558025 , 0.99131739, -0.13137238],
-        #                                             [-0.02978381 , 0.1314809 ,  0.99087118]])
+        extrinsic_proj_real[:3,:3] = torch.tensor([[ 9.9286293239384182e-01, 6.6195007972498819e-03 ,1.1907720053602434e-01],
+                                                   [ 4.7593928018852495e-03, 9.9546383966145868e-01 ,-9.5021534962465432e-02] ,
+                                                   [-1.1916604238816823e-01, 9.4910095014497209e-02  ,9.8832764213386259e-01]])
         
-        # rotation
-        extrinsic_proj_real[:3,:3] = torch.tensor([[ 0.99966018, -0.00384192 ,0.02578291],
-                                                   [ 0.00631669, 0.99530308 ,-0.09660162] ,
-                                                   [-0.02529067, 0.09673165 ,0.99498913]])
-        
-        # t_mtrx = torch.tensor([[-63.94495247],
-        #                         [-12.97260334],
-        #                         [-13.05130514]])
-        
-        t_mtrx = torch.tensor([[-62.93973922] ,[-13.57632379], [ -5.49703815]])
+        t_mtrx = torch.tensor([[-6.2177630727543303e+01] ,[-1.2625778282717615e+01], [-1.6809619580073809e+00]])
         
         extrinsic_proj_real[:3,3:4] = t_mtrx*1e-3
         extrinsic_proj_real[3,3] = 1
@@ -137,6 +124,18 @@ class Projector():
         
         return xyz_proj
     
+    def zero_order_projection(self, X, Y, Z):
+        
+        # XYZ_dg -> proj coord -> center 연결 -> proj plane 만나는 점        
+        # world coord XYZ1 to projector coord
+        XYZ1 = torch.stack((X,Y,Z,torch.ones_like(X)), dim = 1).to(device=self.device)
+        XYZ1_proj = torch.linalg.inv(self.extrinsic_proj_real())@XYZ1       
+
+        suv = self.intrinsic_proj_real().to(self.device) @ XYZ1_proj[:,:3]
+        gt_uv1 = suv/ suv[...,2,:].unsqueeze(dim = 1)
+        
+        return gt_uv1
+     
     def xy_to_uv(self, xyz_proj):
         suv = self.intrinsic_proj_real().to(self.device) @ xyz_proj
         uv1 = suv/ suv[...,2,:].unsqueeze(dim = 3)

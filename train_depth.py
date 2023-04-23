@@ -10,7 +10,8 @@ import hyper_sl.datatools as dtools
 from hyper_sl.image_formation import renderer
 from hyper_sl.hyp_reconstruction import compute_hyp, diff_hyp
 from hyper_sl.depth_reconstruction import depthReconstruction
-from hyper_sl.utils import data_process, normalize
+from hyper_sl.utils import data_process
+from hyper_sl.utils import normalize
 from hyper_sl.image_formation import camera
 
 from torch.utils.tensorboard import SummaryWriter
@@ -60,7 +61,9 @@ def train(arg, epochs, cam_crf):
     for epoch in range(epochs):
         model.train()
         
+        losses_total = []
         losses_depth = []
+        # losses_hyp = []
         total_iter = 0
         
         for i, data in enumerate(train_loader):
@@ -84,15 +87,10 @@ def train(arg, epochs, cam_crf):
             
             """
             gt_xy = gt_xy.to(arg.device) # B, # pixel
-            illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
-            hyp = hyp.to(arg.device) # B, # pixel, 25
-            shading = shading.to(arg.device) # B, 3(m), 25(wvl), # pixel
             
             # DEPTH ESTIMATION
             # reshape
-            N3_arr = N3_arr.reshape(-1,arg.illum_num, 3)
-            I = N3_arr.reshape(-1, arg.illum_num * 3)
-    
+            N3_arr = N3_arr.reshape(-1,arg.illum_num, 3)    
             N3_arr = N3_arr.unsqueeze(dim = 1) 
             gt_xy = gt_xy.reshape(-1,2)
             
@@ -102,20 +100,20 @@ def train(arg, epochs, cam_crf):
             
             # model coord
             pred_xy = model(N3_arr_normalized)
-            gt_xy = gt_xy.reshape(-1, 1, arg.patch_pixel_num, 2)[...,4,:].squeeze()
+            gt_xy = gt_xy.reshape(-1, 1, arg.patch_pixel_num, 2)[...,arg.patch_pixel_num//2,:].squeeze()
             loss_depth = loss_fn(gt_xy, pred_xy)
             
             pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, False)[...,2]
-    
+            
             # save last epoch training set
             if epoch == arg.epoch_num -1 :
                 torch.save(N3_arr, os.path.join(arg.output_dir, f'N3_arr_{epoch}.pt'))
                 torch.save(pred_xy, os.path.join(arg.output_dir, f'pred_xy_{epoch}.pt'))
             
             losses_depth.append(loss_depth.item())
-            # losses_hyp.append(loss_hyp)
             
-            loss = loss_depth
+            loss = (loss_depth / (1/arg.proj_H)) * arg.weight_depth
+            losses_total.append(loss.item())
             
             optimizer.zero_grad()
             loss.backward()
@@ -124,15 +122,16 @@ def train(arg, epochs, cam_crf):
             
         scheduler.step()
         epoch_train_depth_px = (sum(losses_depth)/total_iter) / (1/arg.proj_H)
-        
+    
         print("{%dth epoch} Train depth Loss: "%(epoch), epoch_train_depth_px)
         writer.add_scalar("Training Depth", epoch_train_depth_px, epoch)
-        
+       
         # evaluation
         model.eval()
         
         with torch.no_grad():
-
+            
+            losses_total = []
             losses_depth = []
             total_iter = 0
             
@@ -151,14 +150,10 @@ def train(arg, epochs, cam_crf):
                 # to device
                 N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
                 gt_xy = gt_xy.to(arg.device) # B, # pixel, 2
-                illum_data = illum_data.to(arg.device) # B, # pixel, N, 29
-                hyp = hyp.to(arg.device) # B, # pixel, 29
-                shading = shading.to(arg.device) # B, 3(m), 29(wvl), # pixel
-                
+
                 # DEPTH ESTIMATION
                 # reshape
                 N3_arr = N3_arr.reshape(-1,arg.illum_num, 3)
-                I = N3_arr.reshape(-1, arg.illum_num * 3)
                 
                 N3_arr = N3_arr.unsqueeze(dim = 1) 
                 gt_xy = gt_xy.reshape(-1,2)
@@ -176,6 +171,9 @@ def train(arg, epochs, cam_crf):
                 
                 # loss
                 losses_depth.append(loss_depth.item())
+                
+                loss = (loss_depth / (1/arg.proj_H)) * arg.weight_depth
+                losses_total.append(loss.item())
             
                 total_iter += 1
                 
@@ -183,10 +181,10 @@ def train(arg, epochs, cam_crf):
                 if (epoch%10 == 0) or (epoch == arg.epoch_num-1):
                     if not os.path.exists(arg.model_dir):
                         os.mkdir(arg.model_dir)
-                    torch.save(model.state_dict(), os.path.join(arg.model_dir, 'model_coord_%05d.pth'%epoch))
+                    torch.save(model.state_dict(), os.path.join(arg.model_dir, 'model_depth_newcal_%05d.pth'%epoch))
                                         
             epoch_valid_depth_px = (sum(losses_depth)/ total_iter) / (1/arg.proj_H)
-                
+
             print("{%dth epoch} Valid loss :"  %(epoch), epoch_valid_depth_px)
             writer.add_scalar("Valid Depth", epoch_valid_depth_px, epoch)
 
@@ -194,7 +192,6 @@ def train(arg, epochs, cam_crf):
                 
                 losses_total = []
                 losses_depth = []
-                # losses_hyp = []
                 total_iter = 0
                 
                 for i, data in enumerate(eval_loader):
@@ -212,13 +209,8 @@ def train(arg, epochs, cam_crf):
                     # to device
                     N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
                     gt_xy = gt_xy.to(arg.device) # B, # pixel, 2
-                    illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
-                    hyp = hyp.to(arg.device) # B, # pixel, 29
-                    shading = shading.to(arg.device) # B, 3(m), 25(wvl), # pixel
-                
+
                     # DEPTH ESTIMATION
-                    # reshape
-                    I = N3_arr.reshape(-1, arg.illum_num * 3)
                     gt_xy = gt_xy.reshape(-1,2)
                     
                     # N3_arr padding
@@ -235,10 +227,11 @@ def train(arg, epochs, cam_crf):
                     check = torch.where(torch.isnan(pred_xy) == False)
                     pred_xy_loss = pred_xy[check]
                     gt_xy_loss = gt_xy[check]
-
+                    
+                    # loss
                     loss_depth = loss_fn(gt_xy_loss, pred_xy_loss)
                     losses_depth.append(loss_depth.item())
-
+                    
                     total_iter +=1
                     
                     # Nan 처리
@@ -254,7 +247,6 @@ def train(arg, epochs, cam_crf):
                 
                 print("{%dth epoch} Evaluation loss :"  %(epoch), epoch_eval_depth_px)
                 writer.add_scalar("eval_loss", epoch_eval_depth_px, epoch)
-
                 
                 torch.cuda.empty_cache()
     writer.flush()

@@ -9,11 +9,13 @@ class Argument:
 
 		################## PATH
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
-		self.parser.add_argument('--model_dir', type = str, default="./result/model_noise/")
+		# self.parser.add_argument('--model_dir', type = str, default="./result/model_line/")
+		self.parser.add_argument('--model_dir', type = str, default="./result/model_graycode/")
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
 		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
 		self.parser.add_argument('--dg_intensity_dir', type = str, default='./dataset/image_formation')
 		self.parser.add_argument('--dat_dir', type = str, default = './dataset/image_formation/dat')
+		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern")
 		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
 		self.parser.add_argument('--illum_data_dir', type = str, default= "./dataset/image_formation/illum_data.npy")
 		self.parser.add_argument('--img_hyp_texture_dir', type = str, default="./dataset/image_formation/img_hyp_text")
@@ -30,9 +32,9 @@ class Argument:
 		self.parser.add_argument('--random_pixel_illum', type = str, default="illum.pt")
 		self.parser.add_argument('--random_pixel_hyp_gt', type = str, default="hyp_gt.pt")
 		self.parser.add_argument('--real_data_dir', type=str, default="./dataset/data/real_data")
-		
-  		################## TRAINING & TESTING
-		self.parser.add_argument('--real_data_scene', type = bool, default= True)
+
+		################## TRAINING & TESTING
+		self.parser.add_argument('--real_data_scene', type = bool, default= False)
 		self.parser.add_argument('--feature_num', type = int, default=100)
 		self.parser.add_argument('--load_dataset', action='store_true', default=False)
 		self.parser.add_argument('--wvl_min', type = float, default= 420e-9) 
@@ -57,17 +59,18 @@ class Argument:
 		self.parser.add_argument('--scene_real_num', type = int, default= 1)
 
 		self.parser.add_argument('--illum_num', type = int, default= 40)
+		# self.parser.add_argument('--illum_num', type = int, default= 63)
 
 		self.parser.add_argument('--patch_pixel_num', type = int, default = 9)
 	
-		self.parser.add_argument('--num_train_px_per_iter', type = int, default= 9*500) # 400
-		self.parser.add_argument('--batch_size_train', type = int, default= 8) # 8
-		self.parser.add_argument('--batch_size_test', type = int, default= 4) # 4
+		self.parser.add_argument('--num_train_px_per_iter', type = int, default= 9*500) # 4500
+
+		self.parser.add_argument('--batch_size_train', type = int, default= 16) # 16
+		self.parser.add_argument('--batch_size_test', type = int, default= 8) # 8
 		self.parser.add_argument('--batch_size_eval', type = int, default= 1)
 		self.parser.add_argument('--batch_size_real', type = int, default= 1)
-
 		self.parser.add_argument('--model_lr', type = float, default= 5*1e-4) # 5*1e-4
-		# step size 300 -> 100 / 0.5 -> 0.8
+		# step size 300 -> 100 / 0.5 ->0.8
 		self.parser.add_argument('--model_step_size', type = int, default = 300)
 		self.parser.add_argument('--model_gamma', type= float, default=0.8)
   
@@ -93,7 +96,7 @@ class Argument:
 		self.parser.add_argument('--mat_path', type=str, default= "./dataset/m_files/")
   		# for Camera calibaration
 		self.parser.add_argument('--fov', type=float, default=30.3) # 30.3d
-		self.parser.add_argument('--focal_length', type=float, default= 12.) # 16mm
+		self.parser.add_argument('--focal_length', type=float, default= 12) # 16mm
 
 
 		self.parser.add_argument('--param_path', type = str, default="./calibration/parameters")
@@ -106,11 +109,8 @@ class Argument:
 
 		# projector
 		self.parser.add_argument('--sensor_diag_proj',  type = float, default= 5.842) # 5.842mm
-		self.parser.add_argument('--focal_length_proj', type = float, default= 8.) # 8mm
+		self.parser.add_argument('--focal_length_proj', type = float, default= 8) # 8mm
 		
-		# f?
-		# self.parser.add_argument('-f', '--fff', help = 'jupyter notebook error fix', default='1')
-  
 	def parse(self):
 		arg = self.parser.parse_args()
 		arg.wvls = torch.linspace(arg.wvl_min, arg.wvl_max, arg.wvl_num)
