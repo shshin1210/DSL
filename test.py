@@ -110,7 +110,18 @@ def test(arg, cam_crf, model_path, model_num):
                 # cam_coord = cam_coord.to(arg.device)
                 
                 _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
+                N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
                 
+                _, xy_proj_real_norm, illum_data, _ =pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
+                
+                illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
+                
+                # Ax = b 에서 A
+                illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29
+                A = cal_A(arg, illum, cam_crf, batch_size, pixel_num)
+                I = N3_arr.reshape(-1, arg.illum_num * 3).unsqueeze(dim = 2)
+
+                pred_reflectance = model_hyp(A, I)
                 illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
                 
                 # Ax = b 에서 A

@@ -138,6 +138,7 @@ class PixelRenderer():
         self.p_list = self.p_list.to(device=self.device)
 
     def render(self, depth, normal, hyp, occ, cam_coord, eval, illum_opt = None, illum_only=False):
+    def render(self, depth, normal, hyp, occ, cam_coord, eval, illum_opt = None, illum_only=False):
         print('rendering start')
         render_start = time.time()
         math.factorial(100000)
