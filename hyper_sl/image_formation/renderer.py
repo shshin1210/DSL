@@ -137,7 +137,7 @@ class PixelRenderer():
         self.p_list = self.dist.bring_distortion_coeff(arg, self.m_list, self.wvls, self.dat_dir)
         self.p_list = self.p_list.to(device=self.device)
 
-    def render(self, depth, normal, hyp, occ, cam_coord, eval, illum_opt = None):
+    def render(self, depth, normal, hyp, occ, cam_coord, eval, illum_opt = None, illum_only=False):
         print('rendering start')
         render_start = time.time()
         math.factorial(100000)
@@ -224,23 +224,27 @@ class PixelRenderer():
             illums_w_occ = illum_w_occ*shading 
 
             illums_w_occ = illums_w_occ.permute(0,1,3,2)
-        
-            cam_m_img = torch.zeros((self.batch_size, self.m_n, self.pixel_num, 3))
             
-            # m order에 따른 cam img : cam_m_img
-            for k in range(self.m_n): 
-                cam_m_img[:,k,...] = 0.5*(hyp* (illums_w_occ[:,k,...] * self.dg_intensity[...,k,:].unsqueeze(dim=0))@ self.CRF_cam)
+            if not illum_only:
+                cam_m_img = torch.zeros((self.batch_size, self.m_n, self.pixel_num, 3))
+                
+                # m order에 따른 cam img : cam_m_img
+                for k in range(self.m_n): 
+                    cam_m_img[:,k,...] = 0.5*(hyp* (illums_w_occ[:,k,...] * self.dg_intensity[...,k,:].unsqueeze(dim=0))@ self.CRF_cam)
 
-            cam_img = cam_m_img.sum(axis=1)
+                cam_img = cam_m_img.sum(axis=1)
             
-            # gaussian blur
-            if eval == True:
-                cam_img = cam_img.reshape(-1, self.cam_H, self.cam_W, 3).permute(0,3,1,2)
-                cam_N_img[...,j,:] = torch.clamp(self.gaussian_blur(cam_img), 0, 1).permute(0,2,3,1).reshape(-1, self.pixel_num, 3)
-            else:
-                cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)
+                # gaussian blur
+                if eval == True:
+                    cam_img = cam_img.reshape(-1, self.cam_H, self.cam_W, 3).permute(0,3,1,2)
+                    cam_N_img[...,j,:] = torch.clamp(self.gaussian_blur(cam_img), 0, 1).permute(0,2,3,1).reshape(-1, self.pixel_num, 3)
+                else:
+                    cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)
+                    
             illum_data[:,:,j,:] = illums_m_img
 
+        if illum_only:
+            return None, xy_proj_real_norm, illum_data, None
 
         if eval == False:
             noise = self.noise.sample(cam_N_img.shape)
