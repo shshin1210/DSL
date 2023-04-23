@@ -99,18 +99,26 @@ def test(arg, cam_crf, model_path, model_num):
                 pred_XYZ = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, True)
                 pred_depth = pred_XYZ[...,2].detach().cpu()
                 
+                pred_depth = np.load("/home/shshin/Scalable-Hyp-3D-Imaging/calibration/gray_code_depth_estimation.npy")
+                pred_depth = torch.tensor(pred_depth[...,2]).reshape(arg.cam_H*arg.cam_W).unsqueeze(dim = 0).type(torch.float32) #.to(arg.device)
+                
                 print('depth_pred_finished')
+                
                 # HYPERSPECTRAL ESTIMATION                    
                 # to device
-                # N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
-                # illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
+                N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
+                # cam_coord = cam_coord.to(arg.device)
                 
-                # # Ax = b 에서 A
-                # illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29
-                # A = cal_A(arg, illum, cam_crf, batch_size, pixel_num)
-                # I = N3_arr.reshape(-1, arg.illum_num * 3).unsqueeze(dim = 2)
+                _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
+                
+                illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
+                
+                # Ax = b 에서 A
+                illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29
+                A = cal_A(arg, illum, cam_crf, batch_size, pixel_num)
+                I = N3_arr.reshape(-1, arg.illum_num * 3).unsqueeze(dim = 2)
 
-                # pred_reflectance = model_hyp(A, I)
+                pred_reflectance = model_hyp(A, I)
             
         
     else:
@@ -124,11 +132,11 @@ def test(arg, cam_crf, model_path, model_num):
                 # datas
                 depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
     
-                # create_data = create_data_patch.createData
+                create_data = create_data_patch.createData
                 
-                # pixel_num = arg.cam_H * arg.cam_W
-                # random = False
-                # index = 0
+                pixel_num = arg.cam_H * arg.cam_W
+                random = False
+                index = 0
 
                 # depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
                 # depth = torch.zeros_like(depth)
@@ -139,16 +147,20 @@ def test(arg, cam_crf, model_path, model_num):
                 # # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
                 # depth = depth.reshape(-1, 580*890)
                 
-                # normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-                # normal = torch.ones_like(normal)
+                depth = np.load("/home/shshin/Scalable-Hyp-3D-Imaging/calibration/gray_code_depth_estimation.npy")
+                depth = torch.tensor(depth[...,2]).reshape(arg.cam_H*arg.cam_W).unsqueeze(dim = 0).type(torch.float32) #.to(arg.device)
                 
-                # hyp = create_data(arg, 'hyp', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-                # hyp = torch.ones_like(hyp)
                 
-                # occ = create_data(arg, 'occ', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-                # occ = torch.ones_like(occ)
+                normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                normal = torch.ones_like(normal)
                 
-                # cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0)
+                hyp = create_data(arg, 'hyp', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                hyp = torch.ones_like(hyp)
+                
+                occ = create_data(arg, 'occ', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                occ = torch.ones_like(occ)
+                
+                cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0)
     
                 
                 print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
@@ -260,7 +272,7 @@ def vis(data):
             plt.imshow(data[:, :, i + start_index], vmin=0., vmax=1.)
             plt.axis('off')
             plt.title(f"Image {i + start_index}")
-            # cv2.imwrite('%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
+            cv2.imwrite('spectralon_simulation_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
                     
             if i + start_index == illum_num - 1:
                 plt.colorbar()
