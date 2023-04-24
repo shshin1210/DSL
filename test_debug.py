@@ -290,7 +290,7 @@ def test(arg, cam_crf, model_path, model_num):
                 # # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
                 # depth = depth.reshape(-1, 580*890)
                 
-                depth = np.load("/home/shshin/Scalable-Hyp-3D-Imaging/calibration/gray_code_depth_estimation.npy")
+                depth = np.load("/workspace/Scalable-Hyp-3D-Imaging/calibration/gray_code_depth_estimation.npy")
                 depth = torch.tensor(depth[...,2]).reshape(arg.cam_H*arg.cam_W).unsqueeze(dim = 0).type(torch.float32) #.to(arg.device)
                 
                 
@@ -433,7 +433,7 @@ def vis(data):
             plt.imshow(data[:, :, i + start_index], vmin=0., vmax=1.)
             plt.axis('off')
             plt.title(f"Image {i + start_index}")
-            # cv2.imwrite('spectralon_simulation_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
+            cv2.imwrite('spectralon_simulation_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
                     
             if i + start_index == illum_num - 1:
                 plt.colorbar()

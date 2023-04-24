@@ -14,6 +14,11 @@ from hyper_sl.utils import data_process
 
 from torch.utils.tensorboard import SummaryWriter
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+print('cuda visible device count :',torch.cuda.device_count())
+print('current device number :', torch.cuda.current_device())
+
+
 def train(arg, epochs, cam_crf):
     writer = SummaryWriter(log_dir=arg.log_dir)
     

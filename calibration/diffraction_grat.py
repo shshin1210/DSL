@@ -1,7 +1,7 @@
 import torch
 import sys
 # sys.path.append('C:/Users/mainuser/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging')
-sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging')
+sys.path.append('/workspace/Scalable-Hyp-3D-Imaging')
 
 from hyper_sl.utils.ArgParser import Argument
 from hyper_sl.utils import load_data
@@ -471,8 +471,8 @@ class PixelRenderer():
         return xyz_c , uv_cam
     
     def intrinsic_cam(self):
-        intrinsic_cam = torch.tensor([[1.73445592e+03/ self.cam_focal_length, 0.00000000e+00 , 3.69434796e+02],
-                                    [0.00000000e+00 ,1.71305703e+03/ self.cam_focal_length , 3.41735502e+02],
+        intrinsic_cam = torch.tensor([[1.7471120984549243e+03/ self.cam_focal_length, 0.00000000e+00 , 4.3552404635908243e+02],
+                                    [0.00000000e+00 ,1.7562111249245049e+03/ self.cam_focal_length , 3.3663669106446793e+02],
                                     [0.00000000e+00 ,0.00000000e+00, 1.00000000e+00]])
             
         return intrinsic_cam
@@ -543,8 +543,8 @@ class PixelRenderer():
         # TODO: divided by focal length?
 
         # TODO: divided by focal length?
-        intrinsic_proj_real = torch.tensor([[1.01413202e+03/ self.proj_focal_length, 0.00000000e+00, 3.01185491e+02],
-                                            [0.00000000e+00,1.01411098e+03 / self.proj_focal_length, 3.24341546e+02],
+        intrinsic_proj_real = torch.tensor([[1.0205325617292132e+03/ self.proj_focal_length, 0.00000000e+00, 2.7398003835418473e+02],
+                                            [0.00000000e+00,1.0204965778160497e+03/ self.proj_focal_length, 3.2068450274841155e+02],
                                             [0.00000000e+00,0.00000000e+00, 1.00000000e+00]])
         
         
