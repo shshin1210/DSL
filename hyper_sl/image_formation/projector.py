@@ -59,11 +59,17 @@ class Projector():
         # rotation, translation matrix
         extrinsic_diff = torch.zeros((4,4), device= self.device)
 
-        extrinsic_diff[:3,:3] = torch.tensor([[ 9.9997e-01, -6.7196e-03, -3.4573e-03],
-                                                [ 6.7228e-03,  9.9998e-01,  8.8693e-04],
-                                                [ 3.4512e-03, -9.1015e-04,  9.9999e-01]])
+        # extrinsic_diff[:3,:3] = torch.tensor([[ 9.9997e-01, -6.7196e-03, -3.4573e-03],
+        #                                         [ 6.7228e-03,  9.9998e-01,  8.8693e-04],
+        #                                         [ 3.4512e-03, -9.1015e-04,  9.9999e-01]])
+        # # translate 
+        # t_mtrx = torch.tensor([[0.],[0.],[-4.2502e-02]])
+        
+        extrinsic_diff[:3,:3] = torch.tensor([[9.9999845e-01 ,1.6800547e-03 ,-5.0520507e-04],
+                                                 [-1.6802433e-03 ,9.9999851e-01 , -3.7284498e-04],
+                                                [ 5.0457759e-04, 3.7369365e-04 , 9.9999982e-01]])
         # translate 
-        t_mtrx = torch.tensor([[0.],[0.],[-4.2502e-02]])
+        t_mtrx = torch.tensor([[0.],[0.],[-5.9621420e-02]])
     
         extrinsic_diff[:3,3:4] = t_mtrx
         extrinsic_diff[3,3] = 1
