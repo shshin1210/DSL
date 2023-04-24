@@ -34,7 +34,7 @@ class Argument:
 		self.parser.add_argument('--real_data_dir', type=str, default="./dataset/data/real_data")
 
 		################## TRAINING & TESTING
-		self.parser.add_argument('--real_data_scene', type = bool, default= True)
+		self.parser.add_argument('--real_data_scene', type = bool, default= False)
 		self.parser.add_argument('--feature_num', type = int, default=100)
 		self.parser.add_argument('--load_dataset', action='store_true', default=False)
 		self.parser.add_argument('--wvl_min', type = float, default= 420e-9) 

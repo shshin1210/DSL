@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import os
+from scipy.interpolate import interp1d
 
 import sys
 sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging')
@@ -58,19 +59,10 @@ class Projector():
         # rotation, translation matrix
         extrinsic_diff = torch.zeros((4,4), device= self.device)
 
-        # rotation        
-        # extrinsic_diff[:3,:3] = torch.tensor([[ 0.9999723, -0.00734455 , -0.00119761],
-        #                                         [ 0.00734283 , 0.999972, -0.00142986],
-        #                                         [ 0.00120808, 0.00142101 , 0.9999983]])       
-        
         extrinsic_diff[:3,:3] = torch.tensor([[ 9.9997e-01, -6.7196e-03, -3.4573e-03],
                                                 [ 6.7228e-03,  9.9998e-01,  8.8693e-04],
                                                 [ 3.4512e-03, -9.1015e-04,  9.9999e-01]])
         # translate 
-        # t_mtrx = torch.tensor([[0.],
-        #                         [0.],
-        #                         [-0.03261498]])
-        
         t_mtrx = torch.tensor([[0.],[0.],[-4.2502e-02]])
     
         extrinsic_diff[:3,3:4] = t_mtrx
@@ -176,7 +168,9 @@ class Projector():
         return p_list
     
     def get_PRF(self):
-        PRF = np.load(os.path.join(self.crf_dir, 'CRF_proj.npy'))* 100     
+        PRF = np.load(os.path.join(self.crf_dir, 'CRF_proj.npy'))
+        map_scale = interp1d([PRF.min(), PRF.max()], [0.,1.])
+        PRF = torch.tensor(map_scale(PRF).astype(np.float32))    
         PRF = PRF[2:27]
         return PRF
 

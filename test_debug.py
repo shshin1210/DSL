@@ -88,10 +88,10 @@ def test(arg, cam_crf, model_path, model_num):
                 N3_arr = N3_arr.reshape(-1,arg.illum_num, 3).unsqueeze(dim = 1)          
                 
                 # N3_arr padding
-                N3_arr = data_process.to_patch(arg, N3_arr)
+                N3_arr_patch = data_process.to_patch(arg, N3_arr)
                 
                 # normalization of N3_arr
-                N3_arr_normalized = normalize.N3_normalize(N3_arr, arg.illum_num)
+                N3_arr_normalized = normalize.N3_normalize(N3_arr_patch, arg.illum_num)
                 N3_arr_normalized = N3_arr_normalized.reshape(-1, 1, arg.patch_pixel_num, arg.illum_num, 3)
                 
                 # model coord
@@ -104,11 +104,7 @@ def test(arg, cam_crf, model_path, model_num):
                 
                 print('depth_pred_finished')
                 
-                # HYPERSPECTRAL ESTIMATION                    
-                # to device
-                N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
-                # cam_coord = cam_coord.to(arg.device)
-                
+                # HYPERSPECTRAL ESTIMATION                                   
                 _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
                 N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
                                 
@@ -119,16 +115,155 @@ def test(arg, cam_crf, model_path, model_num):
                 A = cal_A(arg, illum, cam_crf, batch_size, pixel_num)
                 I = N3_arr.reshape(-1, arg.illum_num * 3).unsqueeze(dim = 2)
 
+                # Using Network
                 pred_reflectance = model_hyp(A, I)
                 illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
                 
-                # Ax = b 에서 A
-                illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29
-                A = cal_A(arg, illum, cam_crf, batch_size, pixel_num)
-                I = N3_arr.reshape(-1, arg.illum_num * 3).unsqueeze(dim = 2)
+                # Using optimization
+                # hyp gt data
+                C, R, N, W, M = arg.cam_W, arg.cam_H, arg.illum_num, arg.wvl_num, arg.cam_W* arg.cam_H
+                
+                # A, b
+                A = A.reshape(arg.cam_H, arg.cam_W, 1, arg.illum_num*3, arg.wvl_num).detach().cpu().numpy()
+                b = I.reshape(arg.cam_H, arg.cam_W, arg.illum_num*3, 1).detach().cpu().numpy()
+                
+                # spectralon의 hyperspectral reflectance
+                create_data = create_data_patch.createData
+                
+                pixel_num = arg.cam_H * arg.cam_W
+                random = False
+                index = 0
+                
+                hyp = create_data(arg, 'hyp', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                hyp = torch.ones_like(hyp)
+                hyp = hyp.reshape(-1, arg.wvl_num) # M, 29
+                # shading_term = shading[:,0,:,:].permute(0,2,1).reshape(-1, arg.wvl_num) # 29M, 1
+                # gt_reflectance = shading_term * hyp
+                
+                
+                # A, b into patches
+                b = b.flatten()
+                idx = np.where(b > 0.95)
 
-                pred_reflectance = model_hyp(A, I)
+                b[idx] = 0
+
+                A = A.reshape(-1, W)
+                A[idx] = 0
+
+                A = A.reshape(R, C, 1, 3*N, W)
+                b = b.reshape(R, C, 1, 3*N, 1)
+                
+                A1 = A[:290,:445]
+                A2 = A[:290,445:]
+                A3 = A[290:,:445]
+                A4 = A[290:,445:]
+                
+                b1 = b[:290,:445]
+                b2 = b[:290,445:]
+                b3 = b[290:,:445]
+                b4 = b[290:,445:]
+                
+                A_list = [A1,A2,A3,A4]
+                b_list = [b1,b2,b3,b4]
+    
+                batch_size = 200000
+                num_iter = 5000
+                num_batches = int(np.ceil(M / batch_size))
+                loss_f = torch.nn.L1Loss()
+                loss_f.requires_grad_ = True
+                losses = []
+                X_np_all = torch.zeros(R, C, 1, W, 1)
+
+                # define initial learning rate and decay step
+                lr = 1
+                decay_step = 500
+
+
+                # A = A.reshape(C, R, 1, 3*N, W)
+                # b = b.reshape(C, R, 1, 3*N, 1)
+
+                r, c = 290, 445
+                
+                # training loop over batches
+                for batch_idx in range(4):
+                    # start_idx = batch_idx * batch_size
+                    # end_idx = min((batch_idx + 1) * batch_size, M)
+                    # batch_size_ = end_idx - start_idx
+                    A_batch = torch.from_numpy(A_list[batch_idx]).to(arg.device).reshape(r*c,1, 3*N, W)
+                    B_batch = torch.from_numpy(b_list[batch_idx]).to(arg.device).reshape(r*c,1, 3*N, 1)
+                    X_est = torch.randn(r*c, 1, W, 1, requires_grad=True, device=arg.device)
+                    optimizer = torch.optim.Adam([X_est], lr=lr)
+                    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=decay_step, gamma=0.5)
+
+                    optimizer.zero_grad()
+                    for i in range(num_iter):
+                        loss = loss_f(A_batch @ X_est, B_batch)
+                        X_est_reshape = X_est.reshape(r,c,W).unsqueeze(dim = 0).permute(0,3,1,2)
+                        loss_tv = total_variation_loss_l1(X_est_reshape, 0.1)
+                        loss_spec = total_variation_loss_l2_spectrum(X_est_reshape, 0.1)
+                        total_loss = loss + loss_tv + loss_spec
+                        
+                        total_loss.backward()
+                        losses.append(total_loss.item())
+                        optimizer.step()
+                        scheduler.step()
+                        optimizer.zero_grad()
+
+                        if i % 100 == 0:
+                            print(f"Batch {batch_idx + 1}/{num_batches}, Iteration {i}/{num_iter}, Loss: {loss.item()}, TV Loss: {loss_tv.item()}, Spec Loss: {loss_spec.item()},  LR: {optimizer.param_groups[0]['lr']}")
+
+                    # X_np_all[start_idx:end_idx] = X_est.detach().cpu()
+                    
+                    if batch_idx == 0:
+                        X_np_all[:290,:445]= X_est.detach().cpu().reshape(r,c,1,W,1)
+                    elif batch_idx == 1:
+                        X_np_all[:290,445:]= X_est.detach().cpu().reshape(r,c,1,W,1)
+                    elif batch_idx == 2:
+                        X_np_all[290:,:445]= X_est.detach().cpu().reshape(r,c,1,W,1)
+                    else:
+                        X_np_all[290:,445:]= X_est.detach().cpu().reshape(r,c,1,W,1)
+
+                X_np_all = X_np_all.numpy()
+
+                
+                # plot losses over time
+                plt.figure(figsize=(15,10))
+
+                plt.subplot(1, 2, 1)
+                plt.plot(losses)
+                plt.title("Loss over time")
+                plt.xlabel("Iteration")
+                plt.ylabel("L1 Loss")
+
+                plt.subplot(1, 2, 2)
+                plt.semilogy(losses)
+                plt.title("Log Loss over time")
+                plt.xlabel("Iteration")
+                plt.ylabel("L1 Loss (log scale)")
+
+                plt.show()
+
+                X_np_all = X_np_all.reshape(C,R,W)
             
+                max_images_per_column = 5
+                num_columns = (W + max_images_per_column - 1) // max_images_per_column
+                plt.figure(figsize=(15, 3*num_columns))
+
+                for c in range(num_columns):
+                    start_index = c * max_images_per_column
+                    end_index = min(start_index + max_images_per_column, W)
+                    num_images = end_index - start_index
+                    
+                    for i in range(num_images):
+                        plt.subplot(num_columns, num_images, i + c * num_images + 1)
+                        plt.imshow(X_np_all[:, :, i + start_index], vmin=0, vmax=1)
+                        plt.axis('off')
+                        plt.title(f"Image {i + start_index}")
+                        
+                        if i + start_index == W - 1:
+                            plt.colorbar()
+            
+                plt.show()
         
     else:
         with torch.no_grad():
@@ -156,7 +291,7 @@ def test(arg, cam_crf, model_path, model_num):
                 # # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
                 # depth = depth.reshape(-1, 580*890)
                 
-                depth = np.load("/home/shshin/Scalable-Hyp-3D-Imaging/calibration/gray_code_depth_estimation.npy")
+                depth = np.load("/workspace/Scalable-Hyp-3D-Imaging/calibration/gray_code_depth_estimation.npy")
                 depth = torch.tensor(depth[...,2]).reshape(arg.cam_H*arg.cam_W).unsqueeze(dim = 0).type(torch.float32) #.to(arg.device)
                 
                 
@@ -264,7 +399,25 @@ def test(arg, cam_crf, model_path, model_num):
             print("Eval Hyp Error: ", epoch_eval_hyp)
             
             torch.cuda.empty_cache()
-    
+
+def total_variation_loss_l2(img, weight): 
+    bs_img, c_img, h_img, w_img = img.size() 
+    tv_h = torch.pow(img[:,:,1:,:]-img[:,:,:-1,:], 2).sum() 
+    tv_w = torch.pow(img[:,:,:,1:]-img[:,:,:,:-1], 2).sum() 
+    return weight*(tv_h+tv_w)/(bs_img*c_img*h_img*w_img)
+
+def total_variation_loss_l1(img, weight): 
+    bs_img, c_img, h_img, w_img = img.size() 
+    tv_h = torch.abs(img[:,:,1:,:]-img[:,:,:-1,:]).sum() 
+    tv_w = torch.abs(img[:,:,:,1:]-img[:,:,:,:-1]).sum() 
+    return weight*(tv_h+tv_w)/(bs_img*c_img*h_img*w_img)
+
+def total_variation_loss_l2_spectrum(img, weight): 
+    bs_img, c_img, h_img, w_img = img.size() 
+    tv_s = torch.pow(img[:,1:,:,:]-img[:,:-1,:,:], 2).sum()
+    return weight*(tv_s)/(bs_img*c_img*h_img*w_img)
+
+
 def vis(data):
     illum_num = 40
     max_images_per_column = 5
@@ -281,7 +434,7 @@ def vis(data):
             plt.imshow(data[:, :, i + start_index], vmin=0., vmax=1.)
             plt.axis('off')
             plt.title(f"Image {i + start_index}")
-            # cv2.imwrite('spectralon_simulation_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
+            cv2.imwrite('spectralon_simulation_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
                     
             if i + start_index == illum_num - 1:
                 plt.colorbar()

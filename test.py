@@ -13,8 +13,6 @@ from hyper_sl.depth_reconstruction import depthReconstruction
 from hyper_sl.utils import data_process
 
 from scipy.io import loadmat
-
-from hyper_sl.data import create_data_patch
 import matplotlib.pyplot as plt
 
 
