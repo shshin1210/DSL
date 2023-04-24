@@ -169,8 +169,8 @@ class PixelRenderer():
         sensor_X_real = self.intersection_points_r[0]
         sensor_Y_real = self.intersection_points_r[1]
         
-        lmb = list(np.linspace(400, 680, 29)*1e-9)
-        self.dat_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/dat"
+        lmb = list(np.linspace(420, 660, 25)*1e-9)
+        self.dat_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/dataset/image_formation/dat"
         for m in tqdm(range(len(self.m_list))):
             for i in tqdm(range(len(lmb)), leave = False):
                 

@@ -1,7 +1,7 @@
 import torch
 import sys
 # sys.path.append('C:/Users/mainuser/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging')
-sys.path.append('/home/shshin/Scalable-Hyp-3D-Imaging')
+sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
 
 from hyper_sl.utils.ArgParser import Argument
 from hyper_sl.utils import load_data
@@ -228,39 +228,32 @@ class PixelRenderer():
         uv_cam_m_1, uv_cam_m1 = uv_cam_m_1[...,:3], uv_cam_m1[...,3:]
         
         # ground truth m = 1, m = -1 
-        self.xy_wvl_m1_real = torch.tensor([[[421,425,429],
-                                        [377,382,384],
-                                        [335,341,343],
-                                        [293,299,303],
-                                        [251,258,260]],
+        self.xy_wvl_m1_real = torch.tensor([[[380,382,384],  # 1, 2, 3
+                                        [335,338,341],      # 5개 : wvl
+                                        [293,296,300],      # 2개 : x & y
+                                        [251,259,259],
+                                        [208,212,214]],
                                        
-                                       [[224,391,561],
-                                        [224,392,561],
-                                        [224,392,562],
-                                        [224,392,563],
-                                        [223,393,562]]
+                                       [[150,315,483],
+                                        [151,315,484],
+                                        [149,314,483],
+                                        [149,315,483],
+                                        [148,316,484]]
                                        ], device= device)
-        
-        self.xy_wvl_m1_real[0] = self.xy_wvl_m1_real[0] - 77
-        self.xy_wvl_m1_real[1] = self.xy_wvl_m1_real[1] - 75
-        
-        
-        self.xy_wvl_m_1_real = torch.tensor([[[518,513,511],
-                                        [560,556,555],
-                                        [603,598,596],
-                                        [644,637,637],
-                                        [685,680,679]],
+
+        self.xy_wvl_m_1_real = torch.tensor([[[474,467,467],   # 4, 5, 6
+                                        [515,513,509],
+                                        [557,553,551],
+                                        [599,594,593],
+                                        [640,634,635]],
                                         
-                                       [[223,389,556],
-                                        [224,389,556],
-                                        [222,388,554],
-                                        [222,388,554],
-                                        [221,389,555]]
+                                       [[149,314,484],
+                                        [148,313,484],
+                                        [148,313,483],
+                                        [148,314,482],
+                                        [148,314,484]]
                                        ], device= device)
-        
-        self.xy_wvl_m_1_real[0] = self.xy_wvl_m_1_real[0] - 77
-        self.xy_wvl_m_1_real[1] = self.xy_wvl_m_1_real[1] - 75
-        
+
         # ground truth real xy cam coord
         xyz_real = self.real_to_xy(self.xy_wvl_m_1_real, self.xy_wvl_m1_real)
         self.xyz_real = xyz_real.reshape(3, 2, 5, 3)
@@ -335,7 +328,7 @@ class PixelRenderer():
         
         """
 
-        uv1_p = torch.tensor([[98.,95.,1.],[99.,198.,1.],[100.,300.,1,],[505.,94.,1,],[504.,197.,1,],[503.,300.,1.]]).T.to(self.device)
+        uv1_p = torch.tensor([[152.,101.,1.],[151.,201.,1.],[150.,301.,1,],[559.,95.,1,],[556.,199.,1,],[555.,300.,1.]]).T.to(self.device)
         
         # to real projector plane size
         xyz_p = (torch.linalg.inv(self.intrinsic_proj_real()).to(self.device)@uv1_p)

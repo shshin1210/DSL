@@ -2,7 +2,7 @@ clear all;
 close all;
 warning off;
 
-dat_path = 'C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/dat';
+dat_path = 'C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/dataset/image_formation/dat';
 model = 'poly55';
 pitch =  7.9559e-06;
 
