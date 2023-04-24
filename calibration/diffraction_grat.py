@@ -1,7 +1,7 @@
 import torch
 import sys
 # sys.path.append('C:/Users/mainuser/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging')
-sys.path.append('/workspace/Scalable-Hyp-3D-Imaging')
+sys.path.append('/home/shshin/Scalable-Hyp-3D-Imaging')
 
 from hyper_sl.utils.ArgParser import Argument
 from hyper_sl.utils import load_data
@@ -9,14 +9,10 @@ from hyper_sl.utils import load_data
 from hyper_sl.image_formation.projector import Projector
 from hyper_sl.image_formation.camera import Camera
 
-
-import time, math
 import numpy as np
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-
-from torch.utils.tensorboard import SummaryWriter
 
 device = 'cuda'
 
@@ -78,7 +74,7 @@ class PixelRenderer():
         # self.extrinsic_diff.retain_grad()
 
         # projector sensor plane
-        self.xyz1, self.proj_center = self.proj_sensor_plane(depth)
+        self.xyz1, self.proj_center = self.proj_sensor_plane()
         self.pixel_num = self.xyz1.shape[1]
         
         # change proj sensor plane to dg coord
@@ -204,7 +200,6 @@ class PixelRenderer():
         return extrinsic_diff
 
 
-        
     def render(self, depth, i):        
         # depth for m = [-1,0,1], wvl
         depth = (depth).repeat(self.m_n, 1)
@@ -213,10 +208,8 @@ class PixelRenderer():
         
         # constant where z equals to depth value
         t = (depth-self.intersection_points_proj[2])/self.z
-        t = (depth-self.intersection_points_proj[2])/self.z
         
         # 3D XYZ points
-        self.X, self.Y, self.Z = self.intersection_points_proj[0] + self.alpha_m*t, self.intersection_points_proj[1] + self.beta_m*t, self.intersection_points_proj[2] + self.z*t
         self.X, self.Y, self.Z = self.intersection_points_proj[0] + self.alpha_m*t, self.intersection_points_proj[1] + self.beta_m*t, self.intersection_points_proj[2] + self.z*t
 
         ##### CAM COORDINATE
@@ -271,19 +264,6 @@ class PixelRenderer():
         # ground truth real xy cam coord
         xyz_real = self.real_to_xy(self.xy_wvl_m_1_real, self.xy_wvl_m1_real)
         self.xyz_real = xyz_real.reshape(3, 2, 5, 3)
-        
-        # save to image (gt cam coord & predicted cam coord)
-        # if i % 1000 == 0:
-        #     fig, ax = plt.subplots(figsize = (10,5))
-        #     plt.plot(self.xy_wvl_m_1_real[0].detach().cpu().numpy().flatten(), self.xy_wvl_m_1_real[1].detach().cpu().numpy().flatten(), '.', label = 'gt of m = -1')
-        #     plt.plot(self.xy_wvl_m1_real[0].detach().cpu().numpy().flatten(), self.xy_wvl_m1_real[1].detach().cpu().numpy().flatten(), '.', label = 'gt of m = 1')
-        #     plt.plot(uv_cam_m_1[0].detach().cpu().numpy().flatten(), uv_cam_m_1[1].detach().cpu().numpy().flatten(), '.', label = 'pred m = -1')
-        #     plt.plot(uv_cam_m1[0].detach().cpu().numpy().flatten(), uv_cam_m1[1].detach().cpu().numpy().flatten(), '.', label = 'pred m = 1')
-        #     plt.axis('equal')
-        #     rect = patches.Rectangle((0,0), 1024,768, linewidth = 1, edgecolor = 'r', facecolor='none')
-        #     ax.add_patch(rect)
-        #     ax.legend(loc = 'best')
-        #     plt.savefig(f'./dg_cal/real_and_uv_{i}.png')
             
         if i % 100 == 0:
             fig, ax = plt.subplots(figsize = (10,5))
@@ -315,131 +295,6 @@ class PixelRenderer():
         xyz_c[2] = self.cam_focal_length
         
         return xyz_c       
-        
-    def visualization(self):
-        """
-            visualization (NEED TO BE FIXED...)
-        """
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        
-        # ax.set_xlim([-1,1])
-        # ax.set_ylim([-0.5,0.005])
-        # ax.set_zlim([-0.018,1.52])
-        
-        # ax.set_xlim([-0.005,0.0051])
-        # ax.set_ylim([-0.5,0.005])
-        # ax.set_zlim([-0.018,0.1])
-        # ax.set_xlim([-0.005,0.0051])
-        # ax.set_ylim([-0.5,0.005])
-        # ax.set_zlim([-0.018,0.1])
-        
-        self.xyz1 = self.xyz1.detach().cpu()
-        self.intersection_points_proj = self.intersection_points_proj.detach().cpu()
-        self.alpha_m = self.alpha_m.detach().cpu()
-        self.beta_m = self.beta_m.detach().cpu()
-        self.z = self.z.detach().cpu()
-        
-        # plot projector plane & proj center in proj coord black
-        for i in range(self.xyz1.shape[1]):
-            # draw proj plane
-            ax.scatter(self.xyz1[0,i], self.xyz1[1,i], self.xyz1[2,i], color = 'black', s = 1)
-            # draw intersected points red
-            ax.scatter(self.intersection_points_proj[0,i], self.intersection_points_proj[1,i], self.intersection_points_proj[2,i], color = 'red', s =1)
-            # draw incidient light
-            # ax.plot([[0], self.intersection_points_proj[0,i]], [[0], self.intersection_points_proj[1,i]], [[0], self.intersection_points_proj[2,i]], color = 'blue', linewidth = 0.25)
-        # draw center (0,0,0)
-        ax.scatter([0],[0],[0], s= 1)
-        
-        
-        # diffracted rays green
-        for i in range(self.xyz1.shape[1]):
-            for k in range(self.alpha_m.shape[0]):
-                for j in range(1):
-                    # draw diffracted rays
-                    start = [self.intersection_points_proj[0,i],self.intersection_points_proj[1,i],self.intersection_points_proj[2,i]]
-
-                    # 정방향
-                    scale =  1/100
-                    # diffracted ray
-                    # only order m = -1
-                    X_d = [start[0], start[0] + scale*self.alpha_m[k,j,i]]
-                    Y_d = [start[1], start[1] + scale*self.beta_m[k,j,i]]
-                    Z_d = [start[2], start[2] + scale*self.z[k,j,i]]
-                    ax.plot(X_d,Y_d,Z_d, color = 'green', linewidth = 0.25)
-        
-        # 3D XYZ points and intersection points 연결
-        # self.X, self.Y, self.Z = self.X.detach().cpu(), self.Y.detach().cpu(), self.Z.detach().cpu()
-        # for i in range(self.xyz1.shape[1]):
-        #     for k in range(self.alpha_m.shape[0]):
-        #         for j in range(1):
-        #             # draw diffracted rays
-        #             start = [self.intersection_points_proj[0,i],self.intersection_points_proj[1,i],self.intersection_points_proj[2,i]]
-
-        #             # 정방향
-        #             scale =  1/100
-        #             # diffracted ray
-        #             # only order m = -1
-        #             X_d = [start[0], self.X[k,j,i]]
-        #             Y_d = [start[1], self.Y[k,j,i]]
-        #             Z_d = [start[2], self.Z[k,j,i]]
-        #             ax.plot(X_d,Y_d,Z_d, color = 'purple', linewidth = 0.25)
-        
-        
-        # camera unprojection
-        
-        
-        # predicted & gt cam coords
-        inv = torch.tensor([[ 0.9995, -0.0016,  0.0303, -0.0639],
-                            [ 0.0056,  0.9913, -0.1314, -0.0130],
-                            [-0.0298,  0.1315,  0.9909, -0.0131],
-                            [ 0.0000,  0.0000,  0.0000,  1.0000]], device='cuda:0')
-        
-        
-        # chnage camera plane coords to proj coord
-        self.xyz1_cam_m1 =  torch.concat((self.xyz_cam_m1, torch.ones(size = (1,5,3),device = device)), dim = 0 )
-        self.xyz_cam_m_1 =  torch.concat((self.xyz_cam_m_1, torch.ones(size = (1,5,3),device = device)), dim = 0 )
-        self.xyz_real =  torch.concat((self.xyz_real, torch.ones(size = (1,2,5,3),device = device)), dim = 0 )
-
-        self.xyz1_cam_m1 = inv@self.xyz1_cam_m1.reshape(4,-1)
-        self.xyz_cam_m_1 = inv@self.xyz_cam_m_1.reshape(4,-1)
-        self.xyz_real = inv@self.xyz_real.reshape(4,-1)
-
-        self.xyz1_cam_m1 = self.xyz1_cam_m1.reshape(4,5,3)[:3]
-        self.xyz_cam_m_1 = self.xyz_cam_m_1.reshape(4,5,3)[:3]
-        self.xyz_real = self.xyz_real.reshape(4,2,5,3)[:3]
-
-        self.xyz_cam_m1,self.xyz_cam_m_1 = self.xyz_cam_m1.detach().cpu(),self.xyz_cam_m_1.detach().cpu()
-        self.xyz_real = self.xyz_real.detach().cpu()
-        
-        # draw ground truth cam coord, predicted cam coord
-        for i in range(self.xyz_cam_m1.shape[2]):
-            ax.scatter(self.xyz_cam_m1[0,0,i], self.xyz_cam_m1[1,0,i], self.xyz_cam_m1[1,0,i], color = 'pink', s = 1)
-            ax.scatter(self.xyz_cam_m_1[0,0,i], self.xyz_cam_m_1[1,0,i], self.xyz_cam_m_1[1,0,i], color = 'pink', s = 1)
-            ax.scatter(self.xyz_real[0,0,0,i], self.xyz_real[1,0,0,i], self.xyz_real[1,0,0,i], color = 'orange', s = 1)
-            ax.scatter(self.xyz_real[0,1,0,i], self.xyz_real[1,1,0,i], self.xyz_real[1,1,0,i], color = 'orange', s = 1)
-
-        # XYZ rays and center point
-        # for i in range(self.xyz1.shape[1]):
-        #     for k in range(self.alpha_m.shape[0]):
-        #         for j in range(1):
-        #             # draw diffracted rays
-        #             start = torch.tensor([-0.0639, -0.0130, -0.0131]) # cam center
-
-        #             # 정방향
-        #             scale =  1/100
-        #             # diffracted ray
-        #             # only order m = -1
-        #             X_d = [start[0], self.X[k,j,i]]
-        #             Y_d = [start[1], self.Y[k,j,i]]
-        #             Z_d = [start[2], self.Z[k,j,i]]
-        #             ax.plot(X_d,Y_d,Z_d, color = 'purple', linewidth = 0.25)
-        
-        # plt.legend([])
-        # plt.legend([])
-        # plt.show()
-        # plt.savefig('./visualization.png')       
-
     
     def projection(self, X,Y,Z):
         """
@@ -454,10 +309,6 @@ class PixelRenderer():
         # XYZ 3D points proj coord -> cam coord                   
         XYZ_cam = (self.extrinsic_proj_real)@XYZ1
 
-        # XYZ_cam[2]
-
-        # XYZ_cam[2]
-        
         # uv cam coord
         uv_cam = (self.int_cam.to(device))@XYZ_cam[:3]
         uv_cam = uv_cam / uv_cam[2]
@@ -477,49 +328,20 @@ class PixelRenderer():
             
         return intrinsic_cam
     
-    def proj_sensor_plane(self, depth):
+    def proj_sensor_plane(self):
         """ Projector sensor plane coordinates
         
             returns projector center coordinate, sensor plane coordiante
         
         """
-        # proj sensor
-        # xs = torch.linspace(0,self.proj_H-1, self.proj_H)
-        # ys = torch.linspace(0,self.proj_W-1, self.proj_W)
-        # c, r = torch.meshgrid(xs, ys, indexing='ij')
-        # xs = torch.linspace(0,self.proj_H-1, self.proj_H)
-        # ys = torch.linspace(0,self.proj_W-1, self.proj_W)
-        # c, r = torch.meshgrid(xs, ys, indexing='ij')
-        
-        # c, r = c.reshape(self.proj_H*self.proj_W), r.reshape(self.proj_H*self.proj_W)
-        # ones = torch.ones_like(c)
-        # c, r = c.reshape(self.proj_H*self.proj_W), r.reshape(self.proj_H*self.proj_W)
-        # ones = torch.ones_like(c)
-        
-        # uv1_p = torch.stack((r,c,ones), dim = 0)
-        # uv1_p = torch.stack((r,c,ones), dim = 0)
-        
-        # # grid points
-        # proj_W = 640
-        # # indexes = torch.tensor([proj_W*100 + 100, proj_W*200 + 100, proj_W*300 + 100, proj_W*100 + 500, proj_W*200 + 500,proj_W*300 + 500])
-        # indexes = torch.tensor([proj_W*360+  298]) # 360, 640
 
-        # uv1_p = uv1_p[:,indexes].to(self.device)
         uv1_p = torch.tensor([[98.,95.,1.],[99.,198.,1.],[100.,300.,1,],[505.,94.,1,],[504.,197.,1,],[503.,300.,1.]]).T.to(self.device)
         
         # to real projector plane size
         xyz_p = (torch.linalg.inv(self.intrinsic_proj_real()).to(self.device)@uv1_p)
-        # TODO: why do we have difference?
-        # xyz_p[0] = (uv1_p[0,:] - self.intrinsic_proj_real()[0,2])*self.proj_pitch
-        # xyz_p[1] = (uv1_p[1,:] - self.intrinsic_proj_real()[1,2])*self.proj_pitch
 
         xyz_p[2] = self.proj_focal_length  # TODO: why?
-        # TODO: why do we have difference?
-        # xyz_p[0] = (uv1_p[0,:] - self.intrinsic_proj_real()[0,2])*self.proj_pitch
-        # xyz_p[1] = (uv1_p[1,:] - self.intrinsic_proj_real()[1,2])*self.proj_pitch
 
-        xyz_p[2] = self.proj_focal_length  # TODO: why?
-        
         # proj_center
         proj_center = torch.zeros(size=(4,1), device=self.device)
         proj_center[3,0] = 1
@@ -538,10 +360,7 @@ class PixelRenderer():
             xyz_p = torch.stack((r*depth,c*depth,ones*depth), dim = 0)
             XYZ = torch.linalg.inv(proj_int)@xyz_p
             
-        # """
-
-        # TODO: divided by focal length?
-
+        """
         # TODO: divided by focal length?
         intrinsic_proj_real = torch.tensor([[1.0205325617292132e+03/ self.proj_focal_length, 0.00000000e+00, 2.7398003835418473e+02],
                                             [0.00000000e+00,1.0204965778160497e+03/ self.proj_focal_length, 3.2068450274841155e+02],
@@ -589,12 +408,7 @@ if __name__ == "__main__":
     arg = argument.parse()
 
     opt_param = torch.tensor([0.5, 0.5, 0.033,0.0005], dtype = torch.float, requires_grad = True, device = device)    
-    # print(opt_param)
-    # [0.4000, 0.4000, 1.1000, 0.0200]
-    # [-0.0111, -0.0111,  1.8875,  0.0200]
-    # 1.5707963267948966, 0.0
-    # 1.5772, 1.6089,
-    # 1.5707963267948966, 0.001, 0.02
+
     lr = 1e-2
     decay_step = 1000
 
@@ -625,14 +439,10 @@ if __name__ == "__main__":
         optimizer.step()
         
         scheduler.step()
-        
-        # writer.add_scalar('loss', loss, epoch)
-        
+
         if i % 100 == 0:
             print(f" Opt param value : {opt_param}, Epoch : {i}/{epoch}, Loss: {loss.item()}, LR: {optimizer.param_groups[0]['lr']}")
-            print(renderer.extrinsic_diff)
+            print(renderer.extrinsic_diff.detach().cpu().numpy())
     plt.figure()
     plt.plot(losses)
     plt.savefig('./loss_ftn.png')
-        
-    # writer.flush()
