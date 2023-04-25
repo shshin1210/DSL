@@ -231,7 +231,7 @@ class PixelRenderer():
         self.xy_wvl_m1_real = torch.tensor([[[380,382,384],  # 1, 2, 3
                                         [335,338,341],      # 5개 : wvl
                                         [293,296,300],      # 2개 : x & y
-                                        [251,259,259],
+                                        [251,254,256],
                                         [208,212,214]],
                                        
                                        [[150,315,483],
@@ -241,7 +241,7 @@ class PixelRenderer():
                                         [148,316,484]]
                                        ], device= device)
 
-        self.xy_wvl_m_1_real = torch.tensor([[[474,467,467],   # 4, 5, 6
+        self.xy_wvl_m_1_real = torch.tensor([[[474,470,468],   # 4, 5, 6
                                         [515,513,509],
                                         [557,553,551],
                                         [599,594,593],
@@ -400,7 +400,7 @@ if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
 
-    opt_param = torch.tensor([0.5, 0.5, 0.033,0.0005], dtype = torch.float, requires_grad = True, device = device)    
+    opt_param = torch.tensor([1.5, 0.5, 0.033,0.0005], dtype = torch.float, requires_grad = True, device = device)    
 
     lr = 1e-2
     decay_step = 1000

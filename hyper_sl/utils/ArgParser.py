@@ -37,9 +37,9 @@ class Argument:
 		self.parser.add_argument('--real_data_scene', type = bool, default= False)
 		self.parser.add_argument('--feature_num', type = int, default=100)
 		self.parser.add_argument('--load_dataset', action='store_true', default=False)
-		self.parser.add_argument('--wvl_min', type = float, default= 420e-9) 
-		self.parser.add_argument('--wvl_max', type = float, default= 660e-9) 
-		self.parser.add_argument('--wvl_num', type = int, default= 25)
+		self.parser.add_argument('--wvl_min', type = float, default= 420e-9) # 420e-9
+		self.parser.add_argument('--wvl_max', type = float, default= 660e-9) # 660e-9
+		self.parser.add_argument('--wvl_num', type = int, default= 25) # 25
 		self.parser.add_argument('--noise_std', type = float, default= 0.001) 
 		
 		self.parser.add_argument('--m_min', type = int, default= -1) 

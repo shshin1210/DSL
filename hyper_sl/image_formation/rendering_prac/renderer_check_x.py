@@ -2,7 +2,7 @@ import numpy as np
 import torch, os, sys
 from tqdm import tqdm
 from scipy.io import savemat
-sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging')
+sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
 
 from hyper_sl.utils import noise,normalize,load_data
 
@@ -121,14 +121,14 @@ class PixelRenderer():
         
         self.diffracted_dir_unit = torch.stack((self.alpha_m,self.beta_m,self.z), dim = 0) 
         self.intersection_points_r = self.intersection_points.reshape(self.m_n,self.proj_H*self.proj_W) 
-        self.diffracted_dir_unit_r = self.diffracted_dir_unit.reshape(self.m_n,self.m_n, self.wvls_n, self.proj_H*self.proj_W)
+        self.diffracted_dir_unit_r = self.diffracted_dir_unit.reshape(self.m_n, self.m_n, self.wvls_n, self.proj_H*self.proj_W)
 
         # optical center
         self.p = self.intersection_points_r.T
         self.d = self.diffracted_dir_unit_r.T
         
         # finding point p
-        self.optical_center_virtual = self.proj.get_virtual_center(self.p,self.d, self.wvls_n, self.m_n)
+        self.optical_center_virtual = self.proj.get_virtual_center(self.p, self.d, self.wvls_n, self.m_n)
         
         # optical_center_virtual shape : m_N, wvls_N, 3
         self.optical_center_virtual = torch.tensor(self.optical_center_virtual, dtype=torch.float32, device= self.device) 
@@ -169,7 +169,7 @@ class PixelRenderer():
         sensor_X_real = self.intersection_points_r[0]
         sensor_Y_real = self.intersection_points_r[1]
         
-        lmb = list(np.linspace(420, 660, 25)*1e-9)
+        lmb = list(torch.linspace(arg.wvl_min, arg.wvl_max, arg.wvl_num))
         self.dat_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/dataset/image_formation/dat"
         for m in tqdm(range(len(self.m_list))):
             for i in tqdm(range(len(lmb)), leave = False):

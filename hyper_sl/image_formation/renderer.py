@@ -1,6 +1,6 @@
 import numpy as np
 import torch, os, sys, cv2
-sys.path.append('/home/shshin/Scalable-Hyperspectral-3D-Imaging')
+sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
 
 from hyper_sl.utils import noise,normalize,load_data
 
@@ -233,8 +233,8 @@ class PixelRenderer():
             illum_img[cond.flatten()] = valid_pattern_img.flatten()
             
             illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
-            illum_img = 0.4 * illum_img * self.dg_intensity.unsqueeze(dim=3)
-            # illum_img = illum_img * self.dg_intensity.unsqueeze(dim=3)
+            # illum_img = 0.4 * illum_img * self.dg_intensity.unsqueeze(dim=3)
+            illum_img = 5 * illum_img * self.dg_intensity.unsqueeze(dim=3)
             illums_m_img = illum_img.sum(axis = 1).reshape(self.batch_size, self.wvls_n, self.pixel_num).permute(0,2,1)
             
             if not illum_only:
@@ -401,7 +401,7 @@ class PixelRenderer():
 if __name__ == "__main__":
    
     import torch, os, sys
-    sys.path.append('/home/shshin/Scalable-Hyperspectral-3D-Imaging')
+    sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
     from scipy.io import loadmat
     from hyper_sl.utils.ArgParser import Argument
     from hyper_sl.data import create_data_patch
@@ -413,7 +413,7 @@ if __name__ == "__main__":
     # 기존의 hyperpsectral 정보와 depth로 rendering 하는 코드
     create_data = create_data_patch.createData
     
-    plane_XYZ = torch.tensor(loadmat('/home/shshin/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/rendering_prac/plane_XYZ.mat')['XYZ_q'])
+    plane_XYZ = torch.tensor(loadmat('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/hyper_sl/image_formation/rendering_prac/plane_XYZ.mat')['XYZ_q'])
     plane_XYZ = data_process.crop(plane_XYZ)
     
     
@@ -437,8 +437,8 @@ if __name__ == "__main__":
     cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0)
     
     import cv2
-    # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/grid.png").astype(np.float32)
-    illum = cv2.imread("/home/shshin/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/rendering_prac/MicrosoftTeams-image (11).png").astype(np.float32)
+    illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/grid.png").astype(np.float32)
+    # illum = cv2.imread("/home/shshin/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/rendering_prac/MicrosoftTeams-image (11).png").astype(np.float32)
     # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/graycode_pattern/pattern_38.png").astype(np.float32)
     illum = cv2.cvtColor(illum, cv2.COLOR_BGR2RGB)
     illum = illum / 255.
