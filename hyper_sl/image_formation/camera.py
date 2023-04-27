@@ -2,17 +2,19 @@ import torch
 import numpy as np
 import os
 from scipy.interpolate import interp1d
+from hyper_sl.utils import calibrated_params
 
 class Camera():
     def __init__(self, arg):
         
         self.crf_dir = arg.camera_response
         
+        # params
+        self.cam_int, _ = calibrated_params.bring_params(arg.calibration_param_path,"cam")
+
     def intrinsic_cam(self):        
-        intrinsic_cam = torch.tensor([[1.7471120984549243e+03, 0.00000000e+00, 4.3552404635908243e+02],
-                                      [0.00000000e+00 ,1.7562111249245049e+03 ,3.3663669106446793e+02] ,
-                                      [0.00000000e+00 ,0.00000000e+00, 1.00000000e+00]])
-            
+        intrinsic_cam = torch.tensor(self.cam_int).type(torch.float32)
+        
         return intrinsic_cam
     
     #### Unprojection

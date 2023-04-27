@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import os
 from scipy.interpolate import interp1d
+from hyper_sl.utils import calibrated_params
 
 import sys
 sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging')
@@ -11,13 +12,18 @@ class Projector():
         # device
         self.device = device
         
+        # arg
+        self.arg = arg
+        
         # path 
         self.crf_dir = arg.projector_response
         self.dg_intensity_dir = arg.dg_intensity_dir
         
         # projector intrinsic
         self.focal_length_proj = arg.focal_length_proj*1e-3
-    
+
+        self.proj_int, _, self.proj_rmat, self.proj_tvec = calibrated_params.bring_params(arg.calibration_param_path,"proj")
+
     def intrinsic_proj_real(self):
         """
             example:
@@ -26,11 +32,8 @@ class Projector():
             XYZ = torch.linalg.inv(proj_int)@xyz_p
             
         """
-        intrinsic_proj_real = torch.tensor([[1.0205325617292132e+03, 0.00000000e+00, 2.7398003835418473e+02],
-                                            [0.00000000e+00 ,1.0204965778160497e+03 ,3.2068450274841155e+02],
-                                            [0.00000000e+00, 0.00000000e+00 ,1.00000000e+00]])
-        
-        
+
+        intrinsic_proj_real = torch.tensor(self.proj_int).type(torch.float32)
         
         return intrinsic_proj_real
                                                 
@@ -40,13 +43,9 @@ class Projector():
         
         """
         extrinsic_proj_real = torch.zeros((4,4)).to(self.device)
-    
-        # rotation
-        extrinsic_proj_real[:3,:3] = torch.tensor([[ 9.9286293239384182e-01, 6.6195007972498819e-03 ,1.1907720053602434e-01],
-                                                   [ 4.7593928018852495e-03, 9.9546383966145868e-01 ,-9.5021534962465432e-02] ,
-                                                   [-1.1916604238816823e-01, 9.4910095014497209e-02  ,9.8832764213386259e-01]])
         
-        t_mtrx = torch.tensor([[-6.2177630727543303e+01] ,[-1.2625778282717615e+01], [-1.6809619580073809e+00]])
+        extrinsic_proj_real[:3,:3] = torch.tensor(self.proj_rmat).type(torch.float32)
+        t_mtrx = torch.tensor(self.proj_tvec).type(torch.float32)
         
         extrinsic_proj_real[:3,3:4] = t_mtrx*1e-3
         extrinsic_proj_real[3,3] = 1
@@ -58,12 +57,6 @@ class Projector():
     def extrinsic_diff(self):
         # rotation, translation matrix
         extrinsic_diff = torch.zeros((4,4), device= self.device)
-
-        # extrinsic_diff[:3,:3] = torch.tensor([[ 9.9997e-01, -6.7196e-03, -3.4573e-03],
-        #                                         [ 6.7228e-03,  9.9998e-01,  8.8693e-04],
-        #                                         [ 3.4512e-03, -9.1015e-04,  9.9999e-01]])
-        # # translate 
-        # t_mtrx = torch.tensor([[0.],[0.],[-4.2502e-02]])
         
         extrinsic_diff[:3,:3] = torch.tensor([[9.9999821e-01 ,1.8362569e-03,-4.4727555e-04],
                                                  [-1.8364087e-03 ,9.9999827e-01 ,  -3.3851352e-04],

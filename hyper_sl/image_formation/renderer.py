@@ -233,8 +233,8 @@ class PixelRenderer():
             illum_img[cond.flatten()] = valid_pattern_img.flatten()
             
             illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
-            # illum_img = 0.4 * illum_img * self.dg_intensity.unsqueeze(dim=3)
-            illum_img = 5 * illum_img * self.dg_intensity.unsqueeze(dim=3)
+            illum_img = 0.4 * illum_img * self.dg_intensity.unsqueeze(dim=3)
+            # illum_img = 5 * illum_img * self.dg_intensity.unsqueeze(dim=3)
             illums_m_img = illum_img.sum(axis = 1).reshape(self.batch_size, self.wvls_n, self.pixel_num).permute(0,2,1)
             
             if not illum_only:
@@ -255,8 +255,9 @@ class PixelRenderer():
             
                 # gaussian blur
                 if eval == True:
-                    cam_img = cam_img.reshape(-1, self.cam_H, self.cam_W, 3).permute(0,3,1,2)
-                    cam_N_img[...,j,:] = torch.clamp(self.gaussian_blur(cam_img), 0, 1).permute(0,2,3,1).reshape(-1, self.pixel_num, 3)
+                    # cam_img = cam_img.reshape(-1, self.cam_H, self.cam_W, 3).permute(0,3,1,2)
+                    # cam_N_img[...,j,:] = torch.clamp(self.gaussian_blur(cam_img), 0, 1).permute(0,2,3,1).reshape(-1, self.pixel_num, 3)
+                    cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)
                 else:
                     cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)
                     
@@ -437,7 +438,7 @@ if __name__ == "__main__":
     cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0)
     
     import cv2
-    illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/grid.png").astype(np.float32)
+    illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/dataset/image_formation/illum/grid.png").astype(np.float32)
     # illum = cv2.imread("/home/shshin/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/rendering_prac/MicrosoftTeams-image (11).png").astype(np.float32)
     # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/graycode_pattern/pattern_38.png").astype(np.float32)
     illum = cv2.cvtColor(illum, cv2.COLOR_BGR2RGB)
