@@ -18,7 +18,7 @@ from hyper_sl.data import create_data_patch
 import matplotlib.pyplot as plt
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 print('cuda visible device count :',torch.cuda.device_count())
 print('current device number :', torch.cuda.current_device())
 
@@ -30,8 +30,7 @@ def test(arg, cam_crf, model_path, model_num):
     model.load_state_dict(torch.load(os.path.join(model_path, 'model_depth_newcal_%05d.pth' %model_num), map_location=arg.device))
     
     model_hyp = mlp_hyp(input_dim = arg.illum_num*3*(arg.wvl_num + 1), output_dim=arg.wvl_num, fdim = 1000).to(device=arg.device)
-    # model_hyp.load_state_dict(torch.load(os.path.join(model_path, 'model_hyp_%05d.pth' %model_num), map_location=arg.device))
-    model_hyp.load_state_dict(torch.load(os.path.join(model_path, 'model_hyp_%05d.pth' %0), map_location=arg.device))
+    model_hyp.load_state_dict(torch.load(os.path.join(model_path, 'model_hyp_%05d.pth' %model_num), map_location=arg.device))
 
     # loss ftn
     loss_fn = torch.nn.L1Loss()
@@ -282,18 +281,19 @@ def test(arg, cam_crf, model_path, model_num):
                 random = False
                 index = 0
 
-                # depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-                # depth = torch.zeros_like(depth)
-                # depth = depth.reshape(-1,580,890)
-                # depth_linespace = torch.linspace(0.6, 0.8, 890)
-                # depth_repeat = depth_linespace.repeat(580,1)
-                # depth[0] = depth_repeat
+                depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                depth = torch.zeros_like(depth)
+                depth = depth.reshape(-1,580,890)
+                depth_linespace = torch.linspace(0.6, 0.8, 890)
+                depth_repeat = depth_linespace.repeat(580,1)
+                depth[0] = depth_repeat
+                depth = depth.reshape(-1, arg.cam_H*arg.cam_W)
                 # # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
                 # depth = depth.reshape(-1, 580*890)
                 
-                depth = np.load("/workspace/Scalable-Hyp-3D-Imaging/calibration/gray_code_depth_estimation.npy")
-                depth = torch.tensor(depth[...,2]).reshape(arg.cam_H*arg.cam_W).unsqueeze(dim = 0).type(torch.float32) #.to(arg.device)
-                
+                # depth = np.load("./calibration/gray_code_depth_estimation.npy")
+                # depth = torch.tensor(depth[...,2]).reshape(arg.cam_H*arg.cam_W).unsqueeze(dim = 0).type(torch.float32) #.to(arg.device)
+                # depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
                 
                 normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
                 normal = torch.ones_like(normal)
@@ -330,7 +330,7 @@ def test(arg, cam_crf, model_path, model_num):
                 # intensity check
                 illum = np.zeros(shape = (360, 640, 40, 3))
                 for i in range(arg.illum_num):
-                    illum[:,:,i] = cv2.imread("/home/shshin/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/graycode_pattern/pattern_%02d.png"%i)/255.
+                    illum[:,:,i] = cv2.imread("./dataset/image_formation/illum/graycode_pattern/pattern_%02d.png"%i)/255.
 
                 # N3_arr padding
                 N3_arr = data_process.to_patch(arg, N3_arr)
@@ -434,7 +434,7 @@ def vis(data):
             plt.imshow(data[:, :, i + start_index], vmin=0., vmax=1.)
             plt.axis('off')
             plt.title(f"Image {i + start_index}")
-            cv2.imwrite('spectralon_simulation_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
+            cv2.imwrite('./simulated_imgs/spectralon_simulation_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
                     
             if i + start_index == illum_num - 1:
                 plt.colorbar()

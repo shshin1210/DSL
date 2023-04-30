@@ -224,7 +224,7 @@ class createData():
             # real_img = data_process.crop(real_img)
             # cv2.imwrite('%s_img.png'%(fn[:-4]), real_img*255.)
             
-            # real_img = torch.tensor(cv2.cvtColor(real_img, cv2.COLOR_BGR2RGB).reshape(self.cam_H*self.cam_W,-1))
+            real_img = torch.tensor(cv2.cvtColor(real_img, cv2.COLOR_BGR2RGB).reshape(self.cam_H*self.cam_W,-1))
             real_img = torch.tensor(real_img.reshape(self.cam_H*self.cam_W,-1))
             
             N3_arr[:,idx] = real_img

@@ -423,8 +423,8 @@ if __name__ == "__main__":
     index = 0
     
     depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-    depth = torch.zeros_like(depth)
-    depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
+    depth = torch.ones_like(depth)
+    # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
     
     normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
     normal = torch.ones_like(normal)
@@ -439,6 +439,7 @@ if __name__ == "__main__":
     
     import cv2
     illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/dataset/image_formation/illum/grid.png").astype(np.float32)
+    # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/dataset/image_formation/illum/line_pattern.png").astype(np.float32)
     # illum = cv2.imread("/home/shshin/Scalable-Hyperspectral-3D-Imaging/hyper_sl/image_formation/rendering_prac/MicrosoftTeams-image (11).png").astype(np.float32)
     # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/graycode_pattern/pattern_38.png").astype(np.float32)
     illum = cv2.cvtColor(illum, cv2.COLOR_BGR2RGB)

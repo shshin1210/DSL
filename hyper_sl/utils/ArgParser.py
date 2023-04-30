@@ -8,9 +8,11 @@ class Argument:
 		self.parser.add_argument('--device', type = str, default="cuda:0")
 
 		################## PATH
+		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
 		# self.parser.add_argument('--model_dir', type = str, default="./result/model_line/")
-		self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
+		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
+		self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
 		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
 		self.parser.add_argument('--dg_intensity_dir', type = str, default='./dataset/image_formation')
@@ -51,8 +53,8 @@ class Argument:
 		# self.parser.add_argument('--cam_H', type = int, default= 1536//2)
 		self.parser.add_argument('--cam_W', type = int, default= 890)
 		self.parser.add_argument('--cam_H', type = int, default= 580)
-		self.parser.add_argument('--proj_W', type = int, default= 1280//2) # 720
-		self.parser.add_argument('--proj_H', type = int, default= 720//2)
+		self.parser.add_argument('--proj_W', type = int, default= 1280//2) # 640
+		self.parser.add_argument('--proj_H', type = int, default= 720//2) # 360
 		self.parser.add_argument('--scene_train_num', type = int, default= 200) # 200
 		self.parser.add_argument('--scene_test_num', type = int, default= 20) # 20
 		self.parser.add_argument('--scene_eval_num', type = int, default= 1)

@@ -259,6 +259,7 @@ class PixelRenderer():
         # idx_list = [32100, 64100, 96100]
         
         for j in range(len(lmb)):
+            j = -1
             alpha_m = alpha_m_list[j]
             beta_m = beta_m_list[j]
             z = z_list[j]
