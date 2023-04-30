@@ -16,7 +16,7 @@ from scipy.io import loadmat
 import matplotlib.pyplot as plt
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 print('cuda visible device count :',torch.cuda.device_count())
 print('current device number :', torch.cuda.current_device())
 
@@ -78,10 +78,10 @@ def test(arg, cam_crf, model_path, model_num):
                 N3_arr = N3_arr.reshape(-1,arg.illum_num, 3).unsqueeze(dim = 1)          
                 
                 # N3_arr padding
-                N3_arr = data_process.to_patch(arg, N3_arr)
+                N3_arr_patch = data_process.to_patch(arg, N3_arr)
                 
                 # normalization of N3_arr
-                N3_arr_normalized = normalize.N3_normalize(N3_arr, arg.illum_num)
+                N3_arr_normalized = normalize.N3_normalize(N3_arr_patch, arg.illum_num)
                 N3_arr_normalized = N3_arr_normalized.reshape(-1, 1, arg.patch_pixel_num, arg.illum_num, 3)
                 
                 # model coord
@@ -90,11 +90,8 @@ def test(arg, cam_crf, model_path, model_num):
                 pred_depth = pred_XYZ[...,2].detach().cpu()
                 
                 # HYPERSPECTRAL ESTIMATION                    
-                # to device
-                N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
-                
+                # to device                
                 _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(pred_depth, None, None, None, cam_coord, None, None, True)
-                N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
                                 
                 illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
                 
@@ -106,12 +103,7 @@ def test(arg, cam_crf, model_path, model_num):
                 pred_reflectance = model_hyp(A, I)
                 illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
                 
-                # Ax = b 에서 A
-                illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29
-                A = cal_A(arg, illum, cam_crf, batch_size, pixel_num)
-                I = N3_arr.reshape(-1, arg.illum_num * 3).unsqueeze(dim = 2)
-
-                pred_reflectance = model_hyp(A, I)
+                print('end')
             
         
     else:
@@ -228,7 +220,7 @@ def vis(data):
             plt.imshow(data[:, :, i + start_index], vmin=0., vmax=1.)
             plt.axis('off')
             plt.title(f"Image {i + start_index}")
-            cv2.imwrite('./simulated_imgs/spectralon_simulation_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
+            # cv2.imwrite('./simulated_imgs/spectralon_simulation_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
                     
             if i + start_index == illum_num - 1:
                 plt.colorbar()

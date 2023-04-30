@@ -220,11 +220,12 @@ class createData():
         for idx, fn in enumerate(scene_files):
             # Camera Undistortion 넣기
             
-            real_img = cv2.imread(os.path.join(scene_i_dir, fn), -1) / 65535.
+            real_img = cv2.imread(os.path.join(scene_i_dir, fn))
+            # real_img = cv2.imread(os.path.join(scene_i_dir, fn), -1) / 65535.
             # real_img = data_process.crop(real_img)
             # cv2.imwrite('%s_img.png'%(fn[:-4]), real_img*255.)
             
-            real_img = torch.tensor(cv2.cvtColor(real_img, cv2.COLOR_BGR2RGB).reshape(self.cam_H*self.cam_W,-1))
+            real_img = cv2.cvtColor(real_img, cv2.COLOR_BGR2RGB).reshape(self.cam_H*self.cam_W,-1)/255.
             real_img = torch.tensor(real_img.reshape(self.cam_H*self.cam_W,-1))
             
             N3_arr[:,idx] = real_img
