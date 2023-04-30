@@ -284,9 +284,10 @@ def test(arg, cam_crf, model_path, model_num):
                 depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
                 depth = torch.zeros_like(depth)
                 depth = depth.reshape(-1,580,890)
-                depth_linespace = torch.linspace(0.6, 0.8, 890)
-                depth_repeat = depth_linespace.repeat(580,1)
-                depth[0] = depth_repeat
+                # depth_linespace = torch.linspace(0.6, 0.8, 890)
+                # depth_repeat = depth_linespace.repeat(580,1)
+                # depth[0] = depth_repeat
+                depth[:] = 0.7
                 depth = depth.reshape(-1, arg.cam_H*arg.cam_W)
                 # # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
                 # depth = depth.reshape(-1, 580*890)
