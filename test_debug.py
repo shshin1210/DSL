@@ -18,7 +18,7 @@ from hyper_sl.data import create_data_patch
 import matplotlib.pyplot as plt
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 print('cuda visible device count :',torch.cuda.device_count())
 print('current device number :', torch.cuda.current_device())
 
@@ -281,14 +281,13 @@ def test(arg, cam_crf, model_path, model_num):
                 random = False
                 index = 0
 
-                depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-                depth = torch.zeros_like(depth)
-                depth = depth.reshape(-1,580,890)
+                # depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
+                depth = torch.tensor(np.load("/workspace/Scalable-Hyp-3D-Imaging/calibration/spectralon_depth.npy")[...,2].reshape(1,-1)).type(torch.float32)
+
                 # depth_linespace = torch.linspace(0.6, 0.8, 890)
                 # depth_repeat = depth_linespace.repeat(580,1)
                 # depth[0] = depth_repeat
-                depth[:] = 0.7
-                depth = depth.reshape(-1, arg.cam_H*arg.cam_W)
+
                 # # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
                 # depth = depth.reshape(-1, 580*890)
                 
@@ -334,11 +333,11 @@ def test(arg, cam_crf, model_path, model_num):
                     illum[:,:,i] = cv2.imread("./dataset/image_formation/illum/graycode_pattern/pattern_%02d.png"%i)/255.
 
                 # N3_arr padding
-                N3_arr = data_process.to_patch(arg, N3_arr)
+                N3_arr_patch = data_process.to_patch(arg, N3_arr)
                 
                 
                 # normalization of N3_arr
-                N3_arr_normalized = normalize.N3_normalize(N3_arr, arg.illum_num)
+                N3_arr_normalized = normalize.N3_normalize(N3_arr_patch, arg.illum_num)
                 N3_arr_normalized = N3_arr_normalized.reshape(-1, 1, arg.patch_pixel_num, arg.illum_num, 3)
                 
                 # model coord
@@ -355,7 +354,7 @@ def test(arg, cam_crf, model_path, model_num):
                 pred_depth[torch.isnan(pred_depth) == True] = 0.
                 
                 # HYPERSPECTRAL ESTIMATION                    
-                N3_arr, gt_xy, illum_data, shading  = pixel_renderer.render(depth = pred_depth, 
+                N3_arr, gt_xy, illum_data, shading  = pixel_renderer.render(depth = depth, 
                                                             normal = normal, hyp = hyp, occ = occ, 
                                                             cam_coord = cam_coord, eval = False)
 
