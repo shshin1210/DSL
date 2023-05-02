@@ -11,8 +11,8 @@ class Argument:
 		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
 		# self.parser.add_argument('--model_dir', type = str, default="./result/model_line/")
-		self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
-		# self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")
+		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
+		self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
 		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
 		self.parser.add_argument('--dg_intensity_dir', type = str, default='./dataset/image_formation')
@@ -38,11 +38,11 @@ class Argument:
 		################## TRAINING & TESTING
 		self.parser.add_argument('--real_data_scene', type = bool, default= False)
 		self.parser.add_argument('--feature_num', type = int, default=100)
-		self.parser.add_argument('--load_dataset', action='store_true', default=False)
+		self.parser.add_argument('--load_dataset', action='store_true', default= False)
 		self.parser.add_argument('--wvl_min', type = float, default= 420e-9) # 420e-9
 		self.parser.add_argument('--wvl_max', type = float, default= 660e-9) # 660e-9
 		self.parser.add_argument('--wvl_num', type = int, default= 25) # 25
-		self.parser.add_argument('--noise_std', type = float, default= 0.001) 
+		self.parser.add_argument('--noise_std', type = float, default= 0.02) 
 		
 		self.parser.add_argument('--m_min', type = int, default= -1) 
 		self.parser.add_argument('--m_max', type = int, default= 1) 
