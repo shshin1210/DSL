@@ -194,7 +194,7 @@ def train(arg, epochs, cam_crf):
                     # hyp gt data
                     hyp = hyp.reshape(-1, arg.wvl_num) # M, 29
                     shading_term = shading[:,0,:,:].permute(0,2,1).reshape(-1, arg.wvl_num) # 29M, 1
-                    gt_reflectance = shading_term * hyp
+                    gt_reflectance = shading_term * hyp * occ
                     
                     # Ax = b 에서 A
                     illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29
