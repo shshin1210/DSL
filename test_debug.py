@@ -18,7 +18,7 @@ from hyper_sl.data import create_data_patch
 import matplotlib.pyplot as plt
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 print('cuda visible device count :',torch.cuda.device_count())
 print('current device number :', torch.cuda.current_device())
 
@@ -367,6 +367,7 @@ def test(arg, cam_crf, model_path, model_num):
                 shading = shading.to(arg.device) # B, 3(m), 25(wvl), # pixel
                 
                 # hyp gt data
+                occ = occ.reshape(-1,1).to(arg.device)
                 hyp = hyp.reshape(-1, arg.wvl_num) # M, 29
                 shading_term = shading[:,0,:,:].permute(0,2,1).reshape(-1, arg.wvl_num) # 29M, 1
                 gt_reflectance = shading_term * hyp * occ
