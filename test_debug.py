@@ -18,7 +18,7 @@ from hyper_sl.data import create_data_patch
 import matplotlib.pyplot as plt
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 print('cuda visible device count :',torch.cuda.device_count())
 print('current device number :', torch.cuda.current_device())
 
@@ -282,7 +282,7 @@ def test(arg, cam_crf, model_path, model_num):
                 index = 0
 
                 # depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-                depth = torch.tensor(np.load("/workspace/Scalable-Hyp-3D-Imaging/calibration/spectralon_depth.npy")[...,2].reshape(1,-1)).type(torch.float32)
+                depth = torch.tensor(np.load("./calibration/spectralon_depth.npy")[...,2].reshape(1,-1)).type(torch.float32)
 
                 # depth_linespace = torch.linspace(0.6, 0.8, 890)
                 # depth_repeat = depth_linespace.repeat(580,1)
@@ -296,10 +296,12 @@ def test(arg, cam_crf, model_path, model_num):
                 # depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
                 
                 normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-                normal = torch.ones_like(normal)
+                normal = torch.zeros_like(normal)
+                normal[:,2] = -1.
                 
                 hyp = create_data(arg, 'hyp', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
                 hyp = torch.ones_like(hyp)
+                hyp[:] = 0.8
                 
                 occ = create_data(arg, 'occ', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
                 occ = torch.ones_like(occ)
@@ -335,7 +337,6 @@ def test(arg, cam_crf, model_path, model_num):
                 # N3_arr padding
                 N3_arr_patch = data_process.to_patch(arg, N3_arr)
                 
-                
                 # normalization of N3_arr
                 N3_arr_normalized = normalize.N3_normalize(N3_arr_patch, arg.illum_num)
                 N3_arr_normalized = N3_arr_normalized.reshape(-1, 1, arg.patch_pixel_num, arg.illum_num, 3)
@@ -368,7 +369,7 @@ def test(arg, cam_crf, model_path, model_num):
                 # hyp gt data
                 hyp = hyp.reshape(-1, arg.wvl_num) # M, 29
                 shading_term = shading[:,0,:,:].permute(0,2,1).reshape(-1, arg.wvl_num) # 29M, 1
-                gt_reflectance = shading_term * hyp
+                gt_reflectance = shading_term * hyp * occ
                 
                 # Ax = b 에서 A
                 illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29

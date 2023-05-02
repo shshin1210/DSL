@@ -217,7 +217,7 @@ class PixelRenderer():
             illum_img[cond.flatten()] = valid_pattern_img.flatten()
             
             illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
-            illum_img = 0.1 * illum_img * self.dg_intensity.unsqueeze(dim=3)
+            illum_img = 0.2 * illum_img * self.dg_intensity.unsqueeze(dim=3)
             illums_m_img = illum_img.sum(axis = 1).reshape(self.batch_size, self.wvls_n, self.pixel_num).permute(0,2,1)
             
             if not illum_only:
@@ -242,17 +242,18 @@ class PixelRenderer():
                 # else:
                 #     cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)
             
-            cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)       
+            cam_N_img[...,j,:] = cam_img
             illum_data[:,:,j,:] = illums_m_img
 
         if illum_only:
             return None, xy_proj_real_norm, illum_data, None
 
         # noise
-        if eval == False:
-            noise = self.noise.sample(cam_N_img.shape)
-            cam_N_img += noise
-            
+        # if eval == False:
+        noise = self.noise.sample(cam_N_img.shape)
+        cam_N_img += noise
+        cam_N_img = torch.clamp(cam_N_img, 0, 1)
+        
         render_end = time.time()
         
         print(f"render time : {render_end - render_start:.5f} sec")
