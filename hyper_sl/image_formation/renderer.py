@@ -167,10 +167,7 @@ class PixelRenderer():
     
         # depth2XYZ
         X, Y, Z = self.cam.unprojection(depth = depth, cam_coord = cam_coord)
-        
-        # gt proj uv1
-        # gt_uv1 = self.proj.zero_order_projection(X,Y,Z)
-        
+
         # change XYZ to dg coord
         XYZ_dg = self.proj.XYZ_to_dg(X,Y,Z)
 
@@ -179,10 +176,9 @@ class PixelRenderer():
         illum_vec_unit = self.illum_unit(X,Y,Z)
         
         if not illum_only:
-            shading = (illum_vec_unit*(normal_vec_unit_clip[:,None,:,:].unsqueeze(dim = 1))).sum(axis = 3)
-            shading = (-shading)
-            shading = shading.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num) 
-
+            shading = (illum_vec_unit*(normal_vec_unit_clip[:,None,:,:].unsqueeze(dim = 1))).sum(axis = 3).squeeze()
+            shading = shading.repeat(self.batch_size, self.m_n, self.wvls_n, 1)
+            
         # find the intersection points with dg and the line XYZ-virtual proj optical center in dg coordinate
         intersection_points_dg = self.proj.intersections_dg(self.optical_center_virtual, XYZ_dg)
         # distortion function
@@ -221,7 +217,7 @@ class PixelRenderer():
             illum_img[cond.flatten()] = valid_pattern_img.flatten()
             
             illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
-            illum_img = 0.4 * illum_img * self.dg_intensity.unsqueeze(dim=3)
+            illum_img = 0.1 * illum_img * self.dg_intensity.unsqueeze(dim=3)
             illums_m_img = illum_img.sum(axis = 1).reshape(self.batch_size, self.wvls_n, self.pixel_num).permute(0,2,1)
             
             if not illum_only:
@@ -338,7 +334,7 @@ class PixelRenderer():
         optical_center_world = optical_center_world.unsqueeze(dim = 0)
         
         # illumination vector in world coord
-        illum_vec =  - optical_center_world.unsqueeze(dim =0) + XYZ
+        illum_vec =  optical_center_world.unsqueeze(dim =0) - XYZ
 
         illum_norm = torch.norm(illum_vec, dim = 2) # dim = 0
         illum_norm = torch.unsqueeze(illum_norm, dim = 2)

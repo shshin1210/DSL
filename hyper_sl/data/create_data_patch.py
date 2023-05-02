@@ -141,6 +141,8 @@ class createData():
             normal[half+1:] = normal[half+1:] + tmp
             
             normal = normal.permute(1,2,0).reshape(3,-1)
+            normal_norm = torch.norm(normal, dim = 0)
+            normal = normal / normal_norm
             
         else:
             normal = self.load_data.load_normal(i)
