@@ -114,13 +114,22 @@ class load_data():
         """
         bring normal array
         """
-        # normal = self.openEXR.read_exr_as_np(i, "Normal").astype(np.float32)
+        # normal = self.openEXR.read_exr_as_np(i, "Normal").astype(np.float32) # 640 640
+
+        # normal_zeros = np.zeros(shape=(self.cam_H, self.cam_W, 3)) # 580, 890
+        # normal_zeros[:,:,2] = 1.
+        # normal_zeros[:, : 640] = normal[:580]
+
         normal = np.load(os.path.join(self.output_dir, "scene_%04d_Normal.npy" %(i))).astype(np.float32)
         normal = self.crop.crop(normal)
 
         normal = torch.tensor(normal)
+        normal = normal * 2 - 1
         normal = normal.reshape(self.cam_H*self.cam_W,3).transpose(1,0)
 
+        normal[1] = - normal[1]
+        normal[2] = - normal[2]
+            
         norm = torch.norm(normal, dim = 0)
         normal_unit = normal/norm
         
