@@ -8,7 +8,7 @@ from hyper_sl.utils.ArgParser import Argument
 from hyper_sl.mlp import mlp_depth, mlp_hyp
 import hyper_sl.datatools as dtools 
 from hyper_sl.image_formation import renderer
-from hyper_sl.hyp_reconstruction import compute_hyp, diff_hyp, cal_A
+from hyper_sl.hyp_reconstruction import cal_A
 
 from hyper_sl.utils import data_process
 
