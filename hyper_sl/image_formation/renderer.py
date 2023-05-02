@@ -164,12 +164,11 @@ class PixelRenderer():
             occ = occ.to(self.device).unsqueeze(dim = 1)
             hyp = torch.tensor(hyp, device= self.device)
             
-            normal_norm = torch.norm(normal.permute(1,0,2).reshape(3, -1), dim = 0)
-            normal_norm = normal_norm.reshape(self.batch_size, self.pixel_num).unsqueeze(dim = 1)
-            
-            normal_vec_unit = normal/normal_norm
-            normal_vec_unit = normal_vec_unit.to(self.device)
-            normal_vec_unit_clip = torch.clamp(normal_vec_unit, 0, 1) # B, 3, #pixel
+            normal = normal.to(self.device)
+            normal[:,1] = - normal[:,1]
+            normal[:,2] = - normal[:,2]
+            normal_vec_unit_clip = normal
+            # normal_vec_unit_clip = torch.clamp(normal, 0, 1) # B, 3, #pixel
     
         # depth2XYZ
         X, Y, Z = self.cam.unprojection(depth = depth, cam_coord = cam_coord)
@@ -182,10 +181,10 @@ class PixelRenderer():
 
         # shading term
         # B, m, 29, 3, # pixel
-        illum_vec_unit = self.illum_unit(X,Y,Z, self.optical_center_virtual)
+        illum_vec_unit = self.illum_unit(X,Y,Z)
         
         if not illum_only:
-            shading = (illum_vec_unit*normal_vec_unit_clip[:,None,:,:].unsqueeze(dim = 1)).sum(axis = 3)
+            shading = (illum_vec_unit*(normal_vec_unit_clip[:,None,:,:].unsqueeze(dim = 1))).sum(axis = 3)
             # shading = abs(shading)
             shading = shading.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num) 
             # shading 반대로 된건 아닌지? 확인 필요함
@@ -335,7 +334,38 @@ class PixelRenderer():
 
         return z
     
-    def illum_unit(self, X,Y,Z, optical_center_virtual):
+    # def illum_unit(self, X,Y,Z, optical_center_virtual):
+    #     """ 
+    #     inputs : X,Y,Z world coord
+    #             virtual projector center in dg coord (optical_center_virtual) # need to change it to world coord
+    #     """
+    #     XYZ = torch.stack((X,Y,Z), dim = 1).to(self.device)
+    #     XYZ = XYZ.unsqueeze(dim=1)
+        
+    #     # optical_center_virtual : m_N, wvls_N, 3(x,y,z)
+    #     m_N = optical_center_virtual.shape[0]
+    #     wvls_N = optical_center_virtual.shape[1]
+        
+    #     # optical center virtual in dg coord to world coord
+    #     ones = torch.ones(size = (m_N, wvls_N), device= self.device)
+    #     optical_center = torch.stack((optical_center_virtual[1],optical_center_virtual[1],optical_center_virtual[1]), dim = 0)
+    #     optical_center1 = torch.stack((optical_center[:,:,0],optical_center[:,:,1],optical_center[:,:,2], ones), dim = 2)
+    #     optical_center1 = torch.unsqueeze(optical_center1, dim = 3)
+    #     # optical_center_virtual_world = self.extrinsic_proj_real@self.extrinsic_diff@optical_center_virtual1 # 4, m_N, wvls_N
+    #     optical_center_world = self.extrinsic_proj_real@optical_center1
+    #     optical_center_world = optical_center_world[:,:,:3] # m_N, wvls_N, 3
+
+    #     # illumination vector in world coord
+    #     illum_vec = - optical_center_world + XYZ.unsqueeze(dim = 1)
+
+    #     illum_norm = torch.norm(illum_vec, dim = 3) # dim = 0
+    #     illum_norm = torch.unsqueeze(illum_norm, dim = 3)
+        
+    #     illum_unit = illum_vec/illum_norm
+
+    #     return illum_unit
+    
+    def illum_unit(self, X,Y,Z):
         """ 
         inputs : X,Y,Z world coord
                 virtual projector center in dg coord (optical_center_virtual) # need to change it to world coord
@@ -343,26 +373,22 @@ class PixelRenderer():
         XYZ = torch.stack((X,Y,Z), dim = 1).to(self.device)
         XYZ = XYZ.unsqueeze(dim=1)
         
-        # optical_center_virtual : m_N, wvls_N, 3(x,y,z)
-        m_N = optical_center_virtual.shape[0]
-        wvls_N = optical_center_virtual.shape[1]
+        # optical_center_proj
+        optical_center_proj = torch.tensor([[0.],[0.],[0.],[1.]], device=self.device)
+
+        optical_center_world = self.extrinsic_proj_real@optical_center_proj
+        optical_center_world = optical_center_world[:3] # m_N, wvls_N, 3
+        optical_center_world = optical_center_world.unsqueeze(dim = 0)
         
-        # optical center virtual in dg coord to world coord
-        ones = torch.ones(size = (m_N, wvls_N), device= self.device)
-        optical_center_virtual1 = torch.stack((optical_center_virtual[:,:,0],optical_center_virtual[:,:,1],optical_center_virtual[:,:,2], ones), dim = 2)
-        optical_center_virtual1 = torch.unsqueeze(optical_center_virtual1, dim = 3)
-        optical_center_virtual_world = self.extrinsic_proj_real@self.extrinsic_diff@optical_center_virtual1 # 4, m_N, wvls_N
-        optical_center_virtual_world = optical_center_virtual_world[:,:,:3] # m_N, wvls_N, 3
-
         # illumination vector in world coord
-        illum_vec = - optical_center_virtual_world + XYZ.unsqueeze(dim = 1)
+        illum_vec =  - optical_center_world.unsqueeze(dim =0) + XYZ
 
-        illum_norm = torch.norm(illum_vec, dim = 3) # dim = 0
-        illum_norm = torch.unsqueeze(illum_norm, dim = 3)
+        illum_norm = torch.norm(illum_vec, dim = 2) # dim = 0
+        illum_norm = torch.unsqueeze(illum_norm, dim = 2)
         
         illum_unit = illum_vec/illum_norm
-        illum_unit = illum_unit.reshape(self.batch_size, m_N, wvls_N, 3, -1) 
-
+        illum_unit = illum_unit.unsqueeze(dim =0)
+        
         return illum_unit
     
     def get_newidx(self, uv1):
@@ -423,17 +449,17 @@ if __name__ == "__main__":
     index = 0
     
     depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-    depth = torch.ones_like(depth)
-    depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
+    # depth = torch.ones_like(depth)
+    # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
     
     normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-    normal = torch.ones_like(normal)
+    # normal = torch.ones_like(normal)
     
     hyp = create_data(arg, 'hyp', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-    hyp = torch.ones_like(hyp)
+    # hyp = torch.ones_like(hyp)
     
     occ = create_data(arg, 'occ', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-    occ = torch.ones_like(occ)
+    # occ = torch.ones_like(occ)
     
     cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0)
     
@@ -447,7 +473,7 @@ if __name__ == "__main__":
     illum = torch.tensor(illum, device='cuda').unsqueeze(dim = 0)
 
     # n_scene, random, pixel_num, eval
-    cam_N_img, xy_proj_real_norm, illum_data, shading = PixelRenderer(arg).render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True, illum_opt=illum)
-    # cam_N_img, xy_proj_real_norm, illum_data, shading = PixelRenderer(arg).render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True)
+    # cam_N_img, xy_proj_real_norm, illum_data, shading = PixelRenderer(arg).render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True, illum_opt=illum)
+    cam_N_img, xy_proj_real_norm, illum_data, shading = PixelRenderer(arg).render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True)
     
     print('end')
