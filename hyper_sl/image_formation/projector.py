@@ -174,6 +174,6 @@ class Projector():
         return PRF
 
     def get_dg_intensity(self):
-        dg_intensity = np.load(os.path.join(self.dg_intensity_dir, 'intensity_dg.npy'))
+        dg_intensity = np.load(os.path.join(self.dg_intensity_dir, 'intensity_dg_new.npy'))
         
         return dg_intensity

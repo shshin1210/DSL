@@ -217,7 +217,7 @@ class PixelRenderer():
             illum_img[cond.flatten()] = valid_pattern_img.flatten()
             
             illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
-            illum_img = 0.2 * illum_img * self.dg_intensity.unsqueeze(dim=3)
+            illum_img =  0.25 * illum_img * self.dg_intensity.unsqueeze(dim=3)
             illums_m_img = illum_img.sum(axis = 1).reshape(self.batch_size, self.wvls_n, self.pixel_num).permute(0,2,1)
             
             if not illum_only:
