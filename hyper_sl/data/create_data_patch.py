@@ -73,7 +73,7 @@ class createData():
             
             half = self.arg.patch_pixel_num // 2
             
-            # meter 단위 depth
+            # meter
             depth_min = 0.6
             depth_max = 1.
             
@@ -85,9 +85,7 @@ class createData():
             depth[half+1:] = depth[half+1:] + tmp
             
             depth = depth.T.reshape(-1,1).squeeze()
-            
-            # depth = (depth_max - depth_min)* torch.rand((pixel_num)) + depth_min
-            
+                        
         else:
             depth = self.load_data.load_depth(i)
             map_scale = interp1d([depth.min(), depth.max()], [0.6, 1.])
@@ -128,9 +126,8 @@ class createData():
             max = -0.001
             
             half = self.arg.patch_pixel_num // 2
-
             tmp = (max - min) * torch.rand(size = (half, 3, pixel_num //self.arg.patch_pixel_num)) + min
-            
+
             normal = torch.zeros(size=(3, pixel_num//self.arg.patch_pixel_num))
             
             # normal
@@ -157,12 +154,7 @@ class createData():
         
         """
         if random == True:
-            # min = 0.
-            # max = 1.29999
-
-            # hyp = (max - min) * torch.rand(size=(pixel_num, self.wvls_n)) + min
-            
-            # depth 끼리 차이 1mm ~ -1mm
+            # 3x3 patch, neighborhood hyp reflectance
             min = 0.001
             max = -0.001
             

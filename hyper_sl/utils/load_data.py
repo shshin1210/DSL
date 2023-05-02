@@ -21,7 +21,7 @@ class load_data():
         
         # cam
         self.cam_H, self.cam_W = arg.cam_H, arg.cam_W
-        self.sensor_width = (arg.sensor_width)*1e-3 # to
+        self.sensor_width = (arg.sensor_width)*1e-3 
         self.focal_length = (arg.focal_length)*1e-3 # to meter
         
     def load_depth(self, i):
@@ -114,12 +114,7 @@ class load_data():
         """
         bring normal array
         """
-        # normal = self.openEXR.read_exr_as_np(i, "Normal").astype(np.float32) # 640 640
-
-        # normal_zeros = np.zeros(shape=(self.cam_H, self.cam_W, 3)) # 580, 890
-        # normal_zeros[:,:,2] = 1.
-        # normal_zeros[:, : 640] = normal[:580]
-
+        
         normal = np.load(os.path.join(self.output_dir, "scene_%04d_Normal.npy" %(i))).astype(np.float32)
         normal = self.crop.crop(normal)
 
@@ -127,6 +122,7 @@ class load_data():
         normal = normal * 2 - 1
         normal = normal.reshape(self.cam_H*self.cam_W,3).transpose(1,0)
 
+        # y, z change coordinate
         normal[1] = - normal[1]
         normal[2] = - normal[2]
             
@@ -144,6 +140,4 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     
     normal = load_data(arg).load_normal(0)
-    # plt.imshow(depth), plt.colorbar()
-    # plt.imsave('./output.png', depth)
     print('end')

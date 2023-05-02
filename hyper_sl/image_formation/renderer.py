@@ -137,8 +137,7 @@ class PixelRenderer():
         self.p_list = self.dist.bring_distortion_coeff(arg, self.m_list, self.wvls, self.dat_dir)
         self.p_list = self.p_list.to(device=self.device)
 
-    def render(self, depth, normal, hyp, occ, cam_coord, eval, illum_opt = None, illum_only=False):
-        
+    def render(self, depth, normal, hyp, occ, cam_coord, eval, illum_only=False):
         """
             input   
                 depth : B, # pixel
@@ -150,7 +149,6 @@ class PixelRenderer():
                 illum_only : outputs only illumination data
         
         """
-        
         print('rendering start')
         render_start = time.time()
         math.factorial(100000)
@@ -165,10 +163,7 @@ class PixelRenderer():
             hyp = torch.tensor(hyp, device= self.device)
             
             normal = normal.to(self.device)
-            normal[:,1] = - normal[:,1]
-            normal[:,2] = - normal[:,2]
             normal_vec_unit_clip = normal
-            # normal_vec_unit_clip = torch.clamp(normal, 0, 1) # B, 3, #pixel
     
         # depth2XYZ
         X, Y, Z = self.cam.unprojection(depth = depth, cam_coord = cam_coord)
@@ -185,9 +180,8 @@ class PixelRenderer():
         
         if not illum_only:
             shading = (illum_vec_unit*(normal_vec_unit_clip[:,None,:,:].unsqueeze(dim = 1))).sum(axis = 3)
-            # shading = abs(shading)
+            shading = (-shading)
             shading = shading.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num) 
-            # shading 반대로 된건 아닌지? 확인 필요함
 
         # find the intersection points with dg and the line XYZ-virtual proj optical center in dg coordinate
         intersection_points_dg = self.proj.intersections_dg(self.optical_center_virtual, XYZ_dg)
@@ -211,12 +205,7 @@ class PixelRenderer():
         cam_N_img = torch.zeros(size=(self.batch_size, self.pixel_num, self.n_illum, 3), device= self.device)
         
         for j in range(self.n_illum):
-        # for j in range(1):
-            if illum_opt == None:
-                illum = self.load_data.load_illum(j).to(self.device)  # TODO: load this at the initialization and define it as the member variable for optimization
-            else:
-                illum = illum_opt
-            
+            illum = self.load_data.load_illum(j).to(self.device) 
             illum_img = torch.zeros(self.batch_size, self.m_n, self.wvls_n, self.pixel_num, device= self.device).flatten()
 
             illum_hyp = illum.reshape((self.proj_H*self.proj_W, 3))@((self.CRF_proj.T).type(torch.float32))
@@ -233,11 +222,9 @@ class PixelRenderer():
             
             illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
             illum_img = 0.4 * illum_img * self.dg_intensity.unsqueeze(dim=3)
-            # illum_img = 5 * illum_img * self.dg_intensity.unsqueeze(dim=3)
             illums_m_img = illum_img.sum(axis = 1).reshape(self.batch_size, self.wvls_n, self.pixel_num).permute(0,2,1)
             
             if not illum_only:
-                
                 # multipy with occlusion
                 illum_w_occ = illum_img*occ.unsqueeze(dim=1)
                 illums_w_occ = illum_w_occ*shading 
@@ -252,19 +239,20 @@ class PixelRenderer():
 
                 cam_img = cam_m_img.sum(axis=1)
             
-                # gaussian blur
-                if eval == True:
-                    # cam_img = cam_img.reshape(-1, self.cam_H, self.cam_W, 3).permute(0,3,1,2)
-                    # cam_N_img[...,j,:] = torch.clamp(self.gaussian_blur(cam_img), 0, 1).permute(0,2,3,1).reshape(-1, self.pixel_num, 3)
-                    cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)
-                else:
-                    cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)
-                    
+                # # gaussian blur
+                # if eval == True:
+                #     cam_img = cam_img.reshape(-1, self.cam_H, self.cam_W, 3).permute(0,3,1,2)
+                #     cam_N_img[...,j,:] = torch.clamp(self.gaussian_blur(cam_img), 0, 1).permute(0,2,3,1).reshape(-1, self.pixel_num, 3)
+                # else:
+                #     cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)
+            
+            cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)       
             illum_data[:,:,j,:] = illums_m_img
 
         if illum_only:
             return None, xy_proj_real_norm, illum_data, None
 
+        # noise
         if eval == False:
             noise = self.noise.sample(cam_N_img.shape)
             cam_N_img += noise
@@ -334,37 +322,6 @@ class PixelRenderer():
 
         return z
     
-    # def illum_unit(self, X,Y,Z, optical_center_virtual):
-    #     """ 
-    #     inputs : X,Y,Z world coord
-    #             virtual projector center in dg coord (optical_center_virtual) # need to change it to world coord
-    #     """
-    #     XYZ = torch.stack((X,Y,Z), dim = 1).to(self.device)
-    #     XYZ = XYZ.unsqueeze(dim=1)
-        
-    #     # optical_center_virtual : m_N, wvls_N, 3(x,y,z)
-    #     m_N = optical_center_virtual.shape[0]
-    #     wvls_N = optical_center_virtual.shape[1]
-        
-    #     # optical center virtual in dg coord to world coord
-    #     ones = torch.ones(size = (m_N, wvls_N), device= self.device)
-    #     optical_center = torch.stack((optical_center_virtual[1],optical_center_virtual[1],optical_center_virtual[1]), dim = 0)
-    #     optical_center1 = torch.stack((optical_center[:,:,0],optical_center[:,:,1],optical_center[:,:,2], ones), dim = 2)
-    #     optical_center1 = torch.unsqueeze(optical_center1, dim = 3)
-    #     # optical_center_virtual_world = self.extrinsic_proj_real@self.extrinsic_diff@optical_center_virtual1 # 4, m_N, wvls_N
-    #     optical_center_world = self.extrinsic_proj_real@optical_center1
-    #     optical_center_world = optical_center_world[:,:,:3] # m_N, wvls_N, 3
-
-    #     # illumination vector in world coord
-    #     illum_vec = - optical_center_world + XYZ.unsqueeze(dim = 1)
-
-    #     illum_norm = torch.norm(illum_vec, dim = 3) # dim = 0
-    #     illum_norm = torch.unsqueeze(illum_norm, dim = 3)
-        
-    #     illum_unit = illum_vec/illum_norm
-
-    #     return illum_unit
-    
     def illum_unit(self, X,Y,Z):
         """ 
         inputs : X,Y,Z world coord
@@ -394,14 +351,7 @@ class PixelRenderer():
     def get_newidx(self, uv1):
         
         r_proj, c_proj = uv1[:,:,:,1], uv1[:,:,:,0]
-
-        # rc_proj = torch.cat((r_proj.unsqueeze(dim = 3), c_proj.unsqueeze(dim =3)), dim = 3)
-        # rc_proj = rc_proj.transpose(4,3).reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num, 2) 
-        
-        # r_proj, c_proj = rc_proj[...,1], rc_proj[...,0]
-
         cond = (0<= r_proj)*(r_proj < self.proj_H)*(0<=c_proj)*(c_proj< self.proj_W) 
-        # cond[:] = True
         
         r_proj_valid, c_proj_valid = r_proj[cond], c_proj[cond]
         r_proj_valid, c_proj_valid = torch.tensor(r_proj_valid), torch.tensor(c_proj_valid)  # TODO: do we need this? 
@@ -473,7 +423,6 @@ if __name__ == "__main__":
     illum = torch.tensor(illum, device='cuda').unsqueeze(dim = 0)
 
     # n_scene, random, pixel_num, eval
-    # cam_N_img, xy_proj_real_norm, illum_data, shading = PixelRenderer(arg).render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True, illum_opt=illum)
     cam_N_img, xy_proj_real_norm, illum_data, shading = PixelRenderer(arg).render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True)
     
     print('end')

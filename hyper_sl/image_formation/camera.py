@@ -33,7 +33,6 @@ class Camera():
         
 
     def get_CRF(self):
-        # CRF = self.compute_CRF()
         CRF = np.load(os.path.join(self.crf_dir, 'CRF_cam.npy'))
         map_scale = interp1d([CRF.min(), CRF.max()], [0.,1.])
         CRF = torch.tensor(map_scale(CRF).astype(np.float32))        
