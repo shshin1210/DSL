@@ -44,7 +44,11 @@ class PixelRenderer():
         # cam
         self.cam_H, self.cam_W = arg.cam_H, arg.cam_W
         self.cam_focal_length = arg.focal_length*1e-3
+        
+        # int & ext
         self.int_cam = self.cam.intrinsic_cam()
+        self.ext_proj = self.proj.extrinsic_proj_real()
+        self.int_proj = self.proj.intrinsic_proj_real()
         
         # proj
         self.proj_focal_length = arg.focal_length_proj *1e-3
@@ -61,9 +65,6 @@ class PixelRenderer():
         self.wvls = torch.tensor([450,500,550,600,650])*1e-9
         self.wvls = self.wvls.to(device=device)
         self.wvls_n = len(self.wvls)
-        
-        # extrinsic matrix
-        self.extrinsic_proj_real = self.proj.extrinsic_proj_real() 
         
         # make sph2cart
         self.u = self.sph2cart(opt_param[0], opt_param[1])
@@ -191,8 +192,8 @@ class PixelRenderer():
         extrinsic_diff[:3,:3] = self.rot_mat
 
         # translate
-        extrinsic_diff[0,3] = 0
-        extrinsic_diff[1,3] = 0
+        extrinsic_diff[0,3] = 0.
+        extrinsic_diff[1,3] = 0.
         extrinsic_diff[2,3] = -point
         extrinsic_diff[3,3] = 1
                 
@@ -227,30 +228,30 @@ class PixelRenderer():
         uv_cam_m_1, uv_cam_m1 = uv_cam_m_1[...,:3], uv_cam_m1[...,3:]
         
         # ground truth m = 1, m = -1 
-        self.xy_wvl_m1_real = torch.tensor([[[380,382,384],  # 1, 2, 3
-                                        [335,338,341],      # 5개 : wvl
-                                        [293,296,300],      # 2개 : x & y
-                                        [251,254,256],
+        self.xy_wvl_m1_real = torch.tensor([[[379,384,384],  # 1, 2, 3
+                                        [337,341,342],      # 5개 : wvl
+                                        [293,298,300],      # 2개 : x & y
+                                        [254,258,258],
                                         [208,212,214]],
                                        
-                                       [[150,315,483],
-                                        [151,315,484],
-                                        [149,314,483],
-                                        [149,315,483],
-                                        [148,316,484]]
+                                       [[90,311,531],
+                                        [91,310,532],
+                                        [89,310,532],
+                                        [89,310,532],
+                                        [89,309,533]]
                                        ], device= device)
 
-        self.xy_wvl_m_1_real = torch.tensor([[[474,470,468],   # 4, 5, 6
-                                        [515,513,509],
-                                        [557,553,551],
-                                        [599,594,593],
-                                        [640,634,635]],
+        self.xy_wvl_m_1_real = torch.tensor([[[475,469,466],   # 4, 5, 6
+                                        [515,510,510],
+                                        [559,553,552],
+                                        [600,594,593],
+                                        [639,635,633]],
                                         
-                                       [[149,314,484],
-                                        [148,313,484],
-                                        [148,313,483],
-                                        [148,314,482],
-                                        [148,314,484]]
+                                       [[90,309,530],
+                                        [89,308,529],
+                                        [89,309,530],
+                                        [89,308,531],
+                                        [89,309,531]]
                                        ], device= device)
 
         # ground truth real xy cam coord
@@ -282,9 +283,9 @@ class PixelRenderer():
         ones = torch.ones(size=(1,2,5,3), device=device)
         
         xy1_m1andm_1 = torch.concat((xy_m1andm_1, ones), dim = 0).reshape(3, -1) # 3 2 5 3
+        xy1_m1andm_s = self.cam_focal_length * xy1_m1andm_1
         
-        xyz_c = (torch.linalg.inv(self.intrinsic_cam()).to(self.device)@xy1_m1andm_1.float())
-        xyz_c[2] = self.cam_focal_length
+        xyz_c = (torch.linalg.inv(self.int_cam)).to(self.device)@xy1_m1andm_s.float()
         
         return xyz_c       
     
@@ -299,7 +300,7 @@ class PixelRenderer():
         XYZ1 = torch.stack((X,Y,Z,torch.ones_like(X)), dim = 0)
 
         # XYZ 3D points proj coord -> cam coord                   
-        XYZ_cam = (self.extrinsic_proj_real)@XYZ1
+        XYZ_cam = (self.ext_proj)@XYZ1
 
         # uv cam coord
         uv_cam = (self.int_cam.to(device))@XYZ_cam[:3]
@@ -307,19 +308,13 @@ class PixelRenderer():
         
         # uv to xy coord
         uv_cam = uv_cam.to(self.device)
+        suv_cam = self.cam_focal_length * uv_cam
         
-        xyz_c = (torch.linalg.inv(self.intrinsic_cam()).to(self.device)@uv_cam)
-        xyz_c[2] = self.cam_focal_length
+        xyz_c = (torch.linalg.inv(self.int_cam).to(self.device)@suv_cam)
 
         return xyz_c , uv_cam
     
-    def intrinsic_cam(self):
-        intrinsic_cam = torch.tensor([[1.7471120984549243e+03/ self.cam_focal_length, 0.00000000e+00 , 4.3552404635908243e+02],
-                                    [0.00000000e+00 ,1.7562111249245049e+03/ self.cam_focal_length , 3.3663669106446793e+02],
-                                    [0.00000000e+00 ,0.00000000e+00, 1.00000000e+00]])
-            
-        return intrinsic_cam
-    
+
     def proj_sensor_plane(self):
         """ Projector sensor plane coordinates
         
@@ -327,12 +322,11 @@ class PixelRenderer():
         
         """
 
-        uv1_p = torch.tensor([[152.,101.,1.],[151.,201.,1.],[150.,301.,1,],[559.,95.,1,],[556.,199.,1,],[555.,300.,1.]]).T.to(self.device)
+        uv1_p = torch.tensor([[128.,67.,1.],[129.,199.,1.],[130.,330.,1,],[531.,67.,1,],[530.,200.,1,],[530.,330.,1.]]).T.to(self.device)
+        suv_p = uv1_p * self.proj_focal_length
         
         # to real projector plane size
-        xyz_p = (torch.linalg.inv(self.intrinsic_proj_real()).to(self.device)@uv1_p)
-
-        xyz_p[2] = self.proj_focal_length  # TODO: why?
+        xyz_p = (torch.linalg.inv(self.int_proj).to(self.device)@suv_p)
 
         # proj_center
         proj_center = torch.zeros(size=(4,1), device=self.device)
@@ -343,23 +337,6 @@ class PixelRenderer():
         xyz1 = xyz1.to(self.device)
         
         return xyz1, proj_center
-    
-    def intrinsic_proj_real(self):
-        """
-            example:
-            
-            ones = torch.ones_like(r, device=device)
-            xyz_p = torch.stack((r*depth,c*depth,ones*depth), dim = 0)
-            XYZ = torch.linalg.inv(proj_int)@xyz_p
-            
-        """
-        # TODO: divided by focal length?
-        intrinsic_proj_real = torch.tensor([[1.0205325617292132e+03/ self.proj_focal_length, 0.00000000e+00, 2.7398003835418473e+02],
-                                            [0.00000000e+00,1.0204965778160497e+03/ self.proj_focal_length, 3.2068450274841155e+02],
-                                            [0.00000000e+00,0.00000000e+00, 1.00000000e+00]])
-        
-        
-        return intrinsic_proj_real
     
     def find_intersection(self, proj_center_dg, incident_dir_unit):
         """ find the intersection of incident rays and diffraction gratings
