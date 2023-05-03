@@ -25,8 +25,7 @@ class PixelRenderer():
     """
     def __init__(self, arg, opt_param, depth):
         self.arg = arg
-    
-        
+
         # device
         self.device = device
         
