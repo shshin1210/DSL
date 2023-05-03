@@ -57,13 +57,19 @@ class Projector():
         # rotation, translation matrix
         extrinsic_diff = torch.zeros((4,4), device= self.device)
 
-        extrinsic_diff[:3,:3] = torch.tensor([[ 9.9999732e-01,  2.2625325e-03, -5.3116900e-04],
-                                                [-2.2627593e-03,  9.9999732e-01, -4.2562018e-04],
-                                                [ 5.3020113e-04,  4.2682525e-04 , 9.9999976e-01]])
+        # extrinsic_diff[:3,:3] = torch.tensor([[ 9.9999732e-01,  2.2625325e-03, -5.3116900e-04],
+        #                                         [-2.2627593e-03,  9.9999732e-01, -4.2562018e-04],
+        #                                         [ 5.3020113e-04,  4.2682525e-04 , 9.9999976e-01]])
+        
+        extrinsic_diff[:3,:3] = torch.tensor([[ 0.9999936 , -0.0033558 , -0.00121038 ],
+                                            [ 0.00335308 , 0.99999183 ,-0.00224885 ],
+                                            [ 0.00121791 , 0.00224478 , 0.9999967  ]])
         
         # translate 
-        t_mtrx = torch.tensor([[0.],[0.],[-5.8024708e-02]])
-            
+        # t_mtrx = torch.tensor([[0.],[0.],[-5.8024708e-02]])
+        t_mtrx = torch.tensor([[0.],[0.],[-0.06480923]])
+        
+        
         extrinsic_diff[:3,3:4] = t_mtrx
         extrinsic_diff[3,3] = 1
         extrinsic_diff = torch.linalg.inv(extrinsic_diff)
@@ -174,6 +180,6 @@ class Projector():
         return PRF
 
     def get_dg_intensity(self):
-        dg_intensity = np.load(os.path.join(self.dg_intensity_dir, 'intensity_dg_new.npy'))
+        dg_intensity = np.load(os.path.join(self.dg_intensity_dir, 'intensity_dg_0502.npy'))
         
         return dg_intensity
