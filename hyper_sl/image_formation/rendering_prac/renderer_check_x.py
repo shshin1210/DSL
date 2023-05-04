@@ -185,14 +185,14 @@ class PixelRenderer():
         
         
         for i in range(len(point_list)):
-            x_points[i] = point_list[i,2,-4,0,191222]
+            y_points[i] = point_list[i,2,-4,0,191222]
             if i % 10 == 0:
-                print(x_points[i].detach().cpu().numpy())
+                print(y_points[i].detach().cpu().numpy())
         
         print(self.intersection_points_r[0,191222].detach().cpu().numpy())
         
-        plt.plot(sensor_z_list, x_points, '-')
-        plt.plot(self.intersection_points_r[0, 191222].detach().cpu(), '.', color = 'red')
+        plt.plot(sensor_z_list, y_points, '-')
+        # plt.plot(self.intersection_points_r[0, 191222].detach().cpu(), '.', color = 'red')
         plt.show()
         
         
