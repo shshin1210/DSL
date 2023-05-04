@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 def undistort(img_dir, int_ext, dist_ext):
     files = os.listdir(img_dir)
     for idx, fn in enumerate(files):
-        img = cv2.imread(os.path.join(img_dir, fn), -1) / 255.
+        img = cv2.imread(os.path.join(img_dir, fn), -1) / 65535.
         cv2.imwrite(os.path.join(img_dir, fn[:-4] + '_undist.png'), cv2.undistort(img, int_ext, dist_ext)*255.)        
     
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     cam_int, cam_dist = calibrated_params.bring_params(arg.calibration_param_path, "cam")
     proj_int, proj_dist, _, _ = calibrated_params.bring_params(arg.calibration_param_path, "proj")
 
-    cam_path = "../../calibration/diff_captured_img_0503"
+    cam_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/spectralon_grid"
     
     undistort(cam_path, cam_int, cam_dist)
 
