@@ -60,7 +60,7 @@ class PixelRenderer():
         self.dg_intensity = torch.tensor(self.proj.get_dg_intensity(), device=self.device).unsqueeze(dim=0).float()
         
         # gaussian blur
-        self.gaussian_blur = tf.GaussianBlur(kernel_size=(11,11), sigma=(3.5,3.5))
+        self.gaussian_blur = tf.GaussianBlur(kernel_size=(11,11), sigma=(1.5,1.5))
         
         # path
         self.dat_dir = arg.dat_dir
@@ -201,7 +201,22 @@ class PixelRenderer():
         cam_N_img = torch.zeros(size=(self.batch_size, self.pixel_num, self.n_illum, 3), device= self.device)
         
         for j in range(self.n_illum):
-            illum = self.load_data.load_illum(j).to(self.device) 
+            # if j == 0 :
+            #     illum = torch.tensor(cv2.imread('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/new_patt_1.png')).type(torch.float32)*0.005
+
+            # elif j == 1 :
+            #     illum = torch.tensor(cv2.imread('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/new_patt_0.png')).type(torch.float32)*0.005
+                
+            # elif j == 2 :
+            #     illum = torch.tensor(cv2.imread('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/new_patt_2.png')).type(torch.float32)*0.005
+
+            # else:
+            #     illum = self.load_data.load_illum(j) * 0.15
+            
+            # illum = illum.to(self.device)
+            
+            illum = self.load_data.load_illum(j).to(self.device) * 0.15
+            illum = self.gaussian_blur(illum.permute(2,0,1)).permute(1,2,0)
             illum_img = torch.zeros(self.batch_size, self.m_n, self.wvls_n, self.pixel_num, device= self.device).flatten()
 
             illum_hyp = illum.reshape((self.proj_H*self.proj_W, 3))@((self.CRF_proj.T).type(torch.float32))
@@ -217,7 +232,7 @@ class PixelRenderer():
             illum_img[cond.flatten()] = valid_pattern_img.flatten()
             
             illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
-            illum_img =  0.25 * illum_img * self.dg_intensity.unsqueeze(dim=3)
+            illum_img =  illum_img * self.dg_intensity.unsqueeze(dim=3)
             illums_m_img = illum_img.sum(axis = 1).reshape(self.batch_size, self.wvls_n, self.pixel_num).permute(0,2,1)
             
             if not illum_only:
@@ -231,16 +246,9 @@ class PixelRenderer():
                 
                 # m order에 따른 cam img : cam_m_img
                 for k in range(self.m_n): 
-                    cam_m_img[:,k,...] = (hyp* (illums_w_occ[:,k,...])@ self.CRF_cam)
+                    cam_m_img[:,k,...] =  1.33*(hyp* (illums_w_occ[:,k,...])@ self.CRF_cam)
 
                 cam_img = cam_m_img.sum(axis=1)
-            
-                # # gaussian blur
-                # if eval == True:
-                #     cam_img = cam_img.reshape(-1, self.cam_H, self.cam_W, 3).permute(0,3,1,2)
-                #     cam_N_img[...,j,:] = torch.clamp(self.gaussian_blur(cam_img), 0, 1).permute(0,2,3,1).reshape(-1, self.pixel_num, 3)
-                # else:
-                #     cam_N_img[...,j,:] = torch.clamp(cam_img, 0, 1)
             
             cam_N_img[...,j,:] = cam_img
             illum_data[:,:,j,:] = illums_m_img
@@ -248,8 +256,6 @@ class PixelRenderer():
         if illum_only:
             return None, xy_proj_real_norm, illum_data, None
 
-        # noise
-        # if eval == False:
         noise = self.noise.sample(cam_N_img.shape)
         cam_N_img += noise
         cam_N_img = torch.clamp(cam_N_img, 0, 1)
