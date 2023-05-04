@@ -301,7 +301,7 @@ def test(arg, cam_crf, model_path, model_num):
                 
                 hyp = create_data(arg, 'hyp', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
                 hyp = torch.ones_like(hyp)
-                hyp[:] = 0.8
+                hyp[:] = 0.9
                 
                 occ = create_data(arg, 'occ', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
                 occ = torch.ones_like(occ)

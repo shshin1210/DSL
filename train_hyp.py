@@ -60,7 +60,7 @@ def train(arg, epochs, cam_crf):
             depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
             print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
             # HYPERSPECTRAL ESTIMATION            
-            N3_arr, gt_xy, _, illum_data, shading  = pixel_renderer.render(depth = depth, 
+            N3_arr, gt_xy, illum_data, shading  = pixel_renderer.render(depth = depth, 
                                                         normal = normal, hyp = hyp, occ = occ, 
                                                         cam_coord = cam_coord, eval = False)
             batch_size = N3_arr.shape[0]
@@ -71,11 +71,12 @@ def train(arg, epochs, cam_crf):
             illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
             hyp = hyp.to(arg.device) # B, # pixel, 25
             shading = shading.to(arg.device) # B, 3(m), 25(wvl), # pixel
+            occ = occ.to(arg.device).reshape(-1,1)
             
             # hyp gt data
             hyp = hyp.reshape(-1, arg.wvl_num) # M, 29
             shading_term = shading[:,0,:,:].permute(0,2,1).reshape(-1, arg.wvl_num) # 29M, 1
-            gt_reflectance = shading_term * hyp
+            gt_reflectance = shading_term * hyp * occ
             
             # Ax = b 에서 A
             illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29            
@@ -122,7 +123,7 @@ def train(arg, epochs, cam_crf):
                 print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
                 
                 # HYPERSPECTRAL ESTIMATION
-                N3_arr, gt_xy, _, illum_data, shading  = pixel_renderer.render(depth = depth, 
+                N3_arr, gt_xy, illum_data, shading  = pixel_renderer.render(depth = depth, 
                                                             normal = normal, hyp = hyp, occ = occ, 
                                                             cam_coord = cam_coord, eval = False)
                 batch_size = N3_arr.shape[0]
@@ -134,11 +135,12 @@ def train(arg, epochs, cam_crf):
                 illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
                 hyp = hyp.to(arg.device) # B, # pixel, 25
                 shading = shading.to(arg.device) # B, 3(m), 25(wvl), # pixel
+                occ = occ.to(arg.device).reshape(-1,1)
                 
                 # hyp gt data
                 hyp = hyp.reshape(-1, arg.wvl_num) # M, 29
                 shading_term = shading[:,0,:,:].permute(0,2,1).reshape(-1, arg.wvl_num) # 29M, 1
-                gt_reflectance = shading_term * hyp
+                gt_reflectance = shading_term * hyp * occ
                 
                 # Ax = b 에서 A
                 illum = illum_data.reshape(-1, arg.illum_num, arg.wvl_num).permute(1,0,2).unsqueeze(dim = 1) # N, 1, M, 29            
@@ -159,7 +161,7 @@ def train(arg, epochs, cam_crf):
                 if (epoch%10 == 0) or (epoch == arg.epoch_num-1):
                     if not os.path.exists(arg.model_dir):
                         os.mkdir(arg.model_dir)
-                    torch.save(model_hyp.state_dict(), os.path.join(arg.model_dir, 'model_hyp_%05d.pth'%epoch))
+                    torch.save(model_hyp.state_dict(), os.path.join(arg.model_dir, 'model_hyp_0504_%05d.pth'%epoch))
                                         
             epoch_valid_hyp = (sum(losses_hyp)/total_iter)
          
@@ -179,7 +181,7 @@ def train(arg, epochs, cam_crf):
                     print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
 
                     # HYPERSPECTRAL ESTIMATION
-                    N3_arr, gt_xy, _, illum_data, shading  = pixel_renderer.render(depth = depth, 
+                    N3_arr, gt_xy, illum_data, shading  = pixel_renderer.render(depth = depth, 
                                                                 normal = normal, hyp = hyp, occ = occ, 
                                                                 cam_coord = cam_coord, eval = False)
                     batch_size = N3_arr.shape[0]
@@ -190,6 +192,7 @@ def train(arg, epochs, cam_crf):
                     illum_data = illum_data.to(arg.device) # B, # pixel, N, 25
                     hyp = hyp.to(arg.device) # B, # pixel, 25
                     shading = shading.to(arg.device) # B, 3(m), 25(wvl), # pixel
+                    occ = occ.to(arg.device).reshape(-1,1)
                     
                     # hyp gt data
                     hyp = hyp.reshape(-1, arg.wvl_num) # M, 29

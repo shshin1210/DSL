@@ -175,9 +175,11 @@ class PixelRenderer():
         # B, m, 29, 3, # pixel
         illum_vec_unit = self.illum_unit(X,Y,Z)
         
+        
         if not illum_only:
-            shading = (illum_vec_unit*(normal_vec_unit_clip[:,None,:,:].unsqueeze(dim = 1))).sum(axis = 3).squeeze()
-            shading = shading.repeat(self.batch_size, self.m_n, self.wvls_n, 1)
+            shading = (illum_vec_unit*(normal_vec_unit_clip.unsqueeze(dim = 1))).sum(axis = 2).squeeze(dim = 1)
+            shading = shading.unsqueeze(dim = 1).repeat(1,self.m_n,1) # extend to B, m, wvl, pixel_num
+            shading = shading.unsqueeze(dim = 2).repeat(1,1,self.wvls_n,1)
             
         # find the intersection points with dg and the line XYZ-virtual proj optical center in dg coordinate
         intersection_points_dg = self.proj.intersections_dg(self.optical_center_virtual, XYZ_dg)
@@ -335,19 +337,18 @@ class PixelRenderer():
         
         # optical_center_proj
         optical_center_proj = torch.tensor([[0.],[0.],[0.],[1.]], device=self.device)
-
+        
         optical_center_world = self.extrinsic_proj_real@optical_center_proj
         optical_center_world = optical_center_world[:3] # m_N, wvls_N, 3
         optical_center_world = optical_center_world.unsqueeze(dim = 0)
         
         # illumination vector in world coord
-        illum_vec =  optical_center_world.unsqueeze(dim =0) - XYZ
+        illum_vec =  optical_center_world.unsqueeze(dim = 1) - XYZ
 
         illum_norm = torch.norm(illum_vec, dim = 2) # dim = 0
         illum_norm = torch.unsqueeze(illum_norm, dim = 2)
         
         illum_unit = illum_vec/illum_norm
-        illum_unit = illum_unit.unsqueeze(dim =0)
         
         return illum_unit
     

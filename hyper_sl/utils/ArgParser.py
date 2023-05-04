@@ -10,8 +10,8 @@ class Argument:
 		################## PATH
 		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
-		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
-		self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")
+		self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
+		# self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
 		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
 		# self.parser.add_argument('--dg_intensity_dir', type = str, default='./dataset/image_formation')
