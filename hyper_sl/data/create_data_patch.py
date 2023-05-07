@@ -131,7 +131,7 @@ class createData():
             normal = torch.zeros(size=(3, pixel_num//self.arg.patch_pixel_num))
             
             # normal
-            normal_min = 0.001
+            normal_min = -0.9999
             normal_max = 0.9999
             
             normal = (normal_max - normal_min) * torch.rand(size = (3, pixel_num//self.arg.patch_pixel_num)) + normal_min
