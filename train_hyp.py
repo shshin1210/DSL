@@ -14,13 +14,18 @@ from hyper_sl.utils import data_process
 
 from torch.utils.tensorboard import SummaryWriter
 
-
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = "7"
 print('cuda visible device count :',torch.cuda.device_count())
 print('current device number :', torch.cuda.current_device())
 
 
 def train(arg, epochs, cam_crf):
+
+    pathname = '0507/gamma%03f_illum%03f_noise%03f_normal'%(arg.model_gamma, arg.illum_weight, arg.noise_std)
+    path_dir = os.path.join(arg.model_dir, pathname)
+    if not os.path.exists(path_dir):
+        os.makedirs(path_dir)
+        
     writer = SummaryWriter(log_dir=arg.log_dir)
     
     train_dataset = dtools.pixelData(arg, train = True, eval = False, pixel_num = arg.num_train_px_per_iter)
@@ -32,13 +37,16 @@ def train(arg, epochs, cam_crf):
     eval_dataset = dtools.pixelData(arg, train = False,eval = True, pixel_num = arg.cam_H* arg.cam_H, random = False)
     eval_loader = DataLoader(eval_dataset, batch_size= arg.batch_size_eval, shuffle=True)
 
+    bring_model_from = 0
     # bring model MLP
     model_hyp = mlp_hyp(input_dim = arg.illum_num*3*(arg.wvl_num + 1), output_dim=arg.wvl_num, fdim = 1000).to(device=arg.device)
-    
-    # optimizer, schedular, loss function
-    optimizer_hyp = torch.optim.Adam(list(model_hyp.parameters()), lr= 5*1e-4)
-    scheduler_hyp = torch.optim.lr_scheduler.StepLR((optimizer_hyp), step_size= 200, gamma= 0.7)
+    # model_dir = "/log/hyp-3d-imaging/result/model_graycode/0505/gamma0.900000_illum0.300000_noise0.015000"
+    # model_hyp.load_state_dict(torch.load(os.path.join(model_dir, 'model_hyp_%05d.pth' %bring_model_from), map_location=arg.device))
 
+    # optimizer, schedular, loss function
+    lr_weight = (0.9)**1
+    optimizer_hyp = torch.optim.Adam(list(model_hyp.parameters()), lr= 5*1e-4)
+    scheduler_hyp = torch.optim.lr_scheduler.StepLR((optimizer_hyp), step_size= 200, gamma= arg.model_gamma)
     print("model gamma: %f, noise std: %f, illum weight: %f " %(arg.model_gamma, arg.noise_std, arg.illum_weight))
 
     # loss ftn   
@@ -60,7 +68,7 @@ def train(arg, epochs, cam_crf):
         for i, data in enumerate(train_loader):
             # datas
             depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
-            print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
+            # print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
             # HYPERSPECTRAL ESTIMATION            
             N3_arr, gt_xy, illum_data, shading  = pixel_renderer.render(depth = depth, 
                                                         normal = normal, hyp = hyp, occ = occ, 
@@ -105,8 +113,8 @@ def train(arg, epochs, cam_crf):
 
         epoch_train_hyp = (sum(losses_hyp)/total_iter)
         
-        print("{%dth epoch} Train Hyp Error: "%(epoch), epoch_train_hyp)
-        writer.add_scalar('hyp_loss' , epoch_train_hyp, epoch)
+        print("{%dth epoch} Train Hyp Error: %f, Learning Rate %f "%(epoch + bring_model_from ,epoch_train_hyp, optimizer_hyp.param_groups[0]['lr']))
+        writer.add_scalar('hyp_loss' , epoch_train_hyp, epoch + bring_model_from)
         torch.cuda.empty_cache()
         
         # evaluation
@@ -152,24 +160,19 @@ def train(arg, epochs, cam_crf):
 
                 # loss
                 losses_hyp.append(loss_hyp.item() * 10 )
-
-                loss = loss_hyp * 10 
             
                 total_iter += 1
                 
                 # model save
                 if (epoch%10 == 0) or (epoch == arg.epoch_num-1):
-                    if not os.path.exists(arg.model_dir):
-                        os.mkdir(arg.model_dir)
-                    torch.save(model_hyp.state_dict(), os.path.join(arg.model_dir, 'model_hyp_0506_line_%05d.pth'%epoch))
+                    torch.save(model_hyp.state_dict(), os.path.join(path_dir, 'model_hyp_%05d.pth'%(epoch + bring_model_from)))
                                         
             epoch_valid_hyp = (sum(losses_hyp)/total_iter)
          
 
-            print("{%dth epoch} Valid Hyp Error: "%(epoch), epoch_valid_hyp)
-            writer.add_scalar("Valid Hyp", epoch_valid_hyp, epoch)
+            print("{%dth epoch} Valid Hyp Error: %f, Learning Rate %f "%(epoch + bring_model_from,epoch_valid_hyp ,optimizer_hyp.param_groups[0]['lr']))
+            writer.add_scalar("Valid Hyp", epoch_valid_hyp, epoch + bring_model_from)
             torch.cuda.empty_cache()
-
     writer.flush()
     
 

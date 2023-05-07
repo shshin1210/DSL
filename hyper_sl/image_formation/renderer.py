@@ -202,22 +202,8 @@ class PixelRenderer():
         
         cam_N_img = torch.zeros(size=(self.batch_size, self.pixel_num, self.n_illum, 3), device= self.device)
         
-        for j in range(self.n_illum):
-            # if j == 0 :
-            #     illum = torch.tensor(cv2.imread('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/new_patt_1.png')).type(torch.float32)*0.005
-
-            # elif j == 1 :
-            #     illum = torch.tensor(cv2.imread('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/new_patt_0.png')).type(torch.float32)*0.005
-                
-            # elif j == 2 :
-            #     illum = torch.tensor(cv2.imread('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/new_patt_2.png')).type(torch.float32)*0.005
-
-            # else:
-            #     illum = self.load_data.load_illum(j) * 0.15
-            
-            # illum = illum.to(self.device)
-            
-            illum = self.load_data.load_illum(j).to(self.device) * 0.15
+        for j in range(self.n_illum):            
+            illum = self.load_data.load_illum(j).to(self.device) * self.arg.illum_weight
             illum = self.gaussian_blur(illum.permute(2,0,1)).permute(1,2,0)
             illum_img = torch.zeros(self.batch_size, self.m_n, self.wvls_n, self.pixel_num, device= self.device).flatten()
 
@@ -248,11 +234,10 @@ class PixelRenderer():
                 
                 # m order에 따른 cam img : cam_m_img
                 for k in range(self.m_n): 
-                    cam_m_img[:,k,...] =  1.33*(hyp* (illums_w_occ[:,k,...])@ self.CRF_cam)
+                    cam_m_img[:,k,...] =  self.arg.image_weight * (hyp* (illums_w_occ[:,k,...])@ self.CRF_cam)
 
                 cam_img = cam_m_img.sum(axis=1)
-            
-            cam_N_img[...,j,:] = cam_img
+                cam_N_img[...,j,:] = cam_img
             illum_data[:,:,j,:] = illums_m_img
 
         if illum_only:
@@ -265,7 +250,7 @@ class PixelRenderer():
         render_end = time.time()
         
         print(f"render time : {render_end - render_start:.5f} sec")
-        print(f'rendering finished for iteration')
+        # print(f'rendering finished for iteration')
                 
         return cam_N_img, xy_proj_real_norm, illum_data, shading
     
