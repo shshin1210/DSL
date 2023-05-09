@@ -11,15 +11,23 @@ class Argument:
 		################## PATH
 		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
+<<<<<<< HEAD
 		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
 		# self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")
 
 		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_line")
 		self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
 		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_360")
+=======
+
+		self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")
+		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_line")
+		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
+		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_360")
+		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/thin_line_pattern_360_gray")
+>>>>>>> 5637a8082c84fe3cb9c47e1ea05aeae622efb68c
 		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
 
-		# self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
 		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
 		# self.parser.add_argument('--dg_intensity_dir', type = str, default='./dataset/image_formation')
@@ -49,6 +57,10 @@ class Argument:
 		self.parser.add_argument('--wvl_min', type = float, default= 420e-9) # 420e-9
 		self.parser.add_argument('--wvl_max', type = float, default= 660e-9) # 660e-9
 		self.parser.add_argument('--wvl_num', type = int, default= 25) # 25
+  
+		# self.parser.add_argument('--wvl_min', type = float, default= 400e-9) # 420e-9
+		# self.parser.add_argument('--wvl_max', type = float, default= 680e-9) # 660e-9
+		# self.parser.add_argument('--wvl_num', type = int, default= 29) # 25
 		
 		self.parser.add_argument('--m_min', type = int, default= -1) 
 		self.parser.add_argument('--m_max', type = int, default= 1) 
@@ -66,8 +78,8 @@ class Argument:
 		self.parser.add_argument('--scene_eval_num', type = int, default= 1)
 		self.parser.add_argument('--scene_real_num', type = int, default= 1)
 
-		self.parser.add_argument('--illum_num', type = int, default= 40)
-		# self.parser.add_argument('--illum_num', type = int, default= 63)
+		# self.parser.add_argument('--illum_num', type = int, default= 40)
+		self.parser.add_argument('--illum_num', type = int, default= 64)
 
 		self.parser.add_argument('--patch_pixel_num', type = int, default = 9)
 	
@@ -87,7 +99,12 @@ class Argument:
 		self.parser.add_argument('--weight_hyp', type = float, default= 0)
 		self.parser.add_argument('--weight_depth', type=float, default= 1)
 
+<<<<<<< HEAD
 		self.parser.add_argument('--illum_weight', type = float, default= 0.6)
+=======
+		# arguments for training
+		self.parser.add_argument('--illum_weight', type = float, default= 1)
+>>>>>>> 5637a8082c84fe3cb9c47e1ea05aeae622efb68c
 		self.parser.add_argument('--model_gamma', type= float, default=0.8)
 		self.parser.add_argument('--noise_std', type = float, default= 0.015) 
 		self.parser.add_argument('--image_weight', type = float, default= 1.33) 
