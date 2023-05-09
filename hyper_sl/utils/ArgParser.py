@@ -5,7 +5,6 @@ class Argument:
 	def __init__(self):
 		self.parser = argparse.ArgumentParser()
 
-		self.parser.add_argument('--visible_device_num', type = str, default="0")
 		self.parser.add_argument('--device', type = str, default="cuda:0")
 
 		################## PATH
@@ -16,7 +15,7 @@ class Argument:
 		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_line")
 		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
 		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_360")
-		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/thin_line_pattern_360_gray")
+		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_3")
 		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
 
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
@@ -70,7 +69,7 @@ class Argument:
 		self.parser.add_argument('--scene_real_num', type = int, default= 1)
 
 		# self.parser.add_argument('--illum_num', type = int, default= 40)
-		self.parser.add_argument('--illum_num', type = int, default= 64)
+		self.parser.add_argument('--illum_num', type = int, default= 120)
 
 		self.parser.add_argument('--patch_pixel_num', type = int, default = 9)
 	
