@@ -12,12 +12,12 @@ class Argument:
 		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
 		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
-		self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")
+		# self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")
 
-		self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_line")
+		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_line")
 		self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
-		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_360")
-		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
+		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_360")
+		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
 
 		# self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
@@ -42,7 +42,7 @@ class Argument:
 		self.parser.add_argument('--real_data_dir', type=str, default="./dataset/data/real_data")
 
 		################## TRAINING & TESTING
-		self.parser.add_argument('--real_data_scene', type = bool, default= False)
+		self.parser.add_argument('--real_data_scene', type = bool, default= True)
 		self.parser.add_argument('--feature_num', type = int, default=100)
 		self.parser.add_argument('--load_dataset', action='store_true', default= False)
 
@@ -87,7 +87,7 @@ class Argument:
 		self.parser.add_argument('--weight_hyp', type = float, default= 0)
 		self.parser.add_argument('--weight_depth', type=float, default= 1)
 
-		self.parser.add_argument('--illum_weight', type = float, default= 0.5)
+		self.parser.add_argument('--illum_weight', type = float, default= 0.6)
 		self.parser.add_argument('--model_gamma', type= float, default=0.8)
 		self.parser.add_argument('--noise_std', type = float, default= 0.015) 
 		self.parser.add_argument('--image_weight', type = float, default= 1.33) 
