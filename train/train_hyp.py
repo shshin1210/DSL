@@ -14,9 +14,9 @@ from hyper_sl.utils import data_process
 
 from torch.utils.tensorboard import SummaryWriter
 
-os.environ['CUDA_VISIBLE_DEVICES'] = "7"
-print('cuda visible device count :',torch.cuda.device_count())
-print('current device number :', torch.cuda.current_device())
+# os.environ['CUDA_VISIBLE_DEVICES'] = "0"
+# print('cuda visible device count :',torch.cuda.device_count())
+# print('current device number :', torch.cuda.current_device())
 
 
 def train(arg, epochs, cam_crf):
@@ -37,15 +37,15 @@ def train(arg, epochs, cam_crf):
     eval_dataset = dtools.pixelData(arg, train = False,eval = True, pixel_num = arg.cam_H* arg.cam_H, random = False)
     eval_loader = DataLoader(eval_dataset, batch_size= arg.batch_size_eval, shuffle=True)
 
-    bring_model_from = 0
+    bring_model_from = 800
     # bring model MLP
     model_hyp = mlp_hyp(input_dim = arg.illum_num*3*(arg.wvl_num + 1), output_dim=arg.wvl_num, fdim = 1000).to(device=arg.device)
-    # model_dir = "/log/hyp-3d-imaging/result/model_graycode/0505/gamma0.900000_illum0.300000_noise0.015000"
-    # model_hyp.load_state_dict(torch.load(os.path.join(model_dir, 'model_hyp_%05d.pth' %bring_model_from), map_location=arg.device))
+    model_dir = "./result/model_new_cal"
+    model_hyp.load_state_dict(torch.load(os.path.join(model_dir, 'model_hyp_0506_line_%05d.pth' %bring_model_from), map_location=arg.device))
 
     # optimizer, schedular, loss function
-    lr_weight = (0.9)**1
-    optimizer_hyp = torch.optim.Adam(list(model_hyp.parameters()), lr= 5*1e-4)
+    lr_weight = (0.9)**4
+    optimizer_hyp = torch.optim.Adam(list(model_hyp.parameters()), lr= 5*1e-4 * lr_weight)
     scheduler_hyp = torch.optim.lr_scheduler.StepLR((optimizer_hyp), step_size= 200, gamma= arg.model_gamma)
     print("model gamma: %f, noise std: %f, illum weight: %f " %(arg.model_gamma, arg.noise_std, arg.illum_weight))
 
