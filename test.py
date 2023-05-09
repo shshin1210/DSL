@@ -17,7 +17,7 @@ from scipy.io import loadmat
 import matplotlib.pyplot as plt
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '6'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 print('cuda visible device count :',torch.cuda.device_count())
 print('current device number :', torch.cuda.current_device())
 
@@ -28,8 +28,8 @@ def test(arg, cam_crf, model_path, model_num):
     # model = mlp_depth(input_dim = arg.patch_pixel_num * arg.illum_num*3, output_dim = 2).to(device=arg.device)
     # model.load_state_dict(torch.load(os.path.join(model_path, 'model_depth_newcal_%05d.pth' %model_num), map_location=arg.device))
     
-    model_hyp = mlp_hyp(input_dim = arg.illum_num*3*(arg.wvl_num + 1), output_dim=arg.wvl_num, fdim = 1000).to(device=arg.device)
-    model_hyp.load_state_dict(torch.load(os.path.join(model_path, './model_hyp_0506_line_%05d.pth' %940), map_location=arg.device))
+    # model_hyp = mlp_hyp(input_dim = arg.illum_num*3*(arg.wvl_num + 1), output_dim=arg.wvl_num, fdim = 1000).to(device=arg.device)
+    # model_hyp.load_state_dict(torch.load(os.path.join(model_path, './model_hyp_0506_line_%05d.pth' %940), map_location=arg.device))
 
     # loss ftn
     loss_fn = torch.nn.L1Loss()
@@ -55,7 +55,7 @@ def test(arg, cam_crf, model_path, model_num):
     eval_loader = DataLoader(eval_dataset, batch_size= arg.batch_size_eval, shuffle=True)
 
     # model.eval()
-    model_hyp.eval()
+    # model_hyp.eval()
     
     if arg.real_data_scene:
         with torch.no_grad():
@@ -64,7 +64,7 @@ def test(arg, cam_crf, model_path, model_num):
                 N3_arr, illum_data, cam_coord = data[0], data[1], data[2]
                 
                 # intensity check
-                N3_arr = N3_arr.reshape(580,890,40,3)
+                N3_arr = N3_arr.reshape(arg.cam_H,arg.cam_W,arg.illum_num,3)
 
                 # batch size
                 batch_size = N3_arr.shape[0]
@@ -72,7 +72,7 @@ def test(arg, cam_crf, model_path, model_num):
                 
                 # to device
                 N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
-                N3_arr = torch.clamp(N3_arr*2.6, 0, 1)
+                N3_arr = torch.clamp(N3_arr, 0, 1)
                 # # DEPTH ESTIMATION
                 # N3_arr = N3_arr.reshape(-1,arg.illum_num, 3).unsqueeze(dim = 1)          
                 
@@ -90,7 +90,7 @@ def test(arg, cam_crf, model_path, model_num):
                 
                 # HYPERSPECTRAL ESTIMATION                    
                 # to device         
-                depth = torch.tensor(np.load("./calibration/spectralon_depth.npy")[...,2].reshape(1,-1)).type(torch.float32)
+                depth = torch.tensor(np.load("./calibration/color_checker_depth_0508.npy")[...,2].reshape(1,-1)).type(torch.float32)
        
                 _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(depth, None, None, None, cam_coord, None, True)
                                 
@@ -164,7 +164,12 @@ def test(arg, cam_crf, model_path, model_num):
                 random = False
                 index = 0
 
-                depth = torch.tensor(np.load("./calibration/spectralon_depth_0503.npy")[...,2].reshape(1,-1)).type(torch.float32)
+                depth = torch.tensor(np.load("./calibration/spectralon_depth_0508.npy")[...,2].reshape(1,-1)).type(torch.float32)
+                # depth_linespace = torch.linspace(0.9, 0.95, 580)
+                # depth_repeat = depth_linespace.repeat(890,1).T
+                # depth[0] = depth_repeat.reshape(1,-1)
+                # depth[0,:] = 0.95
+                                
                 normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
                 normal = torch.zeros_like(normal)
                 normal[:,2] = -1.
@@ -247,12 +252,12 @@ def vis(data, num, vmin, vmax):
             plt.imshow(data[:, :, i + start_index], vmin=vmin, vmax=vmax)
             plt.axis('off')
             plt.title(f"Image {i + start_index}")
-            cv2.imwrite('./spectralon/spectralon_syn_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
+            cv2.imwrite('./spectralon/spectralon_real_%04d_img.png'%(i+start_index), data[:, :, i + start_index, ::-1]*255.)
                     
             if i + start_index == illum_num - 1:
                 plt.colorbar()
 
-    plt.show()
+    # plt.show()
     
     
 if __name__ == "__main__":
