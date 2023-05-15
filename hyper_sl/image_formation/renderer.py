@@ -64,7 +64,6 @@ class PixelRenderer():
         
         # path
         self.dat_dir = arg.dat_dir
-        # self.result_dir = arg.render_result_dir
         
         # m order, wvls
         self.m_list = arg.m_list.to(device=self.device)
@@ -174,8 +173,7 @@ class PixelRenderer():
         # shading term
         # B, m, 29, 3, # pixel
         illum_vec_unit = self.illum_unit(X,Y,Z)
-        
-        
+
         if not illum_only:
             shading = (illum_vec_unit*(normal_vec_unit_clip.unsqueeze(dim = 1))).sum(axis = 2).squeeze(dim = 1)
             shading = shading.unsqueeze(dim = 1).repeat(1,self.m_n,1) # extend to B, m, wvl, pixel_num
@@ -242,7 +240,7 @@ class PixelRenderer():
 
         if illum_only:
             return None, xy_proj_real_norm, illum_data, None
-
+        
         noise = self.noise.sample(cam_N_img.shape)
         cam_N_img += noise
         cam_N_img = torch.clamp(cam_N_img, 0, 1)

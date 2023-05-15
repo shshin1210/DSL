@@ -56,16 +56,35 @@ class Projector():
     def extrinsic_diff(self):
         # rotation, translation matrix
         extrinsic_diff = torch.zeros((4,4), device= self.device)
+
+        # 0506
+        # extrinsic_diff[:3,:3] = torch.tensor([[ 0.989999936 , 1.499835e-2 , -1.499835e-2 ],
+        #                                     [ -1.499835e-2 , 0.989999936 , 0.699835e-2 ],
+        #                                     [ 1.499835e-2, -0.69835e-2, 0.989999936  ]])
+        # t_mtrx = torch.tensor([[0.],[0.],[-5.4991443e-02]]) 
         
-        extrinsic_diff[:3,:3] = torch.tensor([[ 0.989999936 , 1.499835e-2 , -1.499835e-2 ],
-                                            [ -1.499835e-2 , 0.989999936 , 0.699835e-2 ],
-                                            [ 1.499835e-2, -0.69835e-2, 0.989999936  ]])
-        # translate 
-        t_mtrx = torch.tensor([[0.],[0.],[-5.4991443e-02]]) # -5.8
-                
-        extrinsic_diff[:3,3:4] = t_mtrx
+        # present
+        # extrinsic_diff[:3, :3] = torch.tensor([[ 0.9999954  , 0.00163809 ,-0.00256108 ],
+        #                                         [-0.00163416,  0.9999975 ,  0.00154162], 
+        #                                         [ 0.00256359 ,-0.00153744 , 0.9999955 ]] )
+        # t_mtrx = torch.tensor([[0.],[0.],[-0.0291442]])  
         
+        # extrinsic_diff[:3,:3] = torch.tensor([[ 0.9997392  ,-0.02220908,  0.00531494],
+        #                                     [ 0.02226875 , 0.99968654 ,-0.01144284],
+        #                                     [-0.00505914 , 0.01155821  ,0.9999204 ]]) 
+                                                    
+        # # translate 
+        # t_mtrx = torch.tensor([[0.],[0.],[-0.02892936]])  
         
+        # new
+        extrinsic_diff[:3,:3] = torch.tensor([[ 0.9999769 , -0.00362993 , 0.00574559],
+                                                [ 0.0036498,   0.99998736 ,-0.00344892],
+                                                [-0.005733  ,  0.00346981 , 0.9999775 ]] )
+        
+        t_mtrx = torch.tensor([[0.],[0.],[-0.02896785]])  
+                       
+                       
+        extrinsic_diff[:3,3:4] = t_mtrx       
         extrinsic_diff[3,3] = 1
         extrinsic_diff = torch.linalg.inv(extrinsic_diff)
         

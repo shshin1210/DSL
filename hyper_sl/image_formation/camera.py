@@ -6,14 +6,14 @@ from hyper_sl.utils import calibrated_params
 
 class Camera():
     def __init__(self, arg):
-        
+        self.arg = arg
         self.crf_dir = arg.camera_response
         
         # params
         self.cam_int, _ = calibrated_params.bring_params(arg.calibration_param_path,"cam")
 
     def intrinsic_cam(self):        
-        intrinsic_cam = torch.tensor(self.cam_int).type(torch.float32)
+        intrinsic_cam = torch.tensor(self.cam_int).type(torch.float32).to(self.arg.device)
         
         return intrinsic_cam
     
