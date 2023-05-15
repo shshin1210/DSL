@@ -86,9 +86,10 @@ class pixelData(Dataset):
 
         elif self.real == True:
             N3_arr, illum_data = self.create_data(self.arg, 'real', self.pixel_num, self.random, i = index).create()
-            cam_coord = self.create_data(self.arg, 'coord', self.pixel_num, random = self.random).create()
+            # cam_coord = self.create_data(self.arg, 'coord', self.pixel_num, random = self.random).create()
 
             return [N3_arr, illum_data, cam_coord]
+            # return [cam_coord]
             
             
 if __name__ == "__main__":
@@ -101,27 +102,6 @@ if __name__ == "__main__":
     
     
     pixel_num = 640*640
-    
-    # 기존 rendering 방법 =================================================================================================================
-    # 기존 방법으로 얻은 xy proj plane gt
-    # xy_gt = HypDepthData(arg).xy_proj()
-    # cam_N_img = HypDepthData(arg).makeN3Arr()
-    
-    
-    # new rendering  방법 =================================================================================================================
-    # new rendering 방법으로 (기존 dataset 이용하여) 얻은 proj plane gt, 3d xyz points
-    # img_hyp_text_dir = "C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/img_hyp_text"
-    # img_hyp_file = "img_hyp_text_000.npy"
-
-    # depth = hyp_create_data.createData(arg, "depth", pixel_num, random = False, i = 0).create()
-    # normal = hyp_create_data.createData(arg, "normal", pixel_num, random = False, i = 0).create()
-    # hyp = hyp_create_data.createData(arg, 'hyp', pixel_num, random = False, i = 0).create()
-    # occ = hyp_create_data.createData(arg, 'occ', pixel_num, random = False, i = 0).create()
-    # # cam_coord = hyp_create_data.createData(arg, 'coord', pixel_num, random = True).create()
-
-    # # 1 scene에 대해 N개의 pattern을 rendering 해주는 함수
-    # N3Arr, xy_proj = hyp_pixel_renderer.PixelRenderer(arg).render(arg.illum_num, depth=depth, normal = normal, hyp= hyp, occ = occ, pixel_num = pixel_num)  
-
     
     eval_dataset = pixelData(arg, train = False, eval = True, pixel_num = 640*640, bring_data = False, random = False)
     eval_loader = DataLoader(eval_dataset, batch_size= arg.batch_size_eval, shuffle=True)
