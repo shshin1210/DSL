@@ -73,6 +73,7 @@ def test(arg, cam_crf, model_path, model_num):
                 # to device
                 N3_arr = N3_arr.to(arg.device) # B, # pixel, N, 3
                 N3_arr = torch.clamp(N3_arr, 0, 1)
+                
                 # # DEPTH ESTIMATION
                 # N3_arr = N3_arr.reshape(-1,arg.illum_num, 3).unsqueeze(dim = 1)          
                 
@@ -90,7 +91,8 @@ def test(arg, cam_crf, model_path, model_num):
                 
                 # HYPERSPECTRAL ESTIMATION                    
                 # to device         
-                depth = torch.tensor(np.load("./calibration/color_checker_depth_0508.npy")[...,2].reshape(1,-1)).type(torch.float32)
+                # depth = torch.tensor(np.load("./calibration/color_checker_depth_0508.npy")[...,2].reshape(1,-1)).type(torch.float32)
+                depth = torch.tensor(np.load("./spectralon_depth_0511.npy")[...,2].reshape(1,-1)).type(torch.float32)
        
                 _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(depth, None, None, None, cam_coord, None, True)
                                 
@@ -164,7 +166,8 @@ def test(arg, cam_crf, model_path, model_num):
                 random = False
                 index = 0
 
-                depth = torch.tensor(np.load("./calibration/spectralon_depth_0508.npy")[...,2].reshape(1,-1)).type(torch.float32)
+                # depth = torch.tensor(np.load("./spectralon_depth_0510.npy")[...,2].reshape(1,-1)).type(torch.float32)
+                depth = torch.tensor(np.load("./calibration/spectralon_depth_0511.npy")[...,2].reshape(1,-1)).type(torch.float32).to(arg.device)
                 # depth_linespace = torch.linspace(0.9, 0.95, 580)
                 # depth_repeat = depth_linespace.repeat(890,1).T
                 # depth[0] = depth_repeat.reshape(1,-1)
@@ -181,9 +184,8 @@ def test(arg, cam_crf, model_path, model_num):
                 occ = create_data(arg, 'occ', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
                 occ = torch.ones_like(occ)
                 
-                cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0)
+                cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0).to(arg.device)
     
-
                 # HYPERSPECTRAL ESTIMATION                    
                 N3_arr, gt_xy, illum_data, shading  = pixel_renderer.render(depth = depth, 
                                                             normal = normal, hyp = hyp, occ = occ, 

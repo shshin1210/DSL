@@ -34,14 +34,19 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
     # render illumination data
     for i, data in enumerate(eval_loader):
         # datas
-        N3_arr, illum_data, cam_coord = data[0], data[1], data[2]
+        # N3_arr, illum_data, cam_coord = data[0], data[1], data[2]
+        cam_coord = data[0]
         
         # to device         
-        depth = torch.tensor(np.load("./calibration/color_checker_depth_0508.npy")[...,2].reshape(1,-1)).type(torch.float32)
-
+        # depth = torch.tensor(np.load("./calibration/color_checker_depth_0508.npy")[...,2].reshape(1,-1)).type(torch.float32)
+        depth = torch.tensor(np.load("./spectralon_depth_0510.npy")[...,2].reshape(1,-1)).type(torch.float32)
+        
         _, xy_proj_real_norm, illum_data, _ = pixel_renderer.render(depth, None, None, None, cam_coord, None, True)
                         
         illum_data = illum_data.to(arg.device)
+    
+     # Captured image data
+    b = np.load(b_dir)
     
     # Illum data
     A = illum_data[0].detach().cpu().numpy()
@@ -127,5 +132,5 @@ if __name__ == "__main__":
     
     cam_crf = camera.Camera(arg).get_CRF()
 
-    b_dir = "./hdr_step3.npy"
+    b_dir = "./line_3_saturate_0510.npy"
     optimizer_l1_loss(arg, cam_crf=cam_crf, b_dir= b_dir)

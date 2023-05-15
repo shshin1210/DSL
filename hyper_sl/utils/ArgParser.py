@@ -15,7 +15,7 @@ class Argument:
 		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_line")
 		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
 		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_360")
-		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_3")
+		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/test")
 		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
 
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
@@ -40,7 +40,7 @@ class Argument:
 		self.parser.add_argument('--real_data_dir', type=str, default="./dataset/data/real_data")
 
 		################## TRAINING & TESTING
-		self.parser.add_argument('--real_data_scene', type = bool, default= True)
+		self.parser.add_argument('--real_data_scene', type = bool, default= False)
 		self.parser.add_argument('--feature_num', type = int, default=100)
 		self.parser.add_argument('--load_dataset', action='store_true', default= False)
 
@@ -69,7 +69,7 @@ class Argument:
 		self.parser.add_argument('--scene_real_num', type = int, default= 1)
 
 		# self.parser.add_argument('--illum_num', type = int, default= 40)
-		self.parser.add_argument('--illum_num', type = int, default= 120)
+		self.parser.add_argument('--illum_num', type = int, default= 2)
 
 		self.parser.add_argument('--patch_pixel_num', type = int, default = 9)
 	
