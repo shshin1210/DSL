@@ -1,7 +1,7 @@
 import torch
 import sys
 # sys.path.append('C:/Users/mainuser/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging')
-sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
+sys.path.append('/workspace/Scalable-Hyp-3D-Imaging')
 
 from hyper_sl.utils.ArgParser import Argument
 
