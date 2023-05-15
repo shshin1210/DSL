@@ -236,6 +236,7 @@ class PixelRenderer():
 
                 cam_img = cam_m_img.sum(axis=1)
                 cam_N_img[...,j,:] = cam_img
+
             illum_data[:,:,j,:] = illums_m_img
 
         if illum_only:
@@ -341,7 +342,7 @@ class PixelRenderer():
         cond = (0<= r_proj)*(r_proj < self.proj_H)*(0<=c_proj)*(c_proj< self.proj_W) 
         
         r_proj_valid, c_proj_valid = r_proj[cond], c_proj[cond]
-        r_proj_valid, c_proj_valid = torch.tensor(r_proj_valid), torch.tensor(c_proj_valid)  # TODO: do we need this? 
+        r_proj_valid, c_proj_valid = torch.tensor(r_proj_valid), torch.tensor(c_proj_valid)
 
         batch_samples = torch.linspace(0, self.batch_size-1, self.batch_size,device=self.device)
         wvl_samples = torch.linspace(0, self.wvls_n-1, self.wvls_n,device=self.device)

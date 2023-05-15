@@ -62,47 +62,71 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
     
     # optimize with l1 loss
     # Reshape to make M, ...
-    A = A.reshape(R*C, 1, 3*N, W)
-    b = b.reshape(R*C, 1, 3*N, 1)    
-        
+    r, c = 290, 445
+
+    A = A.reshape(R, C, 1, 3*N, W)
+    b = b.reshape(R, C, 1, 3*N, 1)
+
+    A1 = A[:r,:c]
+    A2 = A[:r,c:]
+    A3 = A[r:,:c]
+    A4 = A[r:,c:]
+
+    b1 = b[:r,:c]
+    b2 = b[:r,c:]
+    b3 = b[r:,:c]
+    b4 = b[r:,c:]
+
+    A_list = [A1,A2,A3,A4]
+    b_list = [b1,b2,b3,b4] 
+    
     batch_size = 100000
     num_iter = 5000
-    num_batches = int(np.ceil(M / batch_size))
+
     loss_f = torch.nn.L1Loss()
     losses = []
-    X_np_all = torch.zeros(M, 1, W, 1)
+    X_np_all = torch.zeros(R, C, 1, W, 1)
 
     # define initial learning rate and decay step
-    lr = 0.5
-    decay_step = 800
+    lr = 1
+    decay_step = 500
 
     # training loop over batches
-    for batch_idx in range(num_batches):
-        start_idx = batch_idx * batch_size
-        end_idx = min((batch_idx + 1) * batch_size, M)
-        batch_size_ = end_idx - start_idx
-        A_batch = (A[start_idx:end_idx])
-        B_batch = (b[start_idx:end_idx])
-        X_est = torch.randn(batch_size_, 1, W, 1, requires_grad=True, device=device)
+    for batch_idx in range(len(A_list)):
+        A_batch = (A_list[batch_idx]).to(device).reshape(r*c,1, 3*N, W)
+        B_batch = (b_list[batch_idx]).to(device).reshape(r*c,1, 3*N, 1)
+        X_est = torch.randn(r*c, 1, W, 1, requires_grad=True, device=device)
         optimizer = torch.optim.Adam([X_est], lr=lr)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=decay_step, gamma=0.5)
 
         optimizer.zero_grad()
         for i in range(num_iter):
             loss = loss_f(A_batch @ X_est, B_batch)
-            loss.backward()
-            losses.append(loss.item())
+            X_est_reshape = X_est.reshape(r,c,W).unsqueeze(dim = 0).permute(0,3,1,2)
+            loss_tv = total_variation_loss_l1(X_est_reshape, 0.1)
+            loss_spec = total_variation_loss_l2_spectrum(X_est_reshape, 0.1)
+            total_loss = loss + loss_tv + loss_spec
+            
+            total_loss.backward()
+            losses.append(total_loss.item())
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad()
 
             if i % 100 == 0:
-                print(f"Batch {batch_idx + 1}/{num_batches}, Iteration {i}/{num_iter}, Loss: {loss.item()}, LR: {optimizer.param_groups[0]['lr']}")
+                print(f"Batch {batch_idx + 1}/{len(A_list)}, Iteration {i}/{num_iter}, Loss: {loss.item()}, TV Loss: {loss_tv.item()}, Spec Loss: {loss_spec.item()},  LR: {optimizer.param_groups[0]['lr']}")
 
-        X_np_all[start_idx:end_idx] = X_est.detach().cpu()
+        if batch_idx == 0:
+            X_np_all[:r,:c]= X_est.detach().cpu().reshape(r,c,1,W,1)
+        elif batch_idx == 1:
+            X_np_all[:r,c:]= X_est.detach().cpu().reshape(r,c,1,W,1)
+        elif batch_idx == 2:
+            X_np_all[r:,:c]= X_est.detach().cpu().reshape(r,c,1,W,1)
+        else:
+            X_np_all[r:,c:]= X_est.detach().cpu().reshape(r,c,1,W,1)
 
     X_np_all = X_np_all.numpy()
-    np.save('./X_np_all_step_3_new', X_np_all)
+    np.save('./X_np_all_step_tv_wo_spec', X_np_all)
 
     # plot losses over time
     plt.figure(figsize=(15,10))
@@ -121,6 +145,22 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
 
     plt.show()
 
+def total_variation_loss_l2(img, weight): 
+    bs_img, c_img, h_img, w_img = img.size() 
+    tv_h = torch.pow(img[:,:,1:,:]-img[:,:,:-1,:], 2).sum() 
+    tv_w = torch.pow(img[:,:,:,1:]-img[:,:,:,:-1], 2).sum() 
+    return weight*(tv_h+tv_w)/(bs_img*c_img*h_img*w_img)
+
+def total_variation_loss_l1(img, weight): 
+    bs_img, c_img, h_img, w_img = img.size() 
+    tv_h = torch.abs(img[:,:,1:,:]-img[:,:,:-1,:]).sum() 
+    tv_w = torch.abs(img[:,:,:,1:]-img[:,:,:,:-1]).sum() 
+    return weight*(tv_h+tv_w)/(bs_img*c_img*h_img*w_img)
+
+def total_variation_loss_l2_spectrum(img, weight): 
+    bs_img, c_img, h_img, w_img = img.size() 
+    tv_s = torch.pow(img[:,1:,:,:]-img[:,:-1,:,:], 2).sum()
+    return weight*(tv_s)/(bs_img*c_img*h_img*w_img)
 
 if __name__ == "__main__":
     
@@ -132,5 +172,5 @@ if __name__ == "__main__":
     cam_crf = camera.Camera(arg).get_CRF()
     cam_crf = torch.tensor(cam_crf, device= arg.device)
 
-    b_dir = "./hdr_line_3.npy"
+    b_dir = "./line_3_saturate_0510.npy"
     optimizer_l1_loss(arg, cam_crf=cam_crf, b_dir= b_dir)
