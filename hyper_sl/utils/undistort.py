@@ -2,19 +2,16 @@ import cv2, os, sys
 
 sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
 
-import numpy as np
 from hyper_sl.utils.ArgParser import Argument
-from hyper_sl.utils import data_process
 from hyper_sl.utils import calibrated_params
 import matplotlib.pyplot as plt
 
-def undistort(img_dir, int_ext, dist_ext):
+def undistort(img_dir, int_ext, dist_ext, bit):
     files = os.listdir(img_dir)
     for idx, fn in enumerate(files):
-        img = cv2.imread(os.path.join(img_dir, fn), -1) / 65535.
-        cv2.imwrite(os.path.join(img_dir, fn[:-4] + '_undist.png'), cv2.undistort(img, int_ext, dist_ext)*255.)        
-    
-
+        img = cv2.imread(os.path.join(img_dir, fn), -1) / bit
+        cv2.imwrite(os.path.join(img_dir, fn[:-4] + '_undist.png'), cv2.undistort(img, int_ext, dist_ext)*255.)
+        
 def vis(data):
     illum_num = 40
     max_images_per_column = 5
