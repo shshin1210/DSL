@@ -8,7 +8,7 @@ class Argument:
 		self.parser.add_argument('--device', type = str, default="cuda:0")
 
 		################## PATH
-		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
+		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam_0525.xml")
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
 
 		# self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")

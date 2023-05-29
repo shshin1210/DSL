@@ -9,7 +9,7 @@ from hyper_sl.image_formation.camera import Camera
 from hyper_sl.image_formation import distortion
 import torchvision.transforms as tf
 
-from hyper_sl.data.create_data import createData
+from hyper_sl.data.create_data_patch import createData
 
 import time, math
 

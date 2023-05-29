@@ -10,10 +10,6 @@ from hyper_sl.image_formation.projector import Projector
 from hyper_sl.image_formation.camera import Camera
 from hyper_sl.image_formation import distortion
 
-from hyper_sl.data.create_data import createData
-
-import time, math
-
 class PixelRenderer():
     """ Render for a single scene 
         which has specific # of pixels for N different patterns
@@ -39,7 +35,6 @@ class PixelRenderer():
         self.load_data = load_data.load_data(arg)
         self.noise = noise.GaussianNoise(0, arg.noise_std, arg.device)
         self.normalize = normalize
-        self.create_data = createData
         
         # cam
         self.cam_H, self.cam_W = arg.cam_H, arg.cam_W

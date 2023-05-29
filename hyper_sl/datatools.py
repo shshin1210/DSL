@@ -9,7 +9,6 @@ import sys
 # sys.path.append('/home/shshin/Scalable-Hyperspectral-3D-Imaging')
 
 from hyper_sl.data import create_data_patch
-from hyper_sl.image_formation.etc import hyp_renderer
 
 #  pixel-wise totally random with random scene
 class pixelData(Dataset):
@@ -35,7 +34,6 @@ class pixelData(Dataset):
         # bring class
         # self.create_data = create_data.createData
         self.create_data = create_data_patch.createData
-        self.render = hyp_renderer
         
         # arguments
         self.pixel_num = pixel_num  # total pixel
