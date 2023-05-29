@@ -121,6 +121,18 @@ class PixelRenderer():
         self.beta_m = torch.unsqueeze(self.beta_m, 1).repeat(1, self.wvls_n, 1)
         self.beta_m = self.beta_m.reshape(self.m_n, self.wvls_n, self.pixel_num) 
         
+        self.diffracted_dir = torch.stack((self.alpha_m.reshape(-1,1), self.beta_m.reshape(-1,1), self.z.reshape(-1,1)), dim = 2)
+        
+        # Model
+        self.distorted_diff_dir = model(self.diffracted_dir).to(device=arg.device)
+        self.distorted_diff_dir_norm = torch.norm(self.distorted_diff_dir, dim =1)
+        self.distorted_diff_dir_unit = self.distorted_diff_dir/ self.distorted_diff_dir_norm.unsqueeze(dim = 1)
+        self.distorted_diff_dir_reshape = self.distorted_diff_dir_unit.reshape(self.m_n, self.wvls_n, self.pixel_num, -1)
+        
+        self.alpha_m = self.distorted_diff_dir_reshape[...,0]
+        self.beta_m = self.distorted_diff_dir_reshape[...,1]
+        self.z_m = self.distorted_diff_dir_reshape[...,2]
+        
     def sph2cart(self, elevation, azimuth):
         """
             change spherical coord to cart coord
