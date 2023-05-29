@@ -53,11 +53,12 @@ def main(arg):
         **if wavelength sequence changes, change wvls
     """
     
-    wvls = np.arange(450, 660, 50)[::-1]
+    # wvls = np.arange(450, 660, 50)[::-1]
+    wvls = np.arange(450, 660, 50)
     
     cam_int, cam_dist = calibrated_params.bring_params(arg.calibration_param_path, "cam")
     
-    test_fn = "test_2023_05_15_17_34"
+    test_fn = "test_2023_05_29_13_01"
     img_test_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/" + test_fn
     
     # files for each wvls
