@@ -6,11 +6,8 @@ from hyper_sl.utils.ArgParser import Argument
 import numpy as np
 from scipy.io import loadmat
 
-def point_process(arg, total_dir, pattern_dir, wvls, n_patt):
-    # processing points
-    # if reorder == True:
-    #     processed_points = reorder_points(arg, pattern_dir, wvls)
-    
+def point_process(arg, total_dir, date, pattern_dir, wvls, n_patt):
+
     pixel_num = loadmat(os.path.join(pattern_dir,'%dnm_undistort_centroid.mat' %(wvls[0])))['s'].shape[0] // 2
     processed_points = np.zeros(shape=(arg.m_num, len(wvls), pixel_num, 2))
     
@@ -18,47 +15,66 @@ def point_process(arg, total_dir, pattern_dir, wvls, n_patt):
         wvl_point = np.array(loadmat(os.path.join(pattern_dir,'%dnm_undistort_centroid.mat' %(wvls[w])))['s'])            
         wvl_point = np.array([pts[0][0][0] for pts in wvl_point])
         
-        zero, first = find_order(total_dir, wvl_point, wvls[w], n_patt)
+        zero, first, bool = find_order(total_dir, date, wvl_point, wvls[w], n_patt)
         
         # zero order
         processed_points[1] = zero[np.newaxis,:,:]
         
-        if n_patt == 0:
-            # first order
-            processed_points[0, w, :, :] = np.concatenate((first[:3], first[:3]), axis = 0)
-            processed_points[2, w, :, :] = np.concatenate((first[3:], first[3:]), axis = 0)
-        else:
+        if bool == False:
             processed_points[0, w, :, :] = first
+        else:
             processed_points[2, w, :, :] = first
-            
+    
+    # sorting
+    sorted_idx = np.argsort(-processed_points[...,1], axis = 2)
+    x_sort = np.take_along_axis(processed_points[...,0], sorted_idx, axis = 2)
+    y_sort = np.take_along_axis(processed_points[...,1], sorted_idx, axis = 2)
+    
+    processed_points[...,0], processed_points[...,1] = x_sort, y_sort
+    
     return processed_points
     
-def find_order(total_dir, wvl_point, wvl, n_patt):
-    dir = total_dir + 'test_2023_05_15_17_34_processed/'
-    img = cv2.imread(dir+ 'pattern_%02d/%03dnm_undistort.png'%(n_patt, wvl), 0)
-    
-    pts = np.array([img[i[1].astype(np.int16) ,i[0].astype(np.int16)] for i in wvl_point])
-    avg = np.average(pts) - 5
+def find_order(total_dir, date, wvl_point, wvl, n_patt):
+    dir = total_dir + date + '_processed/'
+    img = cv2.imread(dir+ 'pattern_%02d/%03dnm_undistort.png'%(n_patt, wvl))
+    img_m = img.mean(axis = 2)
+        
+    pts = np.array([img_m[i[1].astype(np.int16) ,i[0].astype(np.int16)] for i in wvl_point])
 
-    first = np.array([wvl_point[idx] for idx, value in enumerate(pts) if value < avg])
-    zero = np.array([wvl_point[idx] for idx, value in enumerate(pts) if value > avg])
+    # proj emission ftn 때문에 500nm intensity low
+    if (n_patt == 0) and (wvl == 500):
+        pts[4] = 170
     
-    return zero, first
-
+    # zero order / first order
+    if len(pts) < 6:
+        zero = np.array([wvl_point[idx] for idx, _ in enumerate(pts)])
+        first = np.zeros_like(zero)
+    else:
+        avg = np.average(pts) - 8
+        first = np.array([wvl_point[idx] for idx, value in enumerate(pts) if value < avg ])
+        zero = np.array([wvl_point[idx] for idx, value in enumerate(pts) if value >= avg ])
+    
+    # m = -1 order / m = 1 order
+    if zero[:,0].mean() > first[:,0].mean():
+        first_m2 = first
+        return zero, first_m2, True
+    else:
+        first_m0 = first
+        return zero, first_m0, False
 
 if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
     
     total_dir = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/"
-    point_dir = total_dir + 'test_2023_05_15_17_34_points'
+    date = 'test_2023_05_29_13_01'
+    point_dir = total_dir + date + '_points'
     
-    N_pattern = 3
+    N_pattern = len(os.listdir(point_dir))
     wvls = np.arange(450, 660, 50)
     
     for i in range(N_pattern):
         pattern_dir = point_dir + '/pattern_%02d'%i
-        processed_points = point_process(arg, total_dir, pattern_dir, wvls, i)
-        
-        
+        processed_points = point_process(arg, total_dir, date, pattern_dir, wvls, i)
+
         print('end')
