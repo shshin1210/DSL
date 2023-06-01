@@ -26,7 +26,7 @@ class PixelRenderer():
         self.arg = arg
 
         # model
-        model = distortion_mlp(input_dim = 3, output_dim = 3).to(device=arg.device)
+        model = distortion_mlp(input_dim = 5, output_dim = 2).to(device=arg.device)
         
         # device
         self.device = arg.device
@@ -104,6 +104,12 @@ class PixelRenderer():
         self.intersection_points1 = torch.concat((self.intersection_points, self.ones), dim = 0)
         self.intersection_points_proj = torch.linalg.inv(self.extrinsic_diff)@self.intersection_points1
         
+        # input intersection points (proj coord)
+        intersect_pts = self.intersection_points_proj[:3].T
+        intersect_pts = intersect_pts.unsqueeze(dim = 0).repeat(self.m_n, 1, 1)
+        intersect_pts = intersect_pts.unsqueeze(dim = 1).repeat(1, self.wvls_n, 1, 1)
+        intersect_pts = intersect_pts.reshape(-1, 1, 3)
+        
         # incident light direction vectors in projector coord
         self.alpha_i = self.incident_dir_unit_proj[0,:]
         self.beta_i = self.incident_dir_unit_proj[1,:]
@@ -121,19 +127,28 @@ class PixelRenderer():
         self.beta_m = torch.unsqueeze(self.beta_m, 1).repeat(1, self.wvls_n, 1)
         self.beta_m = self.beta_m.reshape(self.m_n, self.wvls_n, self.pixel_num) 
         
-        self.diffracted_dir = torch.stack((self.alpha_m.reshape(-1,1), self.beta_m.reshape(-1,1), self.z.reshape(-1,1)), dim = 2)
+        # diffracted direction cartesian vector to spherical vector
+        self.diff_dir = torch.stack((self.alpha_m.reshape(-1,1), self.beta_m.reshape(-1,1), self.z.reshape(-1,1)), dim = 2)
+        sph = self.cart2sph(self.diff_dir[...,0], self.diff_dir[...,1], self.diff_dir[...,2])
+        elev, azi = sph[0], sph[1]
+        diff_sph = torch.stack((elev, azi), dim = 2)
         
         # Model
-        self.distorted_diff_dir = model(self.diffracted_dir).to(device=arg.device)
-        self.distorted_diff_dir_norm = torch.norm(self.distorted_diff_dir, dim =1)
-        self.distorted_diff_dir_unit = self.distorted_diff_dir/ self.distorted_diff_dir_norm.unsqueeze(dim = 1)
-        self.distorted_diff_dir_reshape = self.distorted_diff_dir_unit.reshape(self.m_n, self.wvls_n, self.pixel_num, -1)
+        # input spherical 
+        dist_sph = model(diff_sph, intersect_pts).to(device=arg.device)
+        # spherical to cart
+        dist_diff_dir = self.sph2cart(dist_sph[...,0], dist_sph[...,1]).T
         
-        self.alpha_m = self.distorted_diff_dir_reshape[...,0]
-        self.beta_m = self.distorted_diff_dir_reshape[...,1]
-        self.z_m = self.distorted_diff_dir_reshape[...,2]
+        # normalization
+        dist_diff_dir_norm = torch.norm(dist_diff_dir, dim =1)
+        dist_diff_dir_unit = dist_diff_dir/ dist_diff_dir_norm.unsqueeze(dim = 1)
+        dist_diff_dir_reshape = dist_diff_dir_unit.reshape(self.m_n, self.wvls_n, self.pixel_num, -1)
         
-    def sph2cart(self, elevation, azimuth):
+        self.alpha_m = dist_diff_dir_reshape[...,0]
+        self.beta_m = dist_diff_dir_reshape[...,1]
+        self.z_m = dist_diff_dir_reshape[...,2]
+        
+    def sph2cart(self, elev, azi):
         """
             change spherical coord to cart coord
             input : elevation, azimuth
@@ -141,14 +156,21 @@ class PixelRenderer():
         
         """
         r = 1
-        x = r * torch.sin(elevation) * torch.cos(azimuth)
-        y = r * torch.sin(elevation) * torch.sin(azimuth)
-        z = r * torch.cos(elevation)
+        x = r * torch.sin(elev) * torch.cos(azi)
+        y = r * torch.sin(elev) * torch.sin(azi)
+        z = r * torch.cos(elev)
         
         u_vec = torch.stack((x,y,z), dim = 0)
 
         return u_vec
     
+    def cart2sph(self, x, y, z):
+        r = torch.sqrt(x**2 + y**2 + z**2)
+        elev = torch.acos(z / r)
+        azi = torch.atan(y / x)
+        
+        return elev, azi
+        
     def rotation_matrix(self, u, k):
         """
             input : vectors
@@ -370,9 +392,9 @@ if __name__ == "__main__":
     opt_param = torch.tensor([ 1.5, 1., 0.8, 0.003], dtype= torch.float, requires_grad=True, device= arg.device)
 
     # training args
-    lr = 1e-2 # 1e-3
+    lr = 1e-1 # 1e-3
     decay_step = 500 # 1000
-    epoch = 5000
+    epoch = 50000
     
     # loss ftn
     loss_f = torch.nn.L1Loss()
