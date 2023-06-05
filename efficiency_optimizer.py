@@ -6,7 +6,7 @@ import os
 from hyper_sl.utils.ArgParser import Argument
 from hyper_sl.data import create_data_patch
 import hyper_sl.datatools as dtools 
-from hyper_sl.image_formation import renderer_opt
+from hyper_sl.image_formation.rendering_prac import renderer_opt
 
 import matplotlib.pyplot as plt
 

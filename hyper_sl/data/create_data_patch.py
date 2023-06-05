@@ -2,7 +2,6 @@ import torch, os, cv2
 
 from hyper_sl.utils.ArgParser import Argument
 from hyper_sl.utils.load_data import load_data
-from hyper_sl.utils import data_process
 from scipy.interpolate import interp1d
 import numpy as np
 
