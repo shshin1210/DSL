@@ -56,22 +56,13 @@ class Projector():
     
     # dg coord to projector coord
     def extrinsic_diff(self):
-        # rotation, translation matrix
-        extrinsic_diff = torch.zeros((4,4), device= self.device)
-
-        # new
-        extrinsic_diff[:3,:3] = torch.tensor([[ 0.9999769 , -0.00362993 , 0.00574559],
-                                                [ 0.0036498,   0.99998736 ,-0.00344892],
-                                                [-0.005733  ,  0.00346981 , 0.9999775 ]] )
         
-        t_mtrx = torch.tensor([[0.],[0.],[-0.02896785]])                       
-                       
-        extrinsic_diff[:3,3:4] = t_mtrx       
-        extrinsic_diff[3,3] = 1
+        extrinsic_diff = torch.tensor(np.load('./calibration/dg_calibration/extrinsic_diff.npy'), device=self.device)
         extrinsic_diff = torch.linalg.inv(extrinsic_diff)
 
         return extrinsic_diff
-
+    
+    # Multi dg extrinsic
     def XYZ_to_dg(self, X,Y,Z):
         """
             Input : world coordinate X,Y,Z 3d points
@@ -83,13 +74,13 @@ class Projector():
         XYZ1_proj = torch.linalg.inv(self.extrinsic_proj_real())@XYZ1            
         
         # proj coord XYZ1 to dg coord XYZ1
-        XYZ1_dg = torch.linalg.inv(self.extrinsic_diff())@XYZ1_proj
+        XYZ1_dg = torch.linalg.inv(self.extrinsic_diff())@XYZ1_proj.unsqueeze(dim = 1).unsqueeze(dim = 1)
         
-        return XYZ1_dg[:,:3]
-    
+        return XYZ1_dg[:,:,:,:3]
+
+    # Multi dg extrinsic
     def intersections_dg(self, optical_center_virtual, XYZ_dg):
         optical_center_virtual = optical_center_virtual.unsqueeze(dim = 0).unsqueeze(dim = 4)
-        XYZ_dg = XYZ_dg.unsqueeze(dim = 1).unsqueeze(dim = 1)
         
         dir_vec = XYZ_dg - optical_center_virtual
         norm = dir_vec.norm(dim = 3)
@@ -98,8 +89,8 @@ class Projector():
         t = - optical_center_virtual[...,2,:] / dir_vec_unit[...,2,:]
         intersection_points_dg = dir_vec_unit*(t.unsqueeze(dim = 3)) + optical_center_virtual
 
-        return intersection_points_dg      
-        
+        return intersection_points_dg     
+
     def intersect_points_to_proj(self, intersection_points_dg_real1):
         intersection_points_proj_real = self.extrinsic_diff()@intersection_points_dg_real1
         
@@ -140,22 +131,24 @@ class Projector():
         """P and dir are NxD arrays defining N lines.
         D is the dimension of the space. This function 
         returns the least squares intersection of the N
-        """        
+        lines from the system given by eq. 13 in 
+        http://cal.cs.illinois.edu/~johannes/research/LS_line_intersect.pdf.
+        """
         
-        torch_eye = torch.eye(dir.shape[2], device=self.device)
+        # For multi diff grat
+        torch_eye = torch.eye(dir.shape[-1], device=self.device)
+        torch_eye = torch_eye.unsqueeze(dim = 0).repeat(self.m_n ,1,1).unsqueeze(dim = 0).repeat(25, 1, 1, 1)
 
         projs = torch_eye - torch.unsqueeze(dir, dim = 4)*torch.unsqueeze(dir, dim = 3)
         
         R = projs.sum(axis = 0)
-        P = P.unsqueeze(dim = 1).unsqueeze(dim = 1)
         q = (projs @ torch.unsqueeze(P, dim = 4)).sum(axis=0) # px sum
         
         p = torch.linalg.lstsq(R,q,rcond=None)[0]
         p = p.squeeze().permute(1,0,2)
-
+    
         return p
         
-    
     def get_PRF(self):
         PRF = np.load(os.path.join(self.crf_dir, 'CRF_proj.npy'))
         map_scale = interp1d([PRF.min(), PRF.max()], [0.,1.])

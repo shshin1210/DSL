@@ -4,7 +4,7 @@ sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
 
 from hyper_sl.utils import noise,normalize,load_data
 
-from hyper_sl.image_formation.projector import Projector
+from hyper_sl.image_formation.projector_multi import Projector
 from hyper_sl.image_formation.camera import Camera
 from hyper_sl.image_formation import distortion
 import torchvision.transforms as tf
@@ -60,7 +60,8 @@ class PixelRenderer():
         self.dg_intensity = torch.tensor(self.proj.get_dg_intensity(), device=self.device).unsqueeze(dim=0).float()
         
         # gaussian blur
-        self.gaussian_blur = tf.GaussianBlur(kernel_size=(11,11), sigma=(1.5,1.5))
+        # self.gaussian_blur = tf.GaussianBlur(kernel_size=(11,11), sigma=(0.8,0.8))
+        self.gaussian_blur = tf.GaussianBlur(kernel_size=(11,11), sigma=(0.1,0.1))
         
         # path
         self.dat_dir = arg.dat_dir
@@ -80,28 +81,29 @@ class PixelRenderer():
         
         # change proj sensor to dg coord
         self.xyz_proj_dg = torch.linalg.inv(self.extrinsic_diff)@self.xyz1
-        self.xyz_proj_dg = self.xyz_proj_dg[:3]
+        self.xyz_proj_dg = self.xyz_proj_dg[:,:,:3]
 
         # change proj center to dg coord
         self.proj_center_dg = torch.linalg.inv(self.extrinsic_diff)@self.proj_center
-        self.proj_center_dg = self.proj_center_dg[:3]
+        self.proj_center_dg = self.proj_center_dg[:,:,:3]
         
         # incident light, intersection points in DG coord
         # incident light dir vectors
         self.incident_dir = - self.proj_center_dg + self.xyz_proj_dg
 
         # make incident dir to unit vector
-        self.norm = torch.norm(self.incident_dir, dim = 0)
+        self.norm = torch.norm(self.incident_dir, dim = 2) # m, wvl, xyz1, px
 
         # incident light unit dir vector
-        self.incident_dir_unit = self.incident_dir/self.norm
+        self.incident_dir_unit = self.incident_dir/self.norm.unsqueeze(dim = 2)
         
         self.intersection_points = self.find_intersection(self.proj_center_dg,self.incident_dir_unit)
-        self.intersection_points = self.intersection_points.reshape(3,self.proj_H, self.proj_W)
-        
+        self.intersection_points = self.intersection_points.reshape(self.m_n, self.wvls_n, 3, self.proj_H, self.proj_W) # m, wvl, xyz1, H, W
+        self.intersection_points = self.intersection_points.permute(2,0,1,3,4) # xyz1, wvl, m, H, W
+
         # incident light direction vectors
-        self.alpha_i = self.incident_dir_unit[0,:]
-        self.beta_i = self.incident_dir_unit[1,:]
+        self.alpha_i = self.incident_dir_unit[:,:,0]
+        self.beta_i = self.incident_dir_unit[:,:,1]
 
         #### Scene independent variables
         # compute direction cosines
@@ -113,20 +115,18 @@ class PixelRenderer():
         self.z = self.z.reshape(self.m_n, self.wvls_n, self.proj_H, self.proj_W)
 
         # for m = [-1,0,1]
-        self.beta_m = torch.unsqueeze(self.beta_m, 0).repeat(self.m_n, 1)
-        self.beta_m = torch.unsqueeze(self.beta_m, 1).repeat(1, self.wvls_n, 1)
         self.beta_m = self.beta_m.reshape(self.m_n, self.wvls_n, self.proj_H, self.proj_W) 
-        
+
         self.diffracted_dir_unit = torch.stack((self.alpha_m,self.beta_m,self.z), dim = 0) 
-        self.intersection_points_r = self.intersection_points.reshape(self.m_n,self.proj_H*self.proj_W) 
-        self.diffracted_dir_unit_r = self.diffracted_dir_unit.reshape(self.m_n,self.m_n, self.wvls_n, self.proj_H*self.proj_W)
+        self.intersection_points_r = self.intersection_points.reshape(3, self.m_n, self.wvls_n, self.proj_H*self.proj_W) 
+        self.diffracted_dir_unit_r = self.diffracted_dir_unit.reshape(3, self.m_n, self.wvls_n, self.proj_H*self.proj_W) # abz, m, wvl, H*W
 
         # optical center
         self.p = self.intersection_points_r.T
         self.d = self.diffracted_dir_unit_r.T
         
         # finding point p
-        self.optical_center_virtual = self.proj.get_virtual_center(self.p,self.d, self.wvls_n, self.m_n)
+        self.optical_center_virtual = self.proj.get_virtual_center(self.p, self.d, self.wvls_n, self.m_n)
         
         # optical_center_virtual shape : m_N, wvls_N, 3
         self.optical_center_virtual = torch.tensor(self.optical_center_virtual, dtype=torch.float32, device= self.device) 
@@ -202,6 +202,8 @@ class PixelRenderer():
         
         for j in range(self.n_illum):            
             illum = self.load_data.load_illum(j).to(self.device) * self.arg.illum_weight
+            illum = torch.tensor(cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/grid_dg_000.png").astype(np.float32)).to(arg.device)
+
             illum = self.gaussian_blur(illum.permute(2,0,1)).permute(1,2,0)
             illum_img = torch.zeros(self.batch_size, self.m_n, self.wvls_n, self.pixel_num, device= self.device).flatten()
 
@@ -221,6 +223,9 @@ class PixelRenderer():
             illum_img =  illum_img * self.dg_intensity.unsqueeze(dim=3)
             illums_m_img = illum_img.sum(axis = 1).reshape(self.batch_size, self.wvls_n, self.pixel_num).permute(0,2,1)
             
+            ################################# SHADING
+            shading[:] = 1.
+            
             if not illum_only:
                 # multipy with occlusion
                 illum_w_occ = illum_img*occ.unsqueeze(dim=1)
@@ -236,13 +241,14 @@ class PixelRenderer():
 
                 cam_img = cam_m_img.sum(axis=1)
                 cam_N_img[...,j,:] = cam_img
+
             illum_data[:,:,j,:] = illums_m_img
 
         if illum_only:
             return None, xy_proj_real_norm, illum_data, None
         
-        noise = self.noise.sample(cam_N_img.shape)
-        cam_N_img += noise
+        # noise = self.noise.sample(cam_N_img.shape)
+        # cam_N_img += noise
         cam_N_img = torch.clamp(cam_N_img, 0, 1)
         
         render_end = time.time()
@@ -283,8 +289,9 @@ class PixelRenderer():
         
             returns : intersection points
         """
-        t = -proj_center_dg[2] / incident_dir_unit[2]
-        a = t.unsqueeze(dim = 1).T * incident_dir_unit + proj_center_dg
+        # incident_dir_unit m, wvl, xyz1, px
+        t = -proj_center_dg[:,:,2] / incident_dir_unit[:,:,2] 
+        a = t.unsqueeze(dim = 2) * incident_dir_unit + proj_center_dg
         
         return a
 
@@ -293,7 +300,7 @@ class PixelRenderer():
         d = (1/500)*1e-3
         m = torch.unsqueeze(m, dim=1)
         lmbda = torch.unsqueeze(lmbda, dim = 0).to(self.device)
-        alpha_i = alpha_i.unsqueeze(dim = 0).to(self.device)
+        alpha_i = alpha_i.to(self.device)
 
         m_l_d = m*lmbda/d 
         alpha_m = - m_l_d.unsqueeze(dim = 2) + alpha_i
@@ -380,6 +387,7 @@ if __name__ == "__main__":
     plane_XYZ = torch.tensor(loadmat('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/hyper_sl/image_formation/rendering_prac/plane_XYZ.mat')['XYZ_q'])
     plane_XYZ = data_process.crop(plane_XYZ)
     
+    
     pixel_num = arg.cam_H * arg.cam_W
     random = False
     index = 0
@@ -388,9 +396,10 @@ if __name__ == "__main__":
     # depth = torch.ones_like(depth)
     # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
     depth = torch.tensor(np.load("./calibration/gray_code_depth/spectralon_depth_0527.npy"), dtype=torch.float32).reshape(-1,3)[...,2].to(arg.device).unsqueeze(dim = 0)
-
+    
     normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
     # normal = torch.ones_like(normal)
+    # normal[:] = 0.5
     
     hyp = create_data(arg, 'hyp', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
     hyp = torch.ones_like(hyp)
@@ -401,7 +410,8 @@ if __name__ == "__main__":
     cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0).to(arg.device)
     
     import cv2
-    illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/dataset/image_formation/illum/grid.png").astype(np.float32)
+    illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/grid_dg_000.png").astype(np.float32)
+    # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/dataset/image_formation/illum/grid.png").astype(np.float32)
     # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/dataset/image_formation/illum/line_pattern.png").astype(np.float32)
     # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/hyper_sl/image_formation/rendering_prac/MicrosoftTeams-image (11).png").astype(np.float32)
     # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/graycode_pattern/pattern_38.png").astype(np.float32)
