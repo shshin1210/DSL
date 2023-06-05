@@ -24,9 +24,6 @@ class PixelRenderer():
     """
     def __init__(self, arg, opt_param, illum_dir, n_pattern):
         self.arg = arg
-
-        # model
-        model = distortion_mlp(input_dim = 3, output_dim = 3).to(device=arg.device)
         
         # device
         self.device = arg.device
@@ -205,7 +202,7 @@ class PixelRenderer():
         
         return uv_cam, processed_points
     
-    def visualization(self, uv_cam, real_uv):
+    def visualization(self, uv_cam, real_uv, n, i):
         
         fig, ax = plt.subplots(figsize = (10,5))
         plt.plot(real_uv[0].detach().cpu().numpy().flatten(), real_uv[1].detach().cpu().numpy().flatten(), '.', label = 'gt')
@@ -217,7 +214,7 @@ class PixelRenderer():
         ax.add_patch(rect)
         ax.legend(loc = 'best')
         ax.invert_yaxis()
-        plt.savefig('./dg_cal/real_and_uv.png')
+        plt.savefig('./dg_cal/real_and_uv_%03d_patt_%06d_epoch.png' %(n, i))
     
     def projection(self, X,Y,Z):
         """
@@ -350,17 +347,20 @@ if __name__ == "__main__":
     total_dir = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/"
     point_dir = total_dir + date + '_points'
     
-    # N_pattern = len(os.listdir(point_dir))
-    N_pattern = 1
+    N_pattern = len(os.listdir(point_dir))
+    # N_pattern = 1
     wvls = np.arange(450, 660, 50)
     
+    # optimized param initial values
+    initial_value = torch.tensor([ 1.5, 1., 0.8, 0.003])
+
     # parameters to be optimized
-    opt_param = torch.tensor([ 1.5, 1., 0.8, 0.003], dtype= torch.float, requires_grad=True, device= arg.device)
+    opt_param = torch.tensor(initial_value, dtype= torch.float, requires_grad=True, device= arg.device)
 
     # training args
     lr = 1e-2 # 1e-3
     decay_step = 500 # 1000
-    epoch = 5000
+    epoch = 1500
     
     # loss ftn
     loss_f = torch.nn.L1Loss()
@@ -370,7 +370,7 @@ if __name__ == "__main__":
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=decay_step, gamma = 0.1)
         
     for i in range(epoch):        
-        for n in range(1,2):
+        for n in range(N_pattern):
             renderer = PixelRenderer(arg=arg, opt_param= opt_param, illum_dir = illum_dir, n_pattern= n)
             
             pattern_dir = point_dir + '/pattern_%02d'%n
@@ -404,11 +404,11 @@ if __name__ == "__main__":
                 
                 # loss
                 loss_patt = loss_f(uv_cam_valid.to(torch.float32), real_uv_valid.to(torch.float32))
-                # loss = loss + loss_patt
-                loss = loss_patt
+                loss = loss + loss_patt
+                # loss = loss_patt
 
             if i % 30 == 0:
-                renderer.visualization(uv_cam, real_uv)
+                renderer.visualization(uv_cam, real_uv, n, i)
                 
         optimizer.zero_grad()
         loss.backward()
@@ -419,6 +419,8 @@ if __name__ == "__main__":
         if i % 30 == 0:
             print(f" Opt param value : {opt_param}, Epoch : {i}/{epoch}, Loss: {loss.item() / N_pattern}, LR: {optimizer.param_groups[0]['lr']}")
             print(renderer.extrinsic_diff.detach().cpu().numpy())
-    plt.figure()
-    plt.plot(losses)
-    plt.savefig('./loss_ftn.png')
+            plt.figure()
+            plt.xlabel('epoch')
+            plt.ylabel('loss')
+            plt.plot(losses)
+            plt.savefig('./dg_cal/loss/loss_ftn_%06d.png'%i)
