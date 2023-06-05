@@ -11,17 +11,16 @@ class Argument:
 		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam_0525.xml")
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
 
-		# self.parser.add_argument('--model_dir', type=str, default="./result/model_new_cal")
+		self.parser.add_argument('--model_dir', type=str, default="./model_depth")
 		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_line")
-		self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
+		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
   
 		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_360")
-		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_3_1")
-		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
+		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_3_1")
+		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
 
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
 		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
-		# self.parser.add_argument('--dg_intensity_dir', type = str, default='./dataset/image_formation')
 		self.parser.add_argument('--dg_intensity_dir', type=str, default='./calibration')
 		self.parser.add_argument('--dat_dir', type = str, default = './dataset/image_formation/dat')
 		self.parser.add_argument('--illum_data_dir', type = str, default= "./dataset/image_formation/illum_data.npy")
@@ -58,35 +57,34 @@ class Argument:
 		self.parser.add_argument('--m_num', type = int, default=3)
 
 		self.parser.add_argument('--epoch_num', type = int, default= 2000)
-		# self.parser.add_argument('--cam_W', type = int, default= 2048//2)
-		# self.parser.add_argument('--cam_H', type = int, default= 1536//2)
 		self.parser.add_argument('--cam_W', type = int, default= 890)
 		self.parser.add_argument('--cam_H', type = int, default= 580)
+  
 		self.parser.add_argument('--proj_W', type = int, default= 1280//2) # 640
 		self.parser.add_argument('--proj_H', type = int, default= 720//2) # 360
+  
 		self.parser.add_argument('--scene_train_num', type = int, default= 200) # 200
 		self.parser.add_argument('--scene_test_num', type = int, default= 20) # 20
 		self.parser.add_argument('--scene_eval_num', type = int, default= 1)
 		self.parser.add_argument('--scene_real_num', type = int, default= 1)
 
-		# self.parser.add_argument('--illum_num', type = int, default= 40)
-		self.parser.add_argument('--illum_num', type = int, default= 119)
-
-		self.parser.add_argument('--patch_pixel_num', type = int, default = 9)
-	
-		self.parser.add_argument('--num_train_px_per_iter', type = int, default= 9*500) # 4500
-
 		self.parser.add_argument('--batch_size_train', type = int, default= 16) # 16
 		self.parser.add_argument('--batch_size_test', type = int, default= 8) # 8
 		self.parser.add_argument('--batch_size_eval', type = int, default= 1)
 		self.parser.add_argument('--batch_size_real', type = int, default= 1)
+  
+		self.parser.add_argument('--illum_num', type = int, default= 40)
+
+		self.parser.add_argument('--patch_pixel_num', type = int, default = 9)
+	
+		self.parser.add_argument('--num_train_px_per_iter', type = int, default= 9*500) # 4500
+  
 		self.parser.add_argument('--model_lr', type = float, default= 5*1e-4) # 5*1e-4
-		# step size 300 -> 100 / 0.5 ->0.8
 		self.parser.add_argument('--model_step_size', type = int, default = 300)
   
 		self.parser.add_argument('--illum_lr', type = float, default= 5*1e-4)
 		self.parser.add_argument('--illum_step_size', type = int, default = 250)
-  
+
 		self.parser.add_argument('--weight_hyp', type = float, default= 0)
 		self.parser.add_argument('--weight_depth', type=float, default= 1)
 
