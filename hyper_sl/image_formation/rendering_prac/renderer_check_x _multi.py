@@ -6,7 +6,7 @@ sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
 
 from hyper_sl.utils import noise,normalize,load_data
 
-from hyper_sl.image_formation.projector import Projector
+from hyper_sl.image_formation.projector_multi import Projector
 from hyper_sl.image_formation.camera import Camera
 from hyper_sl.image_formation import distortion
 
@@ -57,7 +57,6 @@ class PixelRenderer():
         
         # path
         self.dat_dir = arg.dat_dir
-        # self.result_dir = arg.render_result_dir
         
         # m order, wvls
         self.m_list = arg.m_list.to(device=self.device)
@@ -73,29 +72,30 @@ class PixelRenderer():
         self.xyz1, self.proj_center = self.proj_sensor_plane()
         
         # change proj sensor to dg coord
-        self.xyz_proj_dg = torch.linalg.inv(self.extrinsic_diff)@self.xyz1
-        self.xyz_proj_dg = self.xyz_proj_dg[:3]
+        self.xyz_proj_dg = torch.linalg.inv(self.extrinsic_diff)@self.xyz1 # m, wvl, xyz1, px
+        self.xyz_proj_dg = self.xyz_proj_dg[:,:,:3]
 
         # change proj center to dg coord
-        self.proj_center_dg = torch.linalg.inv(self.extrinsic_diff)@self.proj_center
-        self.proj_center_dg = self.proj_center_dg[:3]
+        self.proj_center_dg = torch.linalg.inv(self.extrinsic_diff)@self.proj_center # m, wvl, xyz1, px
+        self.proj_center_dg = self.proj_center_dg[:,:,:3]
         
         # incident light, intersection points in DG coord
         # incident light dir vectors
         self.incident_dir = - self.proj_center_dg + self.xyz_proj_dg
 
         # make incident dir to unit vector
-        self.norm = torch.norm(self.incident_dir, dim = 0)
+        self.norm = torch.norm(self.incident_dir, dim = 2) # m, wvl, xyz1, px
         
         # incident light unit dir vector
-        self.incident_dir_unit = self.incident_dir/self.norm
+        self.incident_dir_unit = self.incident_dir/self.norm.unsqueeze(dim = 2)
         
         self.intersection_points = self.find_intersection(self.proj_center_dg,self.incident_dir_unit)
-        self.intersection_points = self.intersection_points.reshape(3,self.proj_H, self.proj_W)
+        self.intersection_points = self.intersection_points.reshape(self.m_n, self.wvls_n, 3, self.proj_H, self.proj_W) # m, wvl, xyz1, H, W
+        self.intersection_points = self.intersection_points.permute(2,0,1,3,4) # xyz1, wvl, m, H, W
 
         # incident light direction vectors
-        self.alpha_i = self.incident_dir_unit[0]
-        self.beta_i = self.incident_dir_unit[1]
+        self.alpha_i = self.incident_dir_unit[:,:,0]
+        self.beta_i = self.incident_dir_unit[:,:,1]
         
         self.CRF_cam = torch.tensor(self.cam.get_CRF()).to(self.device)
         self.CRF_proj = torch.tensor(self.proj.get_PRF()).to(self.device)
@@ -110,16 +110,14 @@ class PixelRenderer():
         self.z = self.z.reshape(self.m_n, self.wvls_n, self.proj_H, self.proj_W)
 
         # for m = [-1,0,1]
-        self.beta_m = torch.unsqueeze(self.beta_m, 0).repeat(self.m_n, 1)
-        self.beta_m = torch.unsqueeze(self.beta_m, 1).repeat(1, self.wvls_n, 1)
         self.beta_m = self.beta_m.reshape(self.m_n, self.wvls_n, self.proj_H, self.proj_W) 
         
         self.diffracted_dir_unit = torch.stack((self.alpha_m,self.beta_m,self.z), dim = 0) 
-        self.intersection_points_r = self.intersection_points.reshape(self.m_n, self.proj_H*self.proj_W) 
+        self.intersection_points_r = self.intersection_points.reshape(3, self.m_n, self.wvls_n, self.proj_H*self.proj_W) 
         self.diffracted_dir_unit_r = self.diffracted_dir_unit.reshape(3, self.m_n, self.wvls_n, self.proj_H*self.proj_W) # abz, m, wvl, H*W
 
         # optical center
-        self.p = self.intersection_points_r.T
+        self.p = self.intersection_points_r.T # xyz, m, wvl, px
         self.d = self.diffracted_dir_unit_r.T
         
         # finding point p
@@ -169,7 +167,7 @@ class PixelRenderer():
         for m in tqdm(range(len(self.m_list))):
             for i in tqdm(range(len(lmb)), leave = False):
                 
-                savemat(os.path.join(self.dat_path, 'dispersion_coordinates_m%d_wvl%d.mat'%(self.m_list[m], torch.round(lmb[i]*1e9) )), {'x': point_list[0,m,i,0].data.cpu().numpy(), 'y': point_list[0,m,i,1].data.cpu().numpy(), 'xo': sensor_X_real.data.cpu().numpy(), 'yo': sensor_Y_real.data.cpu().numpy()})
+                savemat(os.path.join(self.dat_path, 'dispersion_coordinates_m%d_wvl%d.mat'%(self.m_list[m], torch.round(lmb[i]*1e9))), {'x': point_list[0,m,i,0].data.cpu().numpy(), 'y': point_list[0,m,i,1].data.cpu().numpy(), 'xo': sensor_X_real[m,i].data.cpu().numpy(), 'yo': sensor_Y_real[m,i].data.cpu().numpy()})
                 
 
         # visualization of x points
@@ -190,8 +188,6 @@ class PixelRenderer():
         # plt.plot(self.intersection_points_r[0, 191222].detach().cpu(), '.', color = 'red')
         plt.show()
         
-        
-
     def proj_sensor_plane(self):
         """ Projector sensor plane coordinates
         
@@ -224,18 +220,18 @@ class PixelRenderer():
             returns : intersection points
         """
         
-        t = -proj_center_dg[2] / incident_dir_unit[2] 
-        a = t.unsqueeze(dim = 0) * incident_dir_unit + proj_center_dg
+        # incident_dir_unit m, wvl, xyz1, px
+        t = -proj_center_dg[:,:,2] / incident_dir_unit[:,:,2] 
+        a = t.unsqueeze(dim = 2) * incident_dir_unit + proj_center_dg
         
         return a
 
-    
     def get_alpha_m(self, m, alpha_i, lmbda):
 
         d = (1/500)*1e-3
         m = torch.unsqueeze(m, dim=1)
         lmbda = torch.unsqueeze(lmbda, dim = 0).to(self.device)
-        alpha_i = alpha_i.unsqueeze(dim = 0).to(self.device)
+        alpha_i = alpha_i.to(self.device)
 
         m_l_d = m*lmbda/d 
         alpha_m = - m_l_d.unsqueeze(dim = 2) + alpha_i
@@ -250,7 +246,7 @@ class PixelRenderer():
     def get_z_m(self, alpha_m, beta_m):
         z = torch.sqrt(1 - alpha_m**2 - beta_m**2)
 
-        return z           
+        return z
         
         
 if __name__ == "__main__":
