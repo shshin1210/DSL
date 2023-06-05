@@ -305,7 +305,10 @@ class PixelRenderer():
         # depth values in projector coordinate
         depth_proj = torch.linalg.inv(self.ext_proj)@depth1.permute(2,0,1).reshape(4,-1)
         depth_proj = depth_proj.reshape(-1, arg.cam_H, arg.cam_W)[2]
-
+        
+        # depth cam coord
+        # depth_proj = depth1.permute(2, 0, 1)[2]
+        
         # pick depth for 0-order, -1 order, 1 order
         # 3, 5, 6
         depth = torch.zeros(size=(self.m_n, self.wvls_n, self.pixel_num), device= self.device)
@@ -341,7 +344,7 @@ if __name__ == "__main__":
     date = 'test_2023_05_29_13_01'
     
     # depth dir
-    depth_dir = "./calibration/gray_code_depth/spectralon_depth_0527.npy"
+    depth_dir = "./calibration/gray_code_depth/spectralon_depth_0605.npy"
     # illum dir 
     illum_dir = './calibration/dg_calibration/' + date + '_patterns'
     total_dir = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/"
@@ -352,25 +355,22 @@ if __name__ == "__main__":
     wvls = np.arange(450, 660, 50)
     
     # optimized param initial values
-    initial_value = torch.tensor([ 1.5, 0.5, 0.8, -0.01])
-    initial_value = initial_value.unsqueeze(dim =1).repeat(1, 3).unsqueeze(dim = 2).repeat(1, 1, 5)
+    # initial_value = torch.tensor([1.0, 1.0, 0.1, -0.03])
+    # load opt param
+    initial_value = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/opt_param_%06d.npy' %240))
+    # initial_value = initial_value.unsqueeze(dim =1).repeat(1, 3).unsqueeze(dim = 2).repeat(1, 1, 5)
 
     # parameters to be optimized
     opt_param = torch.tensor(initial_value, dtype= torch.float, requires_grad=True, device= arg.device)
-
-    # training args
-    lr = 1e-2 # 1e-3
-    decay_step = 400 # 1000
-    epoch = 1000
     
     # loss ftn
     loss_f = torch.nn.L1Loss()
     losses = []
     
-    optimizer = torch.optim.Adam([opt_param], lr = lr)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=decay_step, gamma = 0.1)
-        
-    for i in range(epoch):        
+    test = True
+    
+    if test == True:
+        # Testing    
         for n in range(N_pattern):
             renderer = PixelRenderer(arg=arg, opt_param= opt_param, illum_dir = illum_dir, n_pattern= n)
             
@@ -406,20 +406,70 @@ if __name__ == "__main__":
                 # loss
                 loss_patt = loss_f(uv_cam_valid.to(torch.float32), real_uv_valid.to(torch.float32))
                 loss = loss + loss_patt
-                # loss = loss_patt
+    
+    else: 
+        # training args
+        lr = 1e-2 # 1e-3
+        decay_step = 400 # 1000
+        epoch = 1000
+        
+        optimizer = torch.optim.Adam([opt_param], lr = lr)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=decay_step, gamma = 0.1)
+
+        
+        for i in range(epoch):        
+            for n in range(N_pattern):
+                renderer = PixelRenderer(arg=arg, opt_param= opt_param, illum_dir = illum_dir, n_pattern= n)
+                
+                pattern_dir = point_dir + '/pattern_%02d'%n
+                processed_points = torch.tensor(point_process.point_process(arg, total_dir, date, pattern_dir, wvls, n),device=arg.device, dtype= torch.long)
+                
+                # 몇번째 pattern인지를 넣어주면 unproj & proj 한 uv coordinate output
+                uv_cam, real_uv = renderer.render(depth_dir= depth_dir, processed_points = processed_points)
+                
+                # first pattern, loss 
+                if n == 0:
+                    # only first orders
+                    uv_cam, real_uv = torch.stack((uv_cam[:,0], uv_cam[:,2]), dim =1), torch.stack((real_uv[:,0], real_uv[:,2]), dim =1)
+                    
+                    # valid
+                    uv_cam_flatten, real_uv_flatten = uv_cam.flatten(), real_uv.flatten()
+                    check = real_uv_flatten != 0
+                    uv_cam_valid, real_uv_valid = uv_cam_flatten[check], real_uv_flatten[check]
+                    
+                    # loss
+                    loss_patt = loss_f(uv_cam_valid.to(torch.float32), real_uv_valid.to(torch.float32))
+                    loss = loss_patt
+                    
+                else:
+                    # only first orders
+                    uv_cam, real_uv = torch.stack((uv_cam[:,0], uv_cam[:,2]), dim =1), torch.stack((real_uv[:,0], real_uv[:,2]), dim =1)
+                    
+                    # valid
+                    uv_cam_flatten, real_uv_flatten = uv_cam.flatten(), real_uv.flatten()
+                    check = real_uv_flatten != 0
+                    uv_cam_valid, real_uv_valid = uv_cam_flatten[check], real_uv_flatten[check]
+                    
+                    # loss
+                    loss_patt = loss_f(uv_cam_valid.to(torch.float32), real_uv_valid.to(torch.float32))
+                    loss = loss + loss_patt
+                    # loss = loss_patt
+
+                if i % 30 == 0:
+                    renderer.visualization(uv_cam, real_uv, n, i)
+                    
+            optimizer.zero_grad()
+            loss.backward()
+            losses.append(loss.item() / N_pattern)
+            optimizer.step()
+            scheduler.step()
 
             if i % 30 == 0:
-                renderer.visualization(uv_cam, real_uv, n, i)
+                print(f" Opt param value : {opt_param}, Epoch : {i}/{epoch}, Loss: {loss.item() / N_pattern}, LR: {optimizer.param_groups[0]['lr']}")
+                print(renderer.extrinsic_diff.detach().cpu().numpy())
+                np.save('./calibration/dg_calibration/dg_extrinsic/dg_extrinsic_%06d' %i, renderer.extrinsic_diff.detach().cpu().numpy())
+                np.save('./calibration/dg_calibration/dg_extrinsic/opt_param_%06d' %i, opt_param.detach().cpu().numpy())
                 
-        optimizer.zero_grad()
-        loss.backward()
-        losses.append(loss.item() / N_pattern)
-        optimizer.step()
-        scheduler.step()
-
-        if i % 30 == 0:
-            print(f" Opt param value : {opt_param}, Epoch : {i}/{epoch}, Loss: {loss.item() / N_pattern}, LR: {optimizer.param_groups[0]['lr']}")
-            print(renderer.extrinsic_diff.detach().cpu().numpy())
-            plt.figure()
-            plt.plot(losses)
-            plt.savefig('./dg_cal/loss/opt/loss_ftn_%06d.png' %i)
+                plt.figure()
+                plt.plot(losses)
+                plt.savefig('./dg_cal/loss/opt/loss_ftn_%06d.png' %i)
