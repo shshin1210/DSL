@@ -232,7 +232,6 @@ class PixelRenderer():
         XYZ_dist = self.distortion(XYZ_cam, k1, k2, k3, k4, p1, p2, p3, p4)
 
         # uv cam coord
-        # uv_cam = (self.int_cam.to(self.device))@XYZ_cam[:3] # m, wvl, xyz1, px
         uv_cam = (self.int_cam.to(self.device))@XYZ_dist # m, wvl, xyz1, px
         uv_cam = uv_cam / uv_cam[...,2,:].unsqueeze(dim = 2)
         
@@ -253,7 +252,7 @@ class PixelRenderer():
         y_distorted = Y_c * (1 + k1*r**2 + k2 * r**4 + k3 * r**6) + (p1*(r**2 + 2*Y_c**2) + 2*p2*X_c*Y_c)*(1+p3*r**2+p4*r**4)
         
         XYZ_dist = torch.stack((x_distorted, y_distorted, XYZ_cam[...,2,:]), dim = 2) # m, wvl, xyz1, px
-        
+
         return XYZ_dist
     
     def proj_sensor_plane(self, illum_dir, n_pattern):
@@ -443,6 +442,7 @@ if __name__ == "__main__":
         if i % 30 == 0:
             print(f" Opt param value : {opt_param}, Epoch : {i}/{epoch}, Loss: {loss.item() / N_pattern}, LR: {optimizer.param_groups[0]['lr']}")
             print(renderer.extrinsic_diff.detach().cpu().numpy())
+            np.save('./calibration/dg_calibration/dg_extrinsic/dg_extrinsic_%06d' %i, renderer.extrinsic_diff.detach().cpu().numpy())
             plt.figure()
             plt.plot(losses)
             plt.savefig('./dg_cal/loss/dist/loss_ftn_%06d.png' %i)
