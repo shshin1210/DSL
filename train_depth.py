@@ -139,6 +139,7 @@ def train(arg, epochs, cam_crf):
             for i, data in enumerate(test_loader):   
                 # datas
                 depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
+                depth, cam_coord = depth.to(arg.device), cam_coord.to(arg.device)
                 print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
                 # image formation
                 N3_arr, gt_xy, illum_data, shading = pixel_renderer.render(depth = depth, 
@@ -198,6 +199,7 @@ def train(arg, epochs, cam_crf):
                 for i, data in enumerate(eval_loader):
                     # datas
                     depth, normal, hyp, occ, cam_coord = data[0], data[1], data[2], data[3], data[4]
+                    depth, cam_coord = depth.to(arg.device), cam_coord.to(arg.device)
                     print(f'rendering for {depth.shape[0]} scenes at {i}-th iteration')
                     # image formation
                     N3_arr, gt_xy, illum_data, shading = pixel_renderer.render(depth = depth, 
@@ -221,7 +223,7 @@ def train(arg, epochs, cam_crf):
                     N3_arr_normalized = normalize.N3_normalize(N3_arr, arg.illum_num)                    
                     N3_arr_normalized = N3_arr_normalized.reshape(-1, 1, arg.patch_pixel_num, arg.illum_num, 3)
                     
-                    pred_xy = model(N3_arr_normalized) # B * # of pixel, 2                    
+                    pred_xy = model(N3_arr_normalized) # B * # of pixel, 2                
                     pred_depth = depth_reconstruction.depth_reconstruction(pred_xy, cam_coord, True)[...,2]
                     
                     # Nan indexing
