@@ -113,6 +113,7 @@ class depthReconstruction():
         center_world = torch.tensor([0,0,0,1]).float()
         center_world = center_world.unsqueeze(dim =1)
 
+        ### 이게 맞는지? #### extrinsic inv?
         center_proj = self.extrinsic_proj_real@center_world.to(self.device)
         
         ones = torch.ones_like(xy_proj_unnorm[...,0]).unsqueeze(dim = 2)
