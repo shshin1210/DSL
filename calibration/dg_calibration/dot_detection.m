@@ -3,7 +3,7 @@ close all;
 warning off;
 
 % image directory
-date = "test_2023_05_29_13_01";
+date = "test_2023_06_24_13_40";
 test_fn = date + "_processed";
 img_test_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/";
 
@@ -33,7 +33,7 @@ for i = 1:numel(pattern_file_list)
         img = rgb2gray(img); 
 
         % extract from gray scale
-        bw = img > 29;
+        bw = img > 33;
 
         % extract index points
         s = regionprops(bw, 'Centroid');
@@ -56,7 +56,7 @@ for i = 1:numel(pattern_file_list)
             mkdir(save_fn)
         end
 
-        mat_file = fullfile(save_fn, wvls_file_list(j).name(1:15) + "_centroid.mat");
+        mat_file = fullfile(save_fn, wvls_file_list(j).name(1:5) + "_centroid.mat");
 
         save(mat_file, "s")
 
