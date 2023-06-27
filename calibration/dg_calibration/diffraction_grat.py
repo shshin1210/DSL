@@ -400,6 +400,7 @@ if __name__ == "__main__":
     
     # depth dir
     depth_dir = "./calibration/gray_code_depth/spectralon_depth_0624.npy"
+    
     # illum dir 
     illum_dir = './calibration/dg_calibration/' + date + '_patterns'
     total_dir = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/"
@@ -425,6 +426,7 @@ if __name__ == "__main__":
     
     test = True
     
+    ### TESTING FOR ZERO ORDER / PATTERN 3
     if test == True:
         # Testing pattern 3
         for n in range(3,4):
