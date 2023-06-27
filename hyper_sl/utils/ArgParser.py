@@ -8,7 +8,7 @@ class Argument:
 		self.parser.add_argument('--device', type = str, default="cuda:0")
 
 		################## PATH
-		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam_0525.xml")
+		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam_0624.xml")
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
 
 		self.parser.add_argument('--model_dir', type=str, default="./model_depth")
@@ -107,7 +107,8 @@ class Argument:
   		# ================================= NEED DATA
 		self.parser.add_argument('--obj_path', type=str, default="//bean.postech.ac.kr/data/ches7283/models-OBJ/models")
 		self.parser.add_argument('--mat_path', type=str, default= "./dataset/m_files/")
-  		# for Camera calibaration
+  		
+    	# for Camera calibaration
 		self.parser.add_argument('--fov', type=float, default=30.3) # 30.3d
 		self.parser.add_argument('--focal_length', type=float, default= 12) # 16mm
 
