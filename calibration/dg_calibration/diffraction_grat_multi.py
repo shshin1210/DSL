@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 from calibration.dg_calibration import point_process
-from calibration.dg_calibration.distortion_mlp import distortion_mlp
 
 class PixelRenderer():
     """ Render for a single scene 
@@ -41,7 +40,6 @@ class PixelRenderer():
                 
         # cam
         self.cam_H, self.cam_W = arg.cam_H, arg.cam_W
-        self.cam_focal_length = arg.focal_length*1e-3
         
         # int & ext
         self.int_cam = self.cam.intrinsic_cam()
@@ -186,10 +184,10 @@ class PixelRenderer():
     def render(self, depth_dir, processed_points):        
 
         depth = self.get_depth(self.arg, depth_dir, processed_points)
-                
+        
         # constant where z equals to depth value
         t = (depth-self.intersection_points_proj[2])/self.z
-        
+
         # 3D XYZ points
         self.X, self.Y, self.Z = self.intersection_points_proj[0] + self.alpha_m*t, self.intersection_points_proj[1] + self.beta_m*t, self.intersection_points_proj[2] + self.z*t
 
@@ -228,6 +226,13 @@ class PixelRenderer():
         # XYZ 3D points proj coord -> cam coord                   
         XYZ_cam = (self.ext_proj)@XYZ1
 
+        # XYZ_cam reshape 임의로 1 order, 0번째 pixel grid, z 좌표를 spectralon depth로 고침
+        XYZ_cam = XYZ_cam.reshape(4, self.m_n, self.wvls_n, 5)
+        # XYZ_cam[:, 1, :, 0] = torch.tensor([-0.08672753906, 0.09519068146, 0.74146856689 , 1.]).unsqueeze(dim = 1) # patt 3, grid 0, depth xyz / 219 550 (x, y)
+        # XYZ_cam[:, 1, :, 2] = torch.tensor([-0.08404611969, -0.01792741966, 0.75118200684 , 1.]).unsqueeze(dim = 1) # patt 4, grid 2, depth xyz / 227 283 (x, y)
+
+        XYZ_cam = XYZ_cam.reshape(4, -1)
+        
         # uv cam coord
         uv_cam = (self.int_cam.to(self.device))@XYZ_cam[:3]
         uv_cam = uv_cam / uv_cam[2]
@@ -245,7 +250,7 @@ class PixelRenderer():
         uv1_p = torch.hstack((uv_p, ones)).T
         
         # uv1_p : x, y, 1 순으로 pixel num 만큼
-        suv_p = uv1_p * self.proj_focal_length
+        suv_p = uv1_p * self.proj_focal_length        
         
         # to real projector plane size
         xyz_p = (torch.linalg.inv(self.int_proj).to(self.device)@suv_p)
@@ -255,7 +260,7 @@ class PixelRenderer():
         proj_center[3,0] = 1.
 
         # make projector sensor xyz1 vector
-        xyz1 = torch.concat((xyz_p, torch.ones(size=(xyz_p.shape[1],), device = self.device).unsqueeze(dim =0)), dim = 0)
+        xyz1 = torch.concat((xyz_p, torch.ones(size=(xyz_p.shape[1],), device = self.device).unsqueeze(dim = 0)), dim = 0)
         xyz1 = xyz1.to(self.device)
         
         return xyz1, proj_center
@@ -302,7 +307,7 @@ class PixelRenderer():
         ones = torch.ones(size = (arg.cam_H, arg.cam_W, 1), device = self.device)
         depth1 = torch.concat((depth, ones), dim = 2)
         
-        # depth values in projector coordinate
+        # # depth values in projector coordinate
         depth_proj = torch.linalg.inv(self.ext_proj)@depth1.permute(2,0,1).reshape(4,-1)
         depth_proj = depth_proj.reshape(-1, arg.cam_H, arg.cam_W)[2]
         
@@ -312,14 +317,12 @@ class PixelRenderer():
         # pick depth for 0-order, -1 order, 1 order
         # 3, 5, 6
         depth = torch.zeros(size=(self.m_n, self.wvls_n, self.pixel_num), device= self.device)
-        depth = depth.reshape(-1, self.pixel_num)
-        
-        processed_points = processed_points.reshape(-1, self.pixel_num, 2)
-        
+                
         for i in range(self.pixel_num):
-            depth[...,i] = depth_proj[processed_points[...,i,1], processed_points[...,i,0]]
+            # processed points : m, wvl, grid, xy
+            depth[...,i] = depth_proj[processed_points[...,i,1], processed_points[...,i,0]] # y, x
         
-        depth = depth.to(self.device).reshape(self.m_n, self.wvls_n, self.pixel_num)
+        depth = depth.to(self.device)
 
         return depth
     
@@ -333,7 +336,8 @@ class PixelRenderer():
         illum_grid_points = np.load(os.path.join(illum_dir, "pattern_%03d.npy" %n_pattern)).reshape(-1,1,2).astype(np.float32)
         illum_grid_points_undistort = torch.tensor(cv2.undistortPoints(illum_grid_points, proj_int, proj_dist, P=proj_int), device= self.device)
         
-        return illum_grid_points_undistort
+        # return illum_grid_points_undistort
+        return illum_grid_points_undistort # x, y
 
 
 if __name__ == "__main__":    
@@ -370,8 +374,8 @@ if __name__ == "__main__":
     test = True
     
     if test == True:
-        # Testing    
-        for n in range(N_pattern):
+        # Testing pattern 3
+        for n in range(3,4):
             renderer = PixelRenderer(arg=arg, opt_param= opt_param, illum_dir = illum_dir, n_pattern= n)
             
             pattern_dir = point_dir + '/pattern_%02d'%n

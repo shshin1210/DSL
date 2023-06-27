@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 from calibration.dg_calibration import point_process
-from calibration.dg_calibration.distortion_mlp import distortion_mlp
 
 class PixelRenderer():
     """ Render for a single scene 
@@ -184,6 +183,9 @@ class PixelRenderer():
 
     def render(self, depth_dir, processed_points):        
 
+        self.XYZ_p = self.unproj_proj()    
+        self.XYZ_c = self.unrproj_cam()
+        
         depth = self.get_depth(self.arg, depth_dir, processed_points)
                 
         # constant where z equals to depth value
@@ -193,15 +195,53 @@ class PixelRenderer():
         self.X, self.Y, self.Z = self.intersection_points_proj[0] + self.alpha_m*t, self.intersection_points_proj[1] + self.beta_m*t, self.intersection_points_proj[2] + self.z*t
 
         ##### CAM COORDINATE
-        # project XYZ proj coord onto cam plane / uv : cam H, W / xy : real cam coord coord
+        # project XYZ proj coord onto cam plane / uv : cam H, W / xy : real cam coord
         uv_cam = self.projection(self.X,self.Y,self.Z)
-        
+
         # predicted uv cam coords
         uv_cam = uv_cam.reshape(3, self.m_n, self.wvls_n, self.pixel_num)[:2]
+    
         processed_points = processed_points.permute(3,0,1,2)
         
         return uv_cam, processed_points
     
+    def distortion(self, XYZ_cam, cam_dist):
+        
+        k1, k2, p1, p2, k3 = cam_dist[:,0], cam_dist[:,1], cam_dist[:,2], cam_dist[:,3], cam_dist[:,4]
+        X_c, Y_c, Z_c = XYZ_cam[0], XYZ_cam[1], XYZ_cam[2]
+        
+        x_prime, y_prime = X_c / Z_c, Y_c / Z_c
+        r = torch.sqrt(x_prime**2 + y_prime**2)        
+        
+        x_distorted = X_c * (1 + k1*r**2 + k2 * r**4 + k3 * r**6) + (2*p1*X_c*Y_c + p2*(r**2 + 2*X_c**2))
+        y_distorted = Y_c * (1 + k1*r**2 + k2 * r**4 + k3 * r**6) + (p1*(r**2 + 2*Y_c**2) + 2*p2*X_c*Y_c)
+        
+        XYZ_dist = torch.stack((x_distorted, y_distorted, XYZ_cam[2,:]), dim = 0) # m, wvl, xyz1, px
+
+        return XYZ_dist
+    
+    def unrproj_cam(self):
+        uv1_c = torch.tensor([234., 285., 1.], device=self.device)
+        
+        z_val = 645.0721 * 1e-3
+        suv_c = uv1_c * z_val
+        
+        XYZ_c = (torch.linalg.inv(self.int_cam).to(self.device)@suv_c)        
+        
+        return XYZ_c
+        
+    def unproj_proj(self):
+        uv_p = self.get_grid_points_undistort(self.illum_dir, self.n_pattern).squeeze()
+        ones = torch.ones(size = (uv_p.shape[0],1), device = self.device)
+        uv1_p = torch.hstack((uv_p, ones)).T
+        
+        z_val = 766.23103754 * 1e-3
+        suv_p = uv1_p * z_val
+        
+        XYZ_p = (torch.linalg.inv(self.int_proj).to(self.device)@suv_p)
+        
+        return XYZ_p
+        
     def visualization(self, uv_cam, real_uv, n, i):
         
         fig, ax = plt.subplots(figsize = (10,5))
@@ -223,12 +263,26 @@ class PixelRenderer():
 
         X,Y,Z = X.flatten(), Y.flatten(), Z.flatten()
         XYZ1 = torch.stack((X,Y,Z,torch.ones_like(X)), dim = 0)
-
+        # self.XYZ_p = torch.concat((self.XYZ_p,torch.ones_like(self.XYZ_p[0]).unsqueeze(dim = 0)), dim = 0)
+        
         # XYZ 3D points proj coord -> cam coord                   
+        # XYZ_cam = (self.ext_proj)@self.XYZ_p
         XYZ_cam = (self.ext_proj)@XYZ1
+        
+        # XYZ_cam reshape 임의로 1 order, 0번째 pixel grid, z 좌표를 spectralon depth로 고침
+        # XYZ_cam = XYZ_cam.reshape(4, self.m_n, self.wvls_n, 5)
+        # XYZ_cam[:, 1, :, 0] = torch.tensor([-0.08672753906, 0.09519068146, 0.74146856689 , 1.]).unsqueeze(dim = 1) # patt 3, grid 0, depth xyz / 219 550 (x, y)
+        # XYZ_cam[:, 1, :, 2] = torch.tensor([-0.08404611969, -0.01792741966, 0.75118200684 , 1.]).unsqueeze(dim = 1) # patt 4, grid 2, depth xyz / 227 283 (x, y)
+        # XYZ_cam[:, 1, :, 2] = torch.tensor([-0.08683381, -0.066380554, 0.6450721 , 1.]).unsqueeze(dim = 1) # patt 4, grid 2, depth xyz / 227 283 (x, y)
+
+        XYZ_cam = XYZ_cam.reshape(4, -1)
+        
+        # distortion
+        cam_dist = torch.tensor(self.undistort_cam(), device=self.device).type(torch.float32)
+        XYZ_dist = self.distortion(XYZ_cam, cam_dist)
 
         # uv cam coord
-        uv_cam = (self.int_cam.to(self.device))@XYZ_cam[:3]
+        uv_cam = (self.int_cam.to(self.device))@XYZ_dist
         uv_cam = uv_cam / uv_cam[2]
         
         return uv_cam
@@ -326,22 +380,26 @@ class PixelRenderer():
         """
         
         proj_int, proj_dist, _, _ = calibrated_params.bring_params(arg.calibration_param_path, "proj")
+
         illum_grid_points = np.load(os.path.join(illum_dir, "pattern_%03d.npy" %n_pattern)).reshape(-1,1,2).astype(np.float32)
         illum_grid_points_undistort = torch.tensor(cv2.undistortPoints(illum_grid_points, proj_int, proj_dist, P=proj_int), device= self.device)
+        # illum_grid_points_undistort =  torch.tensor(illum_grid_points, device= self.device)
         
         return illum_grid_points_undistort
 
-
-        
+    def undistort_cam(self):
+        _, cam_dist = calibrated_params.bring_params(arg.calibration_param_path, "cam")
+        return cam_dist
+   
 if __name__ == "__main__":    
     argument = Argument()
     arg = argument.parse()
 
     # date
-    date = 'test_2023_05_29_13_01'
+    date = 'test_2023_06_24_13_40'
     
     # depth dir
-    depth_dir = "./calibration/gray_code_depth/spectralon_depth_0527.npy"
+    depth_dir = "./calibration/gray_code_depth/spectralon_depth_0624.npy"
     # illum dir 
     illum_dir = './calibration/dg_calibration/' + date + '_patterns'
     total_dir = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/"
@@ -350,34 +408,34 @@ if __name__ == "__main__":
     N_pattern = len(os.listdir(point_dir))
     # N_pattern = 1
     wvls = np.arange(450, 660, 50)
+    grid_pts = 5
     
     # optimized param initial values
     initial_value = torch.tensor([ 1.5, 1., 0.8, 0.003])
 
+    # load opt param
+    initial_value = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/opt_param_single_%s_%06d.npy' %(date, 30)))
+    
     # parameters to be optimized
     opt_param = torch.tensor(initial_value, dtype= torch.float, requires_grad=True, device= arg.device)
-
-    # training args
-    lr = 1e-2 # 1e-3
-    decay_step = 500 # 1000
-    epoch = 1500
     
     # loss ftn
     loss_f = torch.nn.L1Loss()
     losses = []
     
-    optimizer = torch.optim.Adam([opt_param], lr = lr)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=decay_step, gamma = 0.1)
-        
-    for i in range(epoch):        
-        for n in range(N_pattern):
+    test = True
+    
+    if test == True:
+        # Testing pattern 3
+        for n in range(3,4):
             renderer = PixelRenderer(arg=arg, opt_param= opt_param, illum_dir = illum_dir, n_pattern= n)
             
             pattern_dir = point_dir + '/pattern_%02d'%n
-            processed_points = torch.tensor(point_process.point_process(arg, total_dir, date, pattern_dir, wvls, n),device=arg.device, dtype= torch.long)
+            processed_points = torch.tensor(point_process.point_process(arg, grid_pts, total_dir, date, pattern_dir, wvls, n),device=arg.device, dtype= torch.long)
             
             # 몇번째 pattern인지를 넣어주면 unproj & proj 한 uv coordinate output
             uv_cam, real_uv = renderer.render(depth_dir= depth_dir, processed_points = processed_points)
+            renderer.visualization(uv_cam, real_uv, n, 0)
             
             # first pattern, loss 
             if n == 0:
@@ -405,22 +463,72 @@ if __name__ == "__main__":
                 # loss
                 loss_patt = loss_f(uv_cam_valid.to(torch.float32), real_uv_valid.to(torch.float32))
                 loss = loss + loss_patt
-                # loss = loss_patt
+    
+    else: 
+        # training args
+        lr = 1e-2 # 1e-3
+        decay_step = 500 # 1000
+        epoch = 1500
+        
+        optimizer = torch.optim.Adam([opt_param], lr = lr)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=decay_step, gamma = 0.1)
+                
+        for i in range(epoch):        
+            for n in range(N_pattern):
+                renderer = PixelRenderer(arg=arg, opt_param= opt_param, illum_dir = illum_dir, n_pattern= n)
+                
+                pattern_dir = point_dir + '/pattern_%02d'%n
+                processed_points = torch.tensor(point_process.point_process(arg, total_dir, date, pattern_dir, wvls, n),device=arg.device, dtype= torch.long)
+                
+                # 몇번째 pattern인지를 넣어주면 unproj & proj 한 uv coordinate output
+                uv_cam, real_uv = renderer.render(depth_dir= depth_dir, processed_points = processed_points)
+                
+                # first pattern, loss 
+                if n == 0:
+                    # only first orders
+                    uv_cam, real_uv = torch.stack((uv_cam[:,0], uv_cam[:,2]), dim =1), torch.stack((real_uv[:,0], real_uv[:,2]), dim =1)
+                    
+                    # valid
+                    uv_cam_flatten, real_uv_flatten = uv_cam.flatten(), real_uv.flatten()
+                    check = real_uv_flatten != 0
+                    uv_cam_valid, real_uv_valid = uv_cam_flatten[check], real_uv_flatten[check]
+                    
+                    # loss
+                    loss_patt = loss_f(uv_cam_valid.to(torch.float32), real_uv_valid.to(torch.float32))
+                    loss = loss_patt
+                    
+                else:
+                    # only first orders
+                    uv_cam, real_uv = torch.stack((uv_cam[:,0], uv_cam[:,2]), dim =1), torch.stack((real_uv[:,0], real_uv[:,2]), dim =1)
+                    
+                    # valid
+                    uv_cam_flatten, real_uv_flatten = uv_cam.flatten(), real_uv.flatten()
+                    check = real_uv_flatten != 0
+                    uv_cam_valid, real_uv_valid = uv_cam_flatten[check], real_uv_flatten[check]
+                    
+                    # loss
+                    loss_patt = loss_f(uv_cam_valid.to(torch.float32), real_uv_valid.to(torch.float32))
+                    loss = loss + loss_patt
+                    # loss = loss_patt
+
+                if i % 30 == 0:
+                    renderer.visualization(uv_cam, real_uv, n, i)
+                    
+            optimizer.zero_grad()
+            loss.backward()
+            losses.append(loss.item() / N_pattern)
+            optimizer.step()
+            scheduler.step()
 
             if i % 30 == 0:
-                renderer.visualization(uv_cam, real_uv, n, i)
+                print(f" Opt param value : {opt_param}, Epoch : {i}/{epoch}, Loss: {loss.item() / N_pattern}, LR: {optimizer.param_groups[0]['lr']}")
+                print(renderer.extrinsic_diff.detach().cpu().numpy())
                 
-        optimizer.zero_grad()
-        loss.backward()
-        losses.append(loss.item() / N_pattern)
-        optimizer.step()
-        scheduler.step()
-
-        if i % 30 == 0:
-            print(f" Opt param value : {opt_param}, Epoch : {i}/{epoch}, Loss: {loss.item() / N_pattern}, LR: {optimizer.param_groups[0]['lr']}")
-            print(renderer.extrinsic_diff.detach().cpu().numpy())
-            plt.figure()
-            plt.xlabel('epoch')
-            plt.ylabel('loss')
-            plt.plot(losses)
-            plt.savefig('./dg_cal/loss/loss_ftn_%06d.png'%i)
+                np.save('./calibration/dg_calibration/dg_extrinsic/dg_extrinsic_single_%s_%06d' %(date, i), renderer.extrinsic_diff.detach().cpu().numpy())
+                np.save('./calibration/dg_calibration/dg_extrinsic/opt_param_single_%s_%06d' %(date, i), opt_param.detach().cpu().numpy())
+                
+                plt.figure()
+                plt.xlabel('epoch')
+                plt.ylabel('loss')
+                plt.plot(losses)
+                plt.savefig('./dg_cal/loss/loss_ftn_%06d.png'%i)
