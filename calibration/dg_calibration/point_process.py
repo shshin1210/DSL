@@ -25,7 +25,7 @@ def point_process(arg, grid_pts, total_dir, date, pattern_dir, wvls, n_patt):
         else:
             processed_points[2, w, :, :] = first
     
-    # sorting
+    # sorting points
     sorted_idx = np.argsort(-processed_points[...,1], axis = 2)
     x_sort = np.take_along_axis(processed_points[...,0], sorted_idx, axis = 2)
     y_sort = np.take_along_axis(processed_points[...,1], sorted_idx, axis = 2)
@@ -43,8 +43,8 @@ def find_order(grid_pts, total_dir, date, wvl_point, wvl, n_patt):
 
     # proj emission ftn 때문에 500nm intensity low
     # if (n_patt == 0) and (wvl == 500) and (len(pts) > grid_pts*2 -1):
-    if (len(pts) > grid_pts*2 -1) and (n_patt < 5):
-        pts[4] = 160
+    if (len(pts) > grid_pts*2 -1) and (n_patt < 3):
+        pts[3] = 160
         
     # zero order / first order
     if len(pts) < grid_pts + 1:
@@ -66,8 +66,8 @@ def find_order(grid_pts, total_dir, date, wvl_point, wvl, n_patt):
             first = np.zeros_like(zero)
             first[:-1] = np.array([wvl_point[idx] for idx, value in enumerate(pts) if value < avg ])
     else:
-        if n_patt == 9:
-            pts[5] = 130
+        if n_patt > 5:
+            pts[4] = 150
         avg = np.average(pts) - 8
         first = np.array([wvl_point[idx] for idx, value in enumerate(pts) if value < avg ])
         zero = np.array([wvl_point[idx] for idx, value in enumerate(pts) if value >= avg ])
@@ -86,12 +86,12 @@ if __name__ == "__main__":
     arg = argument.parse()
     
     total_dir = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/"
-    date = 'test_2023_06_24_13_40'
+    date = 'test_2023_06_29_20_30'
     point_dir = total_dir + date + '_points'
     
     N_pattern = len(os.listdir(point_dir))
     wvls = np.arange(450, 660, 50)
-    grid_pts = 5
+    grid_pts = 4
     
     for i in range(N_pattern):
         pattern_dir = point_dir + '/pattern_%02d'%i
