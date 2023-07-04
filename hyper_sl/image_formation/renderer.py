@@ -51,8 +51,7 @@ class PixelRenderer():
         self.proj_focal_length = arg.focal_length_proj *1e-3
         self.proj_H = arg.proj_H
         self.proj_W = arg.proj_W
-        self.sensor_height_proj = (torch.sin(torch.atan2(torch.tensor(self.proj_H),torch.tensor(self.proj_W)))*self.proj_sensor_diag)
-        self.proj_pitch = (self.sensor_height_proj/ (self.proj_H))
+        self.proj_pitch = arg.proj_pitch
         self.intrinsic_proj_real = self.proj.intrinsic_proj_real()
         self.CRF_proj = torch.tensor(self.proj.get_PRF()).to(self.device)
 
