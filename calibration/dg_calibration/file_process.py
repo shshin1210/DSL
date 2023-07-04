@@ -63,7 +63,7 @@ def main(arg, bool):
     
     cam_int, cam_dist = calibrated_params.bring_params(arg.calibration_param_path, "cam")
     
-    test_fn = "test_2023_06_29_20_30"
+    test_fn = "test_2023_07_03_17_15"
     img_test_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/" + test_fn
     
     # files for each wvls
