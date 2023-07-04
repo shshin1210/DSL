@@ -3,7 +3,7 @@ close all;
 warning off;
 
 % image directory
-date = "test_2023_06_29_20_30";
+date = "test_2023_07_03_17_15";
 test_fn = date + "_processed";
 img_test_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/";
 
@@ -31,23 +31,72 @@ for i = 1:numel(pattern_file_list)
         
         % rgb image to gray scale
         img = rgb2gray(img); 
+        img = medfilt2(img, [3,3]);
 
         % extract from gray scale
-        bw = img > 26; % 31
+%         bw = img > 28; % 31
 
         % extract index points
-        s = regionprops(bw, 'Centroid');
+        %s = regionprops(bw, 'Centroid');
+%         s = regionprops(img, 'Centroid');
+%         s = regionprops(img);
+        minradius = 2;
+        maxradius = 15;
+        [centers, radii, metric] = imfindcircles(img, [minradius, maxradius], 'EdgeThreshold', 0.027);
+%         
+%         centers= rmoutliers(centers);
         
         % visualization
         figure(1);
         imshow(img)
         hold on
-        for k = 1:numel(s)
-            centroid_k = s(k).Centroid;
-            plot(centroid_k(1), centroid_k(2), 'r.');
+%         for k = 1:numel(s)
+%             centroid_k = s(k).Centroid;
+%             plot(centroid_k(1), centroid_k(2), 'r.');
+%         end
+%         for k = 1:size(centroid_k_inliers,1)
+%             plot(centroid_k_inliers(k,1), centroid_k_inliers(k,2), 'g.');
+%         end
+
+
+        for k = 1:size(centers,1)
+            plot(centers(k,1), centers(k,2), 'g.');
         end
+        title(size(centers,1));
+
         hold off
-        pause(1.5);
+        pause(0.5);
+
+        cmd_c = input('type 0 and enter to correct the points:');
+        if cmd_c == 0
+            figure;
+            imagesc(img);
+            N = input('type number of points:');
+            fprintf('click points one by one\n');
+            [xi, yi] = ginput(N);
+            
+            centers_re = [];
+            for k = 1:N
+                img_cur = zeros(size(img));
+                ymin = yi(k)-maxradius*2;
+                ymax = yi(k)+maxradius*2;
+                xmin = xi(k)-maxradius*2;
+                xmax = xi(k)+maxradius*2;
+                img_cur(ymin:ymax, xmin:xmax,:) = img(ymin:ymax, xmin:xmax,:);
+                [centers_k, radii, metric] = imfindcircles(img_cur, [minradius, maxradius], 'EdgeThreshold', 0.027);
+                centers_re = [centers_re; centers_k(1,:)];
+            end
+            figure(1);
+            imshow(img)
+            hold on
+
+            for k = 1:size(centers_re,1)
+                plot(centers_re(k,1), centers_re(k,2), 'g.');
+            end
+            title(size(centers_re,1));
+            centers = centers_re;
+        end
+
 
         % save points in new folder
         save_fn = fullfile(img_test_path, test_points_fn,  pattern_file_list(i).name);
@@ -58,7 +107,8 @@ for i = 1:numel(pattern_file_list)
 
         mat_file = fullfile(save_fn, wvls_file_list(j).name(1:5) + "_centroid.mat");
 
-        save(mat_file, "s")
+%         save(mat_file, "s")
+        save(mat_file, "centers")
 
     end
 end
