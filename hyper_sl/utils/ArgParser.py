@@ -8,7 +8,7 @@ class Argument:
 		self.parser.add_argument('--device', type = str, default="cuda:0")
 
 		################## PATH
-		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam_0624.xml")
+		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
 
 		self.parser.add_argument('--model_dir', type=str, default="./model_depth")
@@ -123,11 +123,15 @@ class Argument:
 
 		# projector
 		self.parser.add_argument('--sensor_diag_proj',  type = float, default= 5.842) # 5.842mm
-		self.parser.add_argument('--focal_length_proj', type = float, default= 8) # 8mm
+		self.parser.add_argument('--focal_length_proj', type = float, default= 7.6904) # 8mm
 		
 	def parse(self):
 		arg = self.parser.parse_args()
 		arg.wvls = torch.linspace(arg.wvl_min, arg.wvl_max, arg.wvl_num)
 		arg.m_list = torch.linspace(arg.m_min, arg.m_max, arg.m_num)
 		arg.illums = torch.zeros((arg.illum_num, arg.proj_H, arg.proj_W, 3))
+  
+		arg.sensor_height_proj = (torch.sin(torch.atan2(torch.tensor(arg.proj_H),torch.tensor(arg.proj_W)))*(arg.sensor_diag_proj*1e-3))
+		arg.proj_pitch = (arg.sensor_height_proj/ (arg.proj_H))
+  
 		return arg
