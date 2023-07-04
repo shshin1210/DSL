@@ -51,7 +51,7 @@ def find_order(grid_pts, total_dir, date, wvl_point, wvl, n_patt):
     avg_t = np.average(pts[:grid_pts])
     avg_b = np.average(pts[grid_pts:])
     
-    if avg_t > avg_b:
+    if avg_t < avg_b:
         first = wvl_point[:grid_pts]
         zero = wvl_point[grid_pts:]
     else:
