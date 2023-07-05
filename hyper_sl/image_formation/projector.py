@@ -57,17 +57,20 @@ class Projector():
     # dg coord to projector coord
     def extrinsic_diff(self):
         # rotation, translation matrix
-        extrinsic_diff = torch.zeros((4,4), device= self.device)
+        # extrinsic_diff = torch.zeros((4,4), device= self.device)
 
-        # new
-        extrinsic_diff[:3,:3] = torch.tensor([[ 0.9999769 , -0.00362993 , 0.00574559],
-                                                [ 0.0036498,   0.99998736 ,-0.00344892],
-                                                [-0.005733  ,  0.00346981 , 0.9999775 ]] )
+        # # new
+        # extrinsic_diff[:3,:3] = torch.tensor([[ 0.9999769 , -0.00362993 , 0.00574559],
+        #                                         [ 0.0036498,   0.99998736 ,-0.00344892],
+        #                                         [-0.005733  ,  0.00346981 , 0.9999775 ]] )
         
-        t_mtrx = torch.tensor([[0.],[0.],[-0.02896785]])                       
+        # t_mtrx = torch.tensor([[0.],[0.],[-0.02896785]])                       
                        
-        extrinsic_diff[:3,3:4] = t_mtrx       
-        extrinsic_diff[3,3] = 1
+        # extrinsic_diff[:3,3:4] = t_mtrx       
+        # extrinsic_diff[3,3] = 1
+        # extrinsic_diff = torch.linalg.inv(extrinsic_diff)
+
+        extrinsic_diff = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/dg_extrinsic_single_test_2023_07_04_15_41_%06d.npy'%540), device=self.device)
         extrinsic_diff = torch.linalg.inv(extrinsic_diff)
 
         return extrinsic_diff
