@@ -13,8 +13,9 @@ def point_process(arg, grid_pts, total_dir, date, pattern_dir, wvls, n_patt):
     
     for w in range(len(wvls)):
         wvl_point = np.array(loadmat(os.path.join(pattern_dir,'%dnm_centroid.mat' %(wvls[w])))['centers'])            
+        wvl_point -= 1
         # wvl_point = np.array([pts[0][0][0] for pts in wvl_point])
-        
+
         zero, first, bool = find_order(grid_pts, total_dir, date, wvl_point, wvls[w], n_patt)
         
         # zero order
@@ -35,22 +36,36 @@ def point_process(arg, grid_pts, total_dir, date, pattern_dir, wvls, n_patt):
     return processed_points
     
 def find_order(grid_pts, total_dir, date, wvl_point, wvl, n_patt):
+    """
+        Find which order each points belong to
+        orders : -1, 0, 1
+        
+        grid_pts : number of white grid pattern for zero-order
+        total_dir : directory path
+        date : date of data directory
+        wvl_point : coordinate points of all grid points detected by dot_detection.m
+        wvl : 450 - 650 nm, 50 nm interval
+        n_patt : number of patterns
+
+    """
     dir = total_dir + date + '_processed/'
     img = cv2.imread(dir+ 'pattern_%02d/%03dnm.png'%(n_patt, wvl))
     img_m = img.mean(axis = 2)
     
+    # sort with x-axis to find avg of each cols
     sorted_idx = np.argsort(wvl_point[...,0], axis = 0)
     x_sort = np.take_along_axis(wvl_point[...,0], sorted_idx, axis = 0)
     y_sort = np.take_along_axis(wvl_point[...,1], sorted_idx, axis = 0)
     
     wvl_point[...,0], wvl_point[...,1] = x_sort, y_sort
 
-    
     pts = np.array([img_m[i[1].astype(np.int16) ,i[0].astype(np.int16)] for i in wvl_point])
 
+    # separate with # of grid point
     avg_t = np.average(pts[:grid_pts])
     avg_b = np.average(pts[grid_pts:])
     
+    # separate first and zero
     if avg_t < avg_b:
         first = wvl_point[:grid_pts]
         zero = wvl_point[grid_pts:]
@@ -59,7 +74,6 @@ def find_order(grid_pts, total_dir, date, wvl_point, wvl, n_patt):
         first = wvl_point[grid_pts:]
         
     # split order m = -1, 1
-    # m = -1 order / m = 1 order
     if zero[:,0].mean() > first[:,0].mean():
         first_m2 = first
         return zero, first_m2, True
@@ -72,12 +86,12 @@ if __name__ == "__main__":
     arg = argument.parse()
     
     total_dir = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/"
-    date = 'test_2023_07_03_17_15'
+    date = 'test_2023_07_04_15_41'
     point_dir = total_dir + date + '_points'
     
     N_pattern = len(os.listdir(point_dir))
     wvls = np.arange(450, 660, 50)
-    grid_pts = 4
+    grid_pts = 5
     
     for i in range(N_pattern):
         pattern_dir = point_dir + '/pattern_%02d'%i
