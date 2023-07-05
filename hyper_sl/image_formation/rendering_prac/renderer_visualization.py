@@ -3,7 +3,7 @@ import torch, os, sys
 from tqdm import tqdm
 from scipy.io import savemat
 
-sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging')
+sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
 
 from hyper_sl.utils import noise,normalize,load_data
 
@@ -11,7 +11,7 @@ from hyper_sl.image_formation.projector import Projector
 from hyper_sl.image_formation.camera import Camera
 from hyper_sl.image_formation import distortion
 
-from hyper_sl.data.create_data import createData
+from hyper_sl.data.create_data_patch import createData
 
 import time, math
 import matplotlib.pyplot as plt
@@ -278,6 +278,9 @@ class PixelRenderer():
                 Y_d = [start[1], start[1] + scale*beta_m[i].detach().cpu()]
                 Z_d = [start[2], start[2] + scale*z[0,0,i].detach().cpu()]
                 ax.plot(X_d,Y_d,Z_d, color = colors[j], linewidth = 0.25)
+                ######
+                
+                
                 #ax.plot(start[0], start[1], start[2], start[0] + 1/40*alpha_m[i,j], start[1] + 1/40*beta_m[i,j], start[2] +1/40*z[i,j])
 
                 # virtual projector plane & center
@@ -302,7 +305,7 @@ class PixelRenderer():
                 Z_i = [start_proj[2], start[2]]
                 ax.plot(X_i,Y_i,Z_i, color = 'black', linewidth = 0.25)
 
-                ax.scatter(self.optical_center_virtual[1,j,0].detach().cpu(), self.optical_center_virtual[1,j,1].detach().cpu(), self.optical_center_virtual[1,j,2].detach().cpu(), marker= 'o', c = 'red', s = 1)
+                ax.scatter(self.optical_center_virtual[1,j,0].detach().cpu(), self.optical_center_virtual[1,j,1].detach().cpu(), self.optical_center_virtual[1,j,2].detach().cpu(), marker= '*', c = 'cyan', s = 2)
 
                 # x label
                 # plt.xticks(rotation=30, fontsize = 10)
@@ -321,7 +324,7 @@ class PixelRenderer():
                 ax.set_zticks([])
 
         ax.view_init(0,90)
-        plt.savefig("image_formation_dispersion.svg")
+        # plt.savefig("image_formation_dispersion.svg")
         plt.show()
         
         # ==========================================================================================================================
@@ -568,12 +571,12 @@ if __name__ == "__main__":
     from hyper_sl.utils.ArgParser import Argument
     
     from hyper_sl.utils.ArgParser import Argument
-    from hyper_sl.data import create_data
+    from hyper_sl.data import create_data_patch
     argument = Argument()
     arg = argument.parse()
     
     # 기존의 hyperpsectral 정보와 depth로 rendering 하는 코드
-    create_data = create_data.createData
+    create_data = create_data_patch.createData
     
     pixel_num = arg.cam_H * arg.cam_W
     random = False
