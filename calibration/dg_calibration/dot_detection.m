@@ -3,7 +3,7 @@ close all;
 warning off;
 
 % image directory
-date = "test_2023_07_03_17_15";
+date = "test_2023_07_04_15_41";
 test_fn = date + "_processed";
 img_test_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/";
 
@@ -41,7 +41,7 @@ for i = 1:numel(pattern_file_list)
 %         s = regionprops(img, 'Centroid');
 %         s = regionprops(img);
         minradius = 2;
-        maxradius = 15;
+        maxradius = 10;
         [centers, radii, metric] = imfindcircles(img, [minradius, maxradius], 'EdgeThreshold', 0.027);
 %         
 %         centers= rmoutliers(centers);
@@ -78,10 +78,10 @@ for i = 1:numel(pattern_file_list)
             centers_re = [];
             for k = 1:N
                 img_cur = zeros(size(img));
-                ymin = yi(k)-maxradius*2;
-                ymax = yi(k)+maxradius*2;
-                xmin = xi(k)-maxradius*2;
-                xmax = xi(k)+maxradius*2;
+                ymin = yi(k)-maxradius;
+                ymax = yi(k)+maxradius;
+                xmin = xi(k)-maxradius;
+                xmax = xi(k)+maxradius;
                 img_cur(ymin:ymax, xmin:xmax,:) = img(ymin:ymax, xmin:xmax,:);
                 [centers_k, radii, metric] = imfindcircles(img_cur, [minradius, maxradius], 'EdgeThreshold', 0.027);
                 centers_re = [centers_re; centers_k(1,:)];
