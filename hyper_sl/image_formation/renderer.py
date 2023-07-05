@@ -386,10 +386,11 @@ if __name__ == "__main__":
     depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
     # depth = torch.ones_like(depth)
     # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
-    depth = torch.tensor(np.load("./calibration/gray_code_depth/spectralon_depth_0527.npy"), dtype=torch.float32).reshape(-1,3)[...,2].to(arg.device).unsqueeze(dim = 0)
+    depth = torch.tensor(np.load("./calibration/gray_code_depth/spectralon_depth_0704.npy"), dtype=torch.float32).reshape(-1,3)[...,2].to(arg.device).unsqueeze(dim = 0)
 
     normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
-    # normal = torch.ones_like(normal)
+    normal = torch.zeros_like(normal)
+    normal[:,2] = -1
     
     hyp = create_data(arg, 'hyp', pixel_num, random = random, i = index).create().unsqueeze(dim = 0)
     hyp = torch.ones_like(hyp)
