@@ -49,7 +49,7 @@ class PixelRenderer():
         self.int_proj = self.proj.intrinsic_proj_real()
         
         # proj
-        self.proj_focal_length = arg.focal_length_proj *1e-3
+        self.proj_focal_length = self.proj.focal_length_proj()
         self.proj_H = arg.proj_H
         self.proj_W = arg.proj_W
         
@@ -64,7 +64,7 @@ class PixelRenderer():
         self.u = self.sph2cart(opt_param[0], opt_param[1])
 
         self.extrinsic_diff = self.ext_diff(self.u, opt_param[2], opt_param[3])
-
+        
         # projector sensor plane
         self.xyz1, self.proj_center = self.proj_sensor_plane(illum_dir= self.illum_dir, n_pattern= self.n_pattern)
         self.pixel_num = self.xyz1.shape[1]
@@ -248,6 +248,7 @@ class PixelRenderer():
         fig, ax = plt.subplots(figsize = (10,5))
         plt.plot(real_uv[0].detach().cpu().numpy().flatten(), real_uv[1].detach().cpu().numpy().flatten(), '.', label = 'gt')
         plt.plot(uv_cam[0].detach().cpu().numpy().flatten(), uv_cam[1].detach().cpu().numpy().flatten(), '.', label = 'pred')
+
         plt.axis('equal')
         plt.xlim(-10,900)
         plt.ylim(-10,600)
@@ -404,13 +405,13 @@ if __name__ == "__main__":
     arg = argument.parse()
 
     # date
-    date = 'test_2023_07_04_15_41'
+    date = 'test_2023_07_09_15_37'
     
     # grid points
     grid_pts = 5
     
     # depth dir
-    depth_dir = "./calibration/gray_code_depth/spectralon_depth_0704.npy"
+    depth_dir = "./calibration/gray_code_depth/spectralon_depth_0708.npy"
     
     # illum dir 
     illum_dir = './calibration/dg_calibration/' + date + '_patterns'
@@ -421,10 +422,11 @@ if __name__ == "__main__":
     wvls = np.arange(450, 660, 50)
     
     # optimized param initial values
-    # initial_value = torch.tensor([ 1.5, 1., 0.8, 0.003])
-
+    # initial_value = torch.tensor([ 1., 1., 0.5, 0.03])
+    initial_value = torch.tensor([ 1.5, 1., 0.8, 0.01])
+    
     # load opt param
-    initial_value = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/opt_param_single_%s_%06d.npy' %(date, 540)))
+    # initial_value = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/opt_param_single_%s_%06d.npy' %(date, 540)))
     
     # parameters to be optimized
     opt_param = torch.tensor(initial_value, dtype= torch.float, requires_grad=True, device= arg.device)
@@ -433,7 +435,7 @@ if __name__ == "__main__":
     loss_f = torch.nn.L1Loss()
     losses = []
     
-    test = True
+    test = False
     
     ### TESTING FOR ZERO ORDER / PATTERN 3
     if test == True:

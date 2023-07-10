@@ -3,7 +3,7 @@ close all;
 warning off;
 
 % image directory
-date = "test_2023_07_04_15_41";
+date = "test_2023_07_09_15_37";
 test_fn = date + "_processed";
 img_test_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/";
 
@@ -34,22 +34,24 @@ for i = 1:numel(pattern_file_list)
         img = medfilt2(img, [3,3]);
 
         % extract from gray scale
-%         bw = img > 28; % 31
+        % bw = img > 28; % 31
 
         % extract index points
-        %s = regionprops(bw, 'Centroid');
-%         s = regionprops(img, 'Centroid');
-%         s = regionprops(img);
+        % s = regionprops(bw, 'Centroid');
+        % s = regionprops(img, 'Centroid');
+        % s = regionprops(img);
+
         minradius = 2;
         maxradius = 10;
         [centers, radii, metric] = imfindcircles(img, [minradius, maxradius], 'EdgeThreshold', 0.027);
-%         
-%         centers= rmoutliers(centers);
+
+        % centers= rmoutliers(centers);
         
         % visualization
         figure(1);
         imshow(img)
         hold on
+
 %         for k = 1:numel(s)
 %             centroid_k = s(k).Centroid;
 %             plot(centroid_k(1), centroid_k(2), 'r.');

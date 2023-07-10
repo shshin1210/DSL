@@ -86,7 +86,7 @@ if __name__ == "__main__":
     arg = argument.parse()
     
     total_dir = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/"
-    date = 'test_2023_07_04_15_41'
+    date = 'test_2023_07_08_22_06'
     point_dir = total_dir + date + '_points'
     
     N_pattern = len(os.listdir(point_dir))
