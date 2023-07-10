@@ -20,9 +20,6 @@ class Projector():
         # path 
         self.crf_dir = arg.projector_response
         self.dg_intensity_dir = arg.dg_intensity_dir
-        
-        # projector intrinsic
-        self.focal_length_proj = arg.focal_length_proj*1e-3
 
         self.proj_int, _, self.proj_rmat, self.proj_tvec = calibrated_params.bring_params(arg.calibration_param_path,"proj")
 
@@ -37,7 +34,13 @@ class Projector():
         intrinsic_proj_real = torch.tensor(self.proj_int).type(torch.float32)
         
         return intrinsic_proj_real
-                                                
+    
+    # projector focal length
+    def focal_length_proj(self):
+        fcl = self.intrinsic_proj_real() * self.arg.proj_pitch
+        
+        return fcl[0][0]
+                                     
     # projector coord to world coord 
     def extrinsic_proj_real(self):
         """ extrinsic_proj_real @ XYZ1 --> proj coord to world coord
@@ -56,21 +59,10 @@ class Projector():
     
     # dg coord to projector coord
     def extrinsic_diff(self):
-        # rotation, translation matrix
-        # extrinsic_diff = torch.zeros((4,4), device= self.device)
 
-        # # new
-        # extrinsic_diff[:3,:3] = torch.tensor([[ 0.9999769 , -0.00362993 , 0.00574559],
-        #                                         [ 0.0036498,   0.99998736 ,-0.00344892],
-        #                                         [-0.005733  ,  0.00346981 , 0.9999775 ]] )
-        
-        # t_mtrx = torch.tensor([[0.],[0.],[-0.02896785]])                       
-                       
-        # extrinsic_diff[:3,3:4] = t_mtrx       
-        # extrinsic_diff[3,3] = 1
-        # extrinsic_diff = torch.linalg.inv(extrinsic_diff)
+        extrinsic_diff = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/dg_extrinsic_single_test_2023_07_09_15_37_%06d.npy'%210), device=self.device)
+        # extrinsic_diff = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/dg_extrinsic_single_test_2023_07_08_22_06_%06d.npy'%510), device=self.device)
 
-        extrinsic_diff = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/dg_extrinsic_single_test_2023_07_04_15_41_%06d.npy'%540), device=self.device)
         extrinsic_diff = torch.linalg.inv(extrinsic_diff)
 
         return extrinsic_diff
@@ -114,7 +106,7 @@ class Projector():
         
         dir_vec_unit =  dir_vec/norm.unsqueeze(dim = 3)
         
-        t = (self.focal_length_proj - intersection_points_proj_real[...,2,:]) / dir_vec_unit[...,2,:]
+        t = (self.focal_length_proj() - intersection_points_proj_real[...,2,:]) / dir_vec_unit[...,2,:]
         
         xyz_proj = dir_vec_unit * t.unsqueeze(dim = 3) + intersection_points_proj_real
         
@@ -144,6 +136,10 @@ class Projector():
         D is the dimension of the space. This function 
         returns the least squares intersection of the N
         """        
+        
+        # optical center 구할 때 
+        # P : [m, number of px]
+        # dir : [xyz, m, wvl, number of px]       
         
         torch_eye = torch.eye(dir.shape[2], device=self.device)
 

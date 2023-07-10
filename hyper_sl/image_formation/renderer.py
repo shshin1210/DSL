@@ -48,7 +48,7 @@ class PixelRenderer():
         
         # proj
         self.proj_sensor_diag = arg.sensor_diag_proj *1e-3
-        self.proj_focal_length = arg.focal_length_proj *1e-3
+        self.proj_focal_length = self.proj.focal_length_proj()
         self.proj_H = arg.proj_H
         self.proj_W = arg.proj_W
         self.proj_pitch = arg.proj_pitch
