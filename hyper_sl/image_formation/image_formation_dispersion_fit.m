@@ -30,7 +30,7 @@ for i = 1:numel(file_list)
 
     error = sqrt((xo_recon-xo).^2 + (yo_recon-yo).^2);
 
-    figure(1); imagesc(reshape(error, [640, 360])); colorbar; title(sprintf('error %s', file_list(i).name(1:end-4)));
+%     figure(1); imagesc(reshape(error, [640, 360])); colorbar; title(sprintf('error %s', file_list(i).name(1:end-4)));
 
 
     fprintf('reprojection error in px\n');
