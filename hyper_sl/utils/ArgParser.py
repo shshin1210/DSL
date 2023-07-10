@@ -112,7 +112,6 @@ class Argument:
 		self.parser.add_argument('--fov', type=float, default=30.3) # 30.3d
 		self.parser.add_argument('--focal_length', type=float, default= 12) # 16mm
 
-
 		self.parser.add_argument('--param_path', type = str, default="./calibration/parameters")
 		
   		# for Camera calibaration
@@ -123,7 +122,7 @@ class Argument:
 
 		# projector
 		self.parser.add_argument('--sensor_diag_proj',  type = float, default= 5.842) # 5.842mm
-		self.parser.add_argument('--focal_length_proj', type = float, default= 7.6904) # 8mm
+		# self.parser.add_argument('--focal_length_proj', type = float, default= 7.6904) # 8mm
 		
 	def parse(self):
 		arg = self.parser.parse_args()

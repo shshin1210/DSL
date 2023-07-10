@@ -307,6 +307,10 @@ class PixelRenderer():
 
                 ax.scatter(self.optical_center_virtual[1,j,0].detach().cpu(), self.optical_center_virtual[1,j,1].detach().cpu(), self.optical_center_virtual[1,j,2].detach().cpu(), marker= '*', c = 'cyan', s = 2)
 
+                ## 1, -1 order scatter
+                
+                
+                
                 # x label
                 # plt.xticks(rotation=30, fontsize = 10)
                 # ax.xaxis.set_label_coords(0.5,-0.15)
