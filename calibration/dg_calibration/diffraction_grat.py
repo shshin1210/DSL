@@ -405,7 +405,7 @@ if __name__ == "__main__":
     arg = argument.parse()
 
     # date
-    date = 'test_2023_07_09_15_37'
+    date = 'test_2023_07_09_15_37_(2)'
     
     # grid points
     grid_pts = 5
