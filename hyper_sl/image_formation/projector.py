@@ -60,7 +60,7 @@ class Projector():
     # dg coord to projector coord
     def extrinsic_diff(self):
 
-        extrinsic_diff = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/dg_extrinsic_single_test_2023_07_09_15_37_%06d.npy'%210), device=self.device)
+        extrinsic_diff = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/dg_extrinsic_single_test_2023_07_09_15_37_(2)_%06d.npy'%210), device=self.device)
         # extrinsic_diff = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/dg_extrinsic_single_test_2023_07_08_22_06_%06d.npy'%510), device=self.device)
 
         extrinsic_diff = torch.linalg.inv(extrinsic_diff)

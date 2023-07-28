@@ -190,7 +190,7 @@ class PixelRenderer():
                 
                 ## Check why self.z is NaN?
                 # visualization of rays
-                self.vis_ray(0, -3, 10239)
+                # self.vis_ray(0, -3, 10239)
                 
                 no_nan_idx = self.point_list[0,m,l,2].isnan() == False
                 
