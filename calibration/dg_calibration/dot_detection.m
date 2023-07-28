@@ -3,9 +3,11 @@ close all;
 warning off;
 
 % image directory
-date = "test_2023_07_09_15_37";
-test_fn = date + "_processed";
-img_test_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration/";
+% date = "test_2023_07_09_15_37_(2)";
+date = "back_crop";
+% test_fn = date + "_processed";
+test_fn = date;
+img_test_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration_method2/";
 
 % save points directory
 test_points_fn = date + "_points";
@@ -33,38 +35,21 @@ for i = 1:numel(pattern_file_list)
         img = rgb2gray(img); 
         img = medfilt2(img, [3,3]);
 
-        % extract from gray scale
-        % bw = img > 28; % 31
-
-        % extract index points
-        % s = regionprops(bw, 'Centroid');
-        % s = regionprops(img, 'Centroid');
-        % s = regionprops(img);
-
-        minradius = 2;
+        minradius = 1;
         maxradius = 10;
         [centers, radii, metric] = imfindcircles(img, [minradius, maxradius], 'EdgeThreshold', 0.027);
-
-        % centers= rmoutliers(centers);
         
         % visualization
         figure(1);
         imshow(img)
         hold on
 
-%         for k = 1:numel(s)
-%             centroid_k = s(k).Centroid;
-%             plot(centroid_k(1), centroid_k(2), 'r.');
-%         end
-%         for k = 1:size(centroid_k_inliers,1)
-%             plot(centroid_k_inliers(k,1), centroid_k_inliers(k,2), 'g.');
-%         end
-
-
         for k = 1:size(centers,1)
             plot(centers(k,1), centers(k,2), 'g.');
         end
-        title(size(centers,1));
+
+        titleString = [pattern_file_list(i).name,' ', wvls_file_list(j).name(1:5),' ',num2str(size(centers,1))];
+        title(titleString);
 
         hold off
         pause(0.5);
@@ -84,9 +69,27 @@ for i = 1:numel(pattern_file_list)
                 ymax = yi(k)+maxradius;
                 xmin = xi(k)-maxradius;
                 xmax = xi(k)+maxradius;
+                
+                if ymin < 0
+                    ymin = 1;
+                end
+
+                if xmin < 0
+                    xmin = 1;
+                end
+
+                if ymax > 580
+                    ymax = 579;
+                end
+                
+                if xmax > 890
+                    xmax = 889;
+                end
+
                 img_cur(ymin:ymax, xmin:xmax,:) = img(ymin:ymax, xmin:xmax,:);
                 [centers_k, radii, metric] = imfindcircles(img_cur, [minradius, maxradius], 'EdgeThreshold', 0.027);
                 centers_re = [centers_re; centers_k(1,:)];
+
             end
             figure(1);
             imshow(img)
@@ -109,7 +112,6 @@ for i = 1:numel(pattern_file_list)
 
         mat_file = fullfile(save_fn, wvls_file_list(j).name(1:5) + "_centroid.mat");
 
-%         save(mat_file, "s")
         save(mat_file, "centers")
 
     end
