@@ -4,7 +4,7 @@ warning off;
 
 % image directory
 % date = "test_2023_07_09_15_37_(2)";
-date = "20230728_data/front";
+date = "20230728_data/back";
 test_fn = date + "_processed";
 % test_fn = date;
 
@@ -57,7 +57,7 @@ for i = 1:numel(pattern_file_list)
 
         hold off
 %         pause(0.5);
-%         pause(0.1);
+        pause(0.1);
         
 %         cmd_c = input('type 0 and enter to correct the points:');
 %         if cmd_c == 0

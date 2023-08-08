@@ -49,7 +49,7 @@ def save_img(save_dir, img, fn):
     """
     cv2.imwrite(os.path.join(save_dir, fn), img)
 
-def main(arg, bool):
+def file_process(arg, bool, date, front):
     """
         capture images with 650 ~ 450 nm sequence in calibration0~4 folder
         
@@ -63,7 +63,11 @@ def main(arg, bool):
     
     cam_int, cam_dist = calibrated_params.bring_params(arg.calibration_param_path, "cam")
     
-    test_fn = "20230728_data/front"
+    if front == True:
+        test_fn = "2023%s_data/front" %date
+    else:
+        test_fn = "2023%s_data/back" %date
+        
     img_test_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration_method2/" + test_fn
     
     # files for each wvls
@@ -82,15 +86,21 @@ def main(arg, bool):
             save_dir = os.path.join('%s'%(img_test_path + "_processed"), 'pattern_%04d'%idx2)
             if not os.path.exists(save_dir):
                 os.makedirs(save_dir)
-
             save_img(save_dir, img_undistort_crop, '%dnm.png'%wvls[idx])
 
+            # save_dir = os.path.join('%s'%(img_test_path + "_processed2"))
+            # if not os.path.exists(save_dir):
+            #     os.makedirs(save_dir)
+            # save_img(save_dir, img_undistort_crop, 'pattern_%04d_%dnm.png'%(idx2, wvls[idx]))
 
 if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
 
     bool = False # True : undistort image / False : no undistortion to image
-    main(arg, bool)
+    date = "0728" # date of data
+    front = True # True : front spectralon / False : back spectralon
+    
+    file_process(arg, bool, date, front)
 
     print('end')
