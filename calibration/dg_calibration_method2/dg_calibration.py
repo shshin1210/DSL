@@ -1,99 +1,107 @@
 import cv2, os, sys
+import numpy as np
 
 sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
 
+from scipy.io import loadmat, savemat
+from tqdm import tqdm
+
+import define_3dpoints
+import define_3dlines
+import file_process
 from hyper_sl.utils.ArgParser import Argument
-from hyper_sl.utils import calibrated_params
-import numpy as np
-import point_process
-import matplotlib.pyplot as plt
 
-def get_3d_points(points_3d_dir):
-    points_3d = np.load(points_3d_dir)
-    
-    return points_3d
 
-def get_proj_px(pattern_npy_dir):
-    proj_px = np.load(pattern_npy_dir)
+def dg_calibration(arg):
+    """ file process -> point detection -> dg_calibration code """
     
-    return proj_px
-
-def get_detected_pts(arg, point_dir, data_dir, wvls, i):
-    detected_pts_dir = point_dir + '/pattern_%04d'%i
-    detected_pts = point_process.point_process(arg, data_dir, detected_pts_dir, wvls, i)
-    detected_pts = (np.round(detected_pts)).astype(np.int32)
+    # bool = False # True : undistort image / False : no undistortion to image
+    # date = "0728" # date of data
+    # front = True # True : front spectralon / False : back spectralon
     
-    return detected_pts
-
-def visualization(world_3d_pts):
-    fig = plt.figure()
-    ax = plt.axes(projection = '3d')
+    # # file processing : cropping, order datas in pattern and wavelengths
+    # file_process.file_process(arg, bool, date, True) # front spectralon
+    # file_process.file_process(arg, bool, date, False) # back spectralon
     
-    ax.scatter(world_3d_pts[:,:,:,0].flatten(), world_3d_pts[:,:,:,1].flatten(), world_3d_pts[:,:,:,2].flatten())
-
-    ax.set_xlim([-0.05,0.05])
-    ax.set_ylim([-0.05,0.05])
-    ax.set_zlim([-0.05,0.03])
-
-    plt.show()
-    
-def main(arg, flg):
-    # Variable Date
-    date = "0728"    
-    front = flg
-    
+    # # wvl
     wvls = np.arange(450, 660, 50)
-    # wvls = np.array([450])
-    wvls_num = len(wvls)
-    total_px = (arg.proj_H//10)*(arg.proj_W//10)
+    pts_num = (arg.proj_H // 10) * (arg.proj_W // 10)
+    m_list = arg.m_list
     
-    if front == True:
-        position = "front"
-    else:
-        position = "back"
+    # # find 3d points of front & back spectralon
+    # front_world_3d_pts, proj_pts = define_3dpoints.world3d_pts(arg, date, flg=True)
+    # back_world_3d_pts, proj_pts = define_3dpoints.world3d_pts(arg, date, flg=False)
     
-    # directory
-    main_dir = "./calibration/dg_calibration_method2/2023%s_data"%date
-    data_dir = os.path.join(main_dir, position)
+    # bring saved 3d points
+    front_world_3d_pts = np.load('./front_world_3d_pts.npy').reshape(arg.m_num, len(wvls), pts_num -1, 3)
+    back_world_3d_pts = np.load('./back_world_3d_pts.npy').reshape(arg.m_num, len(wvls), pts_num -1, 3)
+    # bring proj pts
+    proj_pts = np.load('./proj_pts.npy')
     
-    # detected points dir
-    point_dir = data_dir + '_points'
-    # spectralon 3d points
-    points_3d_dir = os.path.join(main_dir , "spectralon_depth_%s_%s.npy"%(date,position))
-    # pattern npy 
-    pattern_npy_dir = "./calibration/dg_calibration_method2/grid_npy"
+    # reshaping
+    a = np.zeros(shape=(arg.m_num, len(wvls), pts_num, 3))
+    a[:,:,:2303,:] = front_world_3d_pts
+    a[:,:,-1] = front_world_3d_pts[:,:,-1]
+    front_world_3d_pts = a
+    
+    a = np.zeros(shape=(arg.m_num, len(wvls), pts_num, 3))
+    a[:,:,:2303,:] = back_world_3d_pts
+    a[:,:,-1] = back_world_3d_pts[:,:,-1]
+    back_world_3d_pts = a
+    
+    a = np.zeros(shape=(pts_num, 2))
+    a[:2303] = proj_pts
+    a[-1] = np.array([[634., 354.]])
+    proj_pts = a
 
-    # 3d points
-    points_3d = get_3d_points(points_3d_dir)
+    # visualization 3d points of specific order
+    # define_3dlines.visualization(front_world_3d_pts, back_world_3d_pts, 2)
     
-    # New arrays : m, wvl, # px(=1), 2
-    world_3d_pts = np.zeros(shape=(arg.m_num, wvls_num, total_px, 3))
-    world_3d_pts_reshape = world_3d_pts.reshape(-1, total_px, 3) # m * wvl, # px, 3
-    # projector sensor plane pxs : #px, 2
-    proj_pts = np.zeros(shape=(total_px, 2))
+    front_world_3d_pts_reshape = front_world_3d_pts.reshape(-1, 3)
+    back_world_3d_pts_reshape = back_world_3d_pts.reshape(-1, 3)
     
-    for i in range(len(os.listdir(pattern_npy_dir))-1):
-        # proj pixel center points
-        pattern_dir = os.path.join(pattern_npy_dir, "pattern_%05d.npy"%i)
-        
-        # projector pixel points
-        proj_px = get_proj_px(pattern_dir)
-        proj_pts[i] = proj_px
-        
-        # detected pts
-        detected_pts = get_detected_pts(arg, point_dir, data_dir, wvls, i) # m, wvl, 2
-        detected_pts_reshape = detected_pts.reshape(-1, 2) # (x, y 순)
-        
-        world_3d_pts_reshape[:,i,:] = points_3d[detected_pts_reshape[:,1], detected_pts_reshape[:,0]]
+    # delete outliers
+    dir_vec_reshape = back_world_3d_pts_reshape - front_world_3d_pts_reshape
+    idx = (front_world_3d_pts_reshape[...,2] > 0.) * ( back_world_3d_pts_reshape[...,2] > 0.)
+    for i in range(arg.m_num*len(wvls)*pts_num):
+        if idx[i] == False:
+            dir_vec_reshape[i,:] = 0. # let outlier's direction vector be Zero
+    
+    dir_vec = dir_vec_reshape.reshape(arg.m_num, len(wvls)*pts_num,3)
+    front_world_3d_pts = front_world_3d_pts.reshape(arg.m_num, len(wvls)*pts_num,3)
 
-    return world_3d_pts_reshape, proj_pts
+    # visualization of direction vector of specific order
+    # define_3dlines.dir_visualization(dir_vec, front_world_3d_pts, 2)
 
+    dir_vec = dir_vec_reshape.reshape(arg.m_num, len(wvls), pts_num, 3)
+    front_world_3d_pts = front_world_3d_pts.reshape(arg.m_num, len(wvls), pts_num, 3)
+
+    # depth = np.arange(0.6, 0.9, 0.001)
+    depth = np.arange(0.6, 0.9, 0.01)
+    
+    dat_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/dataset/image_formation/dat/method2"
+
+    for z in depth:
+        t = (z - front_world_3d_pts[...,2]) / dir_vec[...,2]
+        pts = front_world_3d_pts + dir_vec * t[:,:,:,np.newaxis]
+        
+        for m in tqdm(range(arg.m_num)):
+            for w in tqdm(range(len(wvls)), leave = False):
+                
+                pts_x = pts[m, w, :, 0]
+                pts_y = pts[m, w, :, 1]
+                pts_z = pts[m, w, :, 2]
+                
+                gt_x = proj_pts[:,0]
+                gt_y = proj_pts[:,1]
+                
+                savemat(os.path.join(dat_path, 'dispersion_coordinates_m%d_wvl%d_depth%02dcm.mat'%(m_list[m], wvls[w], z *100)), {'x': pts_x, 'y': pts_y, 'z': pts_z, 'xo': gt_x, 'yo': gt_y})
+                # savemat(os.path.join(dat_path, 'dispersion_coordinates_m%d_wvl%d_depth%03dmm.mat'%(m_list[m], wvls[w], z *1000)), {'x': pts_x, 'y': pts_y, 'z': pts_z, 'xo': gt_x, 'yo': gt_y})
 
 if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
 
-    flg = True # True : front spectralon / False : back spectralon
-    
-    front_world_3d_pts_reshape, proj_pts = main(arg, flg=True)
-    back_world_3d_pts_reshape, proj_pts = main(arg, flg=False)
+    dg_calibration(arg)
+
+    print('end')
