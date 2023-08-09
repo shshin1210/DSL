@@ -6,7 +6,7 @@ from hyper_sl.utils.ArgParser import Argument
 import numpy as np
 from scipy.io import loadmat
 
-def point_process(arg, data_dir, detected_pts_dir, wvls, n_patt, proj_px, flg):
+def point_process(arg, data_dir, detected_pts_dir, wvls, n_patt, proj_px, position):
 
     prev_wvl_point = wvl_point = np.array(loadmat(os.path.join(detected_pts_dir,'%dnm_centroid.mat' %(wvls[0])))['centers'])            
     processed_points = np.zeros(shape=(arg.m_num, len(wvls), 1, 2))
@@ -15,7 +15,7 @@ def point_process(arg, data_dir, detected_pts_dir, wvls, n_patt, proj_px, flg):
         wvl_point = np.array(loadmat(os.path.join(detected_pts_dir,'%dnm_centroid.mat' %(wvls[w])))['centers'])            
         wvl_point -= 1
         
-        zero, first_m0, first_m2, prev_wvl_point = find_order(arg, data_dir, wvl_point, wvls[w], n_patt, prev_wvl_point, proj_px, flg)
+        zero, first_m0, first_m2, prev_wvl_point = find_order(arg, data_dir, wvl_point, wvls[w], n_patt, prev_wvl_point, proj_px, position)
         
         # zero order
         processed_points[1] = zero[np.newaxis,:,:]
@@ -31,13 +31,10 @@ def point_process(arg, data_dir, detected_pts_dir, wvls, n_patt, proj_px, flg):
     
     return processed_points
 
-def one_order(wvl_point,zero_arr, proj_px, flg):
-    if flg == True:
-        x_max = 500
-        x_min = 10
-    else:
-        x_max = 450
-        x_min = 30
+def one_order(wvl_point,zero_arr, proj_px, position):
+    if position == "front": x_max, x_min = 500, 10
+    elif position == "mid": x_max, x_min = 450, 30
+    else: x_max, x_min = 450, 30 # ===================================================== back spectralon 수정 =====================================================
         
     if x_max < proj_px[0]: # x 좌표 비교
         first_m2 = wvl_point
@@ -124,7 +121,7 @@ def difference(wvl_point, threshold, axis, prev_wvl_point):
 
         return wvl_point
     
-def find_order(arg, data_dir, wvl_point, wvl, n_patt, prev_wvl_point, proj_px, flg):
+def find_order(arg, data_dir, wvl_point, wvl, n_patt, prev_wvl_point, proj_px, position):
     """
         Find which order each points belong to
         orders : -1, 0, 1
@@ -140,11 +137,14 @@ def find_order(arg, data_dir, wvl_point, wvl, n_patt, prev_wvl_point, proj_px, f
     img_m = np.mean(img, axis = 2)
     
     # 아무것도 안찍힌 데이터 처리
-    # pattern이 2000 (front) / 2050(back) 이상부터는 grid 가 찍히지 않음
-    if flg == True:
+    # pattern이 2000 (front) / 2050(mid) 이상부터는 grid 가 찍히지 않음
+    if position == "front":
         if (wvl_point.shape[0] == 0) or (n_patt > 2000):
             wvl_point = np.zeros(shape=(arg.m_num,2))
-    else:
+    elif position == "mid":
+        if (wvl_point.shape[0] == 0) or (n_patt > 2050):
+            wvl_point = np.zeros(shape=(arg.m_num,2))
+    else: # ===================================================== back spectralon 수정 =====================================================
         if (wvl_point.shape[0] == 0) or (n_patt > 2050):
             wvl_point = np.zeros(shape=(arg.m_num,2))
 
@@ -173,7 +173,7 @@ def find_order(arg, data_dir, wvl_point, wvl, n_patt, prev_wvl_point, proj_px, f
 
     # 하나의 order만 있는경우
     if wvl_point.shape[0] == grid_pts :
-        zero, first_m0, first_m2 = one_order(wvl_point, zero_arr, proj_px, flg)
+        zero, first_m0, first_m2 = one_order(wvl_point, zero_arr, proj_px, position)
         
     # 두개의 m order가 있는 경우
     elif wvl_point.shape[0] == grid_pts *2:
