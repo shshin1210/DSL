@@ -33,7 +33,7 @@ for i = 1:numel(file_list)
     pause(1);
 
     fprintf('reprojection error in px\n');
-    fprintf('\t mean error:%f, max error:%f, stddev: %f\n', mean(error(:)), max(error(:)), std(error(:)));
+    fprintf('\t mean error:%f, max error:%f, stddev: %f\n', mean(error(:), 'omitnan'), max(error(:)), std(error(:), 'omitnan'));
 
     file_name_out = fullfile(dat_path, sprintf('param_%s.mat', file_list(i).name(1:end-4)));
 
