@@ -20,28 +20,45 @@ class Define3dPoints():
         # directory 
         self.main_dir = "./calibration/dg_calibration_method2/2023%s_data"%self.date
         self.data_dir = os.path.join(self.main_dir, self.position)
+        self.processed_dir = os.path.join(self.main_dir, "%s_processed"%self.position)
         self.point_dir = self.data_dir + '_points' # detected points dir
         self.points_3d_dir = os.path.join(self.main_dir , "spectralon_depth_%s_%s.npy"%(self.date,self.position)) # spectralon 3d points
         self.pattern_npy_dir = "./calibration/dg_calibration_method2/grid_npy" # pattern npy 
         
     def get_3d_points(self):
+        """
+            get gray code decoded 3d points
+        """
         points_3d = np.load(self.points_3d_dir)
         
         return points_3d
 
-    def get_proj_px(self):
-        proj_px = np.load(self.pattern_npy_dir)
+    def get_proj_px(self, dir):
+        """
+            get (u, v) coords for projected projector sensor plane
+        """
+        proj_px = np.load(dir)
         
         return proj_px
 
     def get_detected_pts(self, wvls, i, proj_px):
+        """
+            get preprocessed detection points : m, wvl, # points, 3(xyz)
+            
+            returns detected points
+            
+        """
         detected_pts_dir = self.point_dir + '/pattern_%04d'%i
-        detected_pts = point_process.point_process(self.arg, self.data_dir, detected_pts_dir, wvls, i, proj_px, self.position)
+        processed_img_dir = self.processed_dir + '/pattern_%04d'%i
+        detected_pts = point_process.PointProcess(self.arg, self.data_dir, detected_pts_dir, processed_img_dir, wvls, i, proj_px, self.position).point_process()
         detected_pts = (np.round(detected_pts)).astype(np.int32)
         
         return detected_pts
 
     def visualization(self, world_3d_pts):
+        """
+            visualization of 3d points
+        """
         fig = plt.figure()
         ax = plt.axes(projection = '3d')
         
@@ -54,7 +71,10 @@ class Define3dPoints():
         plt.show()
         
     def world3d_pts(self):
-
+        """
+            Get world 3d points by detected points
+            
+        """
         wvls = np.arange(450, 660, 50)
         wvls_num = len(wvls)
         total_px = (self.arg.proj_H//10)*(self.arg.proj_W//10) 
@@ -69,15 +89,20 @@ class Define3dPoints():
         
         for i in range(len(os.listdir(self.pattern_npy_dir))):
             # projector pixel points
-            proj_px = self.get_proj_px()
+            proj_px = self.get_proj_px(os.path.join(self.pattern_npy_dir,"pattern_%05d.npy"%i))
             proj_pts[i] = proj_px
             
             # detected pts
-            detected_pts = self.get_detected_pts(self.arg, wvls, i, proj_px) # m, wvl, 2
+            detected_pts = self.get_detected_pts(wvls, i, proj_px) # m, wvl, 2
             detected_pts_reshape = detected_pts.reshape(-1, 2) # (x, y 순)
-                
+
             world_3d_pts_reshape[:,i,:] = points_3d[detected_pts_reshape[:,1], detected_pts_reshape[:,0]]
 
+            # (u, v) = (0, 0) 인 point에 대해서는 말도안되는 값을 넣어줘서 outlier 처리가 될 수 있게끔 처리
+            for j in range(detected_pts_reshape.shape[0]):
+                if (detected_pts_reshape[j] == 0.).all():
+                    world_3d_pts_reshape[j,i,:] = np.array([-0.5,-0.5,-0.5])
+                    
         return world_3d_pts_reshape, proj_pts
         
     
@@ -86,7 +111,6 @@ if __name__ == "__main__":
     arg = argument.parse()
     
     date = "0728"
-    position = ""
 
     front_world_3d_pts_reshape, proj_pts = Define3dPoints(arg, date, "front").world3d_pts()
     mid_world_3d_pts_reshape, proj_pts = Define3dPoints(arg, date, "mid").world3d_pts()
