@@ -48,9 +48,9 @@ class Argument:
 		self.parser.add_argument('--wvl_max', type = float, default= 660e-9) # 660e-9
 		self.parser.add_argument('--wvl_num', type = int, default= 25) # 25
   
-		# self.parser.add_argument('--wvl_min', type = float, default= 400e-9) # 420e-9
-		# self.parser.add_argument('--wvl_max', type = float, default= 680e-9) # 660e-9
-		# self.parser.add_argument('--wvl_num', type = int, default= 29) # 25
+		self.parser.add_argument('--depth_min', type = float, default= 600*1e-3) # n단위
+		self.parser.add_argument('--depth_max', type = float, default= 900*1e-3) 
+		self.parser.add_argument('--depth_num', type = int, default= 31) # 1mm 단위 : 301 개
 		
 		self.parser.add_argument('--m_min', type = int, default= -1) 
 		self.parser.add_argument('--m_max', type = int, default= 1) 
@@ -128,6 +128,7 @@ class Argument:
 		arg = self.parser.parse_args()
 		arg.wvls = torch.linspace(arg.wvl_min, arg.wvl_max, arg.wvl_num)
 		arg.m_list = torch.linspace(arg.m_min, arg.m_max, arg.m_num)
+		arg.depth_list = torch.linspace(arg.depth_min, arg.depth_max, arg.depth_num)
 		arg.illums = torch.zeros((arg.illum_num, arg.proj_H, arg.proj_W, 3))
   
 		arg.sensor_height_proj = (torch.sin(torch.atan2(torch.tensor(arg.proj_H),torch.tensor(arg.proj_W)))*(arg.sensor_diag_proj*1e-3))
