@@ -15,8 +15,10 @@ for i = 1:numel(file_list)
 %     xo = xo / pitch;
 %     yo = yo / pitch;
 
-    px = dispertion_fit_method2(x, y, xo);
-    py = dispertion_fit_method2(x, y, yo);
+    px = dispertion_fit_m2(x, y, xo);
+    py = dispertion_fit_m2(x, y, yo);
+%     px = createFit(x, y, xo);
+%     py = createFit(x, y, yo);
 
     xo_recon = px(x,y);
     yo_recon = py(x,y);
@@ -24,25 +26,27 @@ for i = 1:numel(file_list)
     error = sqrt((xo_recon-xo).^2 + (yo_recon-yo).^2);
 
 %     figure(1); imagesc(reshape(error, [64, 36])); colorbar; title(sprintf('error %s', file_list(i).name(1:end-4)));
-    pause(1);
+%     pause(1);
+% 
+%     fprintf('reprojection error in px\n');
+%     fprintf('\t mean error:%f, max error:%f, stddev: %f\n', mean(error(:), 'omitnan'), max(error(:)), std(error(:), 'omitnan'));
+%     
+%     figure(1); 
+%     subplot(1,2,1); plot(xo_recon, yo_recon, '.'); title('recon');
+% 
+%     if file_list(i).name(25) == "-"
+%         subtitle(sprintf('order:%s, wvl:%snm, depth:%smm',file_list(i).name(25:26), file_list(i).name(30:33), file_list(i).name(40:42)));
+%     else
+%         subtitle(sprintf('order:%s, wvl:%snm, depth:%smm',file_list(i).name(25), file_list(i).name(29:32), file_list(i).name(39:41)));
+%     end
+% 
+%     subplot(1,2,2); plot(xo, yo, '.'); title('GT');
+%     subtitle(sprintf('\t mean:%f, max:%f, stddev: %f\n', mean(error(:), 'omitnan'), max(error(:)), std(error(:), 'omitnan')));
+% %     saveas(gcf, sprintf('./error_visualization/%s.png', file_list(i).name))
+%     pause(1);
 
     fprintf('reprojection error in px\n');
     fprintf('\t mean error:%f, max error:%f, stddev: %f\n', mean(error(:), 'omitnan'), max(error(:)), std(error(:), 'omitnan'));
-    
-    figure(1); 
-    subplot(1,2,1); plot(xo_recon, yo_recon, '.'); title('recon');
-
-    if file_list(i).name(25) == "-"
-        subtitle(sprintf('order:%s, wvl:%snm, depth:%scm',file_list(i).name(25:26), file_list(i).name(30:33), file_list(i).name(40:41)));
-    else
-        subtitle(sprintf('order:%s, wvl:%snm, depth:%scm',file_list(i).name(25), file_list(i).name(29:32), file_list(i).name(39:40)));
-    end
-
-    subplot(1,2,2); plot(xo, yo, '.'); title('GT');
-    subtitle(sprintf('\t mean:%f, max:%f, stddev: %f\n', mean(error(:), 'omitnan'), max(error(:)), std(error(:), 'omitnan')));
-    saveas(gcf, sprintf('./error_visualization/%s.png', file_list(i).name))
-    pause(1);
-
 
     file_name_out = fullfile(dat_path, sprintf('param_%s.mat', file_list(i).name(1:end-4)));
 

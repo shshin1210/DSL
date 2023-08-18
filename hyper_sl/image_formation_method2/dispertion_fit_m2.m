@@ -1,4 +1,4 @@
-function [fitresult, gof] = dispertion_fit_method2(x, y, xo)
+function [fitresult, gof] = dispertion_fit_m2(x, y, xo)
 %CREATEFIT(X,Y,XO)
 %  피팅을 생성하십시오.
 %
@@ -20,6 +20,8 @@ function [fitresult, gof] = dispertion_fit_method2(x, y, xo)
 
 % fittype과 옵션을 설정하십시오.
 ft = fittype( 'poly55' );
+opts = fitoptions( 'Method', 'LinearLeastSquares' );
+opts.Robust = 'LAR';
 
 % 데이터에 모델을 피팅하십시오.
 [fitresult, gof] = fit( [xData, yData], zData, ft );
