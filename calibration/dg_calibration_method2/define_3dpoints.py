@@ -16,6 +16,7 @@ class Define3dPoints():
         self.arg = arg
         self.date = date
         self.position = position
+        self.wvls = np.array([430, 450, 480, 500, 520, 550, 580, 600, 620, 650, 660])
         
         # directory 
         self.main_dir = "./calibration/dg_calibration_method2/2023%s_data"%self.date
@@ -41,7 +42,7 @@ class Define3dPoints():
         
         return proj_px
 
-    def get_detected_pts(self, wvls, i, proj_px):
+    def get_detected_pts(self, i, proj_px):
         """
             get preprocessed detection points : m, wvl, # points, 3(xyz)
             
@@ -50,7 +51,7 @@ class Define3dPoints():
         """
         detected_pts_dir = self.point_dir + '/pattern_%04d'%i
         processed_img_dir = self.processed_dir + '/pattern_%04d'%i
-        detected_pts = point_process.PointProcess(self.arg, self.data_dir, detected_pts_dir, processed_img_dir, wvls, i, proj_px, self.position).point_process()
+        detected_pts = point_process.PointProcess(self.arg, self.data_dir, detected_pts_dir, processed_img_dir, self.wvls, i, proj_px, self.position).point_process()
         detected_pts = (np.round(detected_pts)).astype(np.int32)
         
         return detected_pts
@@ -75,8 +76,8 @@ class Define3dPoints():
             Get world 3d points by detected points
             
         """
-        wvls = np.arange(450, 660, 50)
-        wvls_num = len(wvls)
+        # wvls = np.arange(450, 660, 50)
+        wvls_num = len(self.wvls)
         total_px = (self.arg.proj_H//10)*(self.arg.proj_W//10) 
 
         # 3d points
@@ -93,7 +94,7 @@ class Define3dPoints():
             proj_pts[i] = proj_px
             
             # detected pts
-            detected_pts = self.get_detected_pts(wvls, i, proj_px) # m, wvl, 2
+            detected_pts = self.get_detected_pts(i, proj_px) # m, wvl, 2
             detected_pts_reshape = detected_pts.reshape(-1, 2) # (x, y 순)
 
             world_3d_pts_reshape[:,i,:] = points_3d[detected_pts_reshape[:,1], detected_pts_reshape[:,0]]
@@ -110,7 +111,7 @@ if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
     
-    date = "0728"
+    date = "0817"
 
     front_world_3d_pts_reshape, proj_pts = Define3dPoints(arg, date, "front").world3d_pts()
     mid_world_3d_pts_reshape, proj_pts = Define3dPoints(arg, date, "mid").world3d_pts()

@@ -20,7 +20,8 @@ class FileProcess():
         # arguments
         self.arg = arg
         self.date = date
-        self.wvls = np.arange(450, 660, 50)
+        # self.wvls = np.arange(450, 660, 50)
+        self.wvls = np.array([430, 450, 480, 500, 520, 550, 580, 600, 620, 650, 660])
         self.cam_int, self.cam_dist = calibrated_params.bring_params(self.arg.calibration_param_path, "cam")
         self.start_x, self.start_y = 75,77
 
@@ -81,7 +82,7 @@ class FileProcess():
             for idx2, inner_file in enumerate(inner_files):
                 img_path = os.path.join(img_test_path, file, inner_file)
                 img_undistort = self.undistort(img_path, self.cam_int, self.cam_dist, undistort_flg)
-                img_undistort_crop = self.crop(self.arg, img_undistort)
+                img_undistort_crop = self.crop(img_undistort)
                 
                 # where to save cropped and undistorted image
                 save_dir = os.path.join('%s'%(img_test_path + "_processed"), 'pattern_%04d'%idx2)
@@ -99,9 +100,9 @@ if __name__ == "__main__":
     arg = argument.parse()
 
     undistort_flg = False # True : undistort image / False : no undistortion to image
-    date = "0728" # date of data
-    position = "back" # front / mid / back
+    date = "0817" # date of data
+    position = "front" # front / mid / back
     
-    FileProcess.file_process(arg, undistort_flg, date, position)
+    FileProcess(arg, date).file_process(undistort_flg, position)
 
     print('end')

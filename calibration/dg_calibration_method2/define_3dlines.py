@@ -11,7 +11,8 @@ class Define3dLines():
     def __init__(self, arg, front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts):
         # argument
         self.arg = arg
-        self.wvls = np.arange(450, 660, 50)
+        # self.wvls = np.arange(450, 660, 50)
+        self.wvls = np.array([430, 450, 480, 500, 520, 550, 580, 600, 620, 650, 660])
         self.pts_num = (arg.proj_H // 10) * (arg.proj_W // 10)
         self.m_list = arg.m_list
         
@@ -40,7 +41,7 @@ class Define3dLines():
         mid_world_3d_pts = self.mid_world_3d_pts.reshape(-1, 3)
          
         # delete outliers of direction vector (delete z points under 0.)
-        idx = (front_world_3d_pts[...,2] > 0.) * (mid_world_3d_pts[...,2] > 0.) * (back_world_3d_pts[...,2] > 0.)
+        idx = (front_world_3d_pts[...,2] > 0.) * (back_world_3d_pts[...,2] > 0.) * (mid_world_3d_pts[...,2] > 0.)
         for i in range(self.arg.m_num*len(self.wvls)*self.pts_num):
             if idx[i] == False:
                 dir_vec[i,:] = 0. # let outlier's direction vector be Zero
@@ -162,7 +163,7 @@ class Define3dLines():
 
         ax.set_xlim([-0.15,0.15])
         ax.set_ylim([-0.1,0.1])
-        ax.set_zlim([-0.,0.6])
+        ax.set_zlim([-0.6,0.6])
 
         plt.title('%d order'%order)
         plt.show()
@@ -178,22 +179,27 @@ class Define3dLines():
 
         m = order_idx
         wvl = wvl_idx
-        
-        fig = plt.figure()
-        ax = plt.axes(projection = '3d')
-        
-        for k in range(0, self.pts_num, 50):
+                
+        for k in range(0, self.pts_num, 20):
             
-            ax.scatter(start_pts[m, wvl, k, 0], start_pts[m, wvl, k, 1], start_pts[m, wvl, k, 2], c = 'red', s = 1)
-            ax.scatter(self.front_world_3d_pts[m, wvl, k, 0], self.front_world_3d_pts[m, wvl, k,1], self.front_world_3d_pts[m, wvl, k, 2] , c = 'black', s =1)
-            ax.scatter(self.mid_world_3d_pts[m, wvl, k, 0], self.mid_world_3d_pts[m, wvl, k, 1], self.mid_world_3d_pts[m, wvl, k, 2] , c = 'black', s =1)
-            ax.scatter(self.back_world_3d_pts[m, wvl, k, 0], self.back_world_3d_pts[m, wvl, k, 1], self.back_world_3d_pts[m, wvl, k, 2] , c = 'black', s =1)
+            ax.scatter(start_pts[m, wvl, k, 0], start_pts[m, wvl, k, 1], start_pts[m, wvl, k, 2], c = 'cyan', s = 5)
+            ax.scatter(self.front_world_3d_pts[m, wvl, k, 0], self.front_world_3d_pts[m, wvl, k,1], self.front_world_3d_pts[m, wvl, k, 2] , c = 'blue', s =5)
+            ax.scatter(self.mid_world_3d_pts[m, wvl, k, 0], self.mid_world_3d_pts[m, wvl, k, 1], self.mid_world_3d_pts[m, wvl, k, 2] , c = 'green', s =5)
+            ax.scatter(self.back_world_3d_pts[m, wvl, k, 0], self.back_world_3d_pts[m, wvl, k, 1], self.back_world_3d_pts[m, wvl, k, 2] , c = 'purple', s =5)
 
             scale = 1
             X_d = [start_pts[m, wvl, k, 0], start_pts[m, wvl, k, 0] + scale* dir_vec[m, wvl, k, 0]]
             Y_d = [start_pts[m, wvl, k, 1], start_pts[m, wvl, k, 1] + scale* dir_vec[m, wvl, k, 1]]
             Z_d = [start_pts[m, wvl, k, 2], start_pts[m, wvl, k, 2] + scale* dir_vec[m, wvl, k, 2]]
 
+            ax.plot(X_d,Y_d,Z_d, color = 'red', linewidth = 1)
+
+
+            scale = -0.5
+            X_d = [start_pts[m, wvl, k, 0], start_pts[m, wvl, k, 0] + scale* dir_vec[m, wvl, k, 0]]
+            Y_d = [start_pts[m, wvl, k, 1], start_pts[m, wvl, k, 1] + scale* dir_vec[m, wvl, k, 1]]
+            Z_d = [start_pts[m, wvl, k, 2], start_pts[m, wvl, k, 2] + scale* dir_vec[m, wvl, k, 2]]
+            
             ax.plot(X_d,Y_d,Z_d, color = 'red', linewidth = 1)
 
         plt.xlabel('x-axis')
