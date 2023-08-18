@@ -22,7 +22,8 @@ class Argument:
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
 		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
 		self.parser.add_argument('--dg_intensity_dir', type=str, default='./calibration')
-		self.parser.add_argument('--dat_dir', type = str, default = './dataset/image_formation/dat')
+		# self.parser.add_argument('--dat_dir', type = str, default = './dataset/image_formation/dat')
+		self.parser.add_argument('--dat_dir', type = str, default= "./dataset/image_formation/dat/method2/interpolated")
 		self.parser.add_argument('--illum_data_dir', type = str, default= "./dataset/image_formation/illum_data.npy")
 		self.parser.add_argument('--img_hyp_texture_dir', type = str, default="./dataset/image_formation/img_hyp_text")
 		self.parser.add_argument('--random_pixel_train_dir', type = str, default="./random_datasets/random_pixel_train")
@@ -49,8 +50,8 @@ class Argument:
 		self.parser.add_argument('--wvl_num', type = int, default= 25) # 25
   
 		self.parser.add_argument('--depth_min', type = float, default= 600*1e-3) # n단위
-		self.parser.add_argument('--depth_max', type = float, default= 900*1e-3) 
-		self.parser.add_argument('--depth_num', type = int, default= 31) # 1mm 단위 : 301 개
+		self.parser.add_argument('--depth_max', type = float, default= 910*1e-3) 
+		self.parser.add_argument('--depth_interval', type = int, default= 0.001) # 1mm 단위 : 0.001
 		
 		self.parser.add_argument('--m_min', type = int, default= -1) 
 		self.parser.add_argument('--m_max', type = int, default= 1) 
@@ -128,7 +129,7 @@ class Argument:
 		arg = self.parser.parse_args()
 		arg.wvls = torch.linspace(arg.wvl_min, arg.wvl_max, arg.wvl_num)
 		arg.m_list = torch.linspace(arg.m_min, arg.m_max, arg.m_num)
-		arg.depth_list = torch.linspace(arg.depth_min, arg.depth_max, arg.depth_num)
+		arg.depth_list = torch.arange(arg.depth_min, arg.depth_max, arg.depth_interval)
 		arg.illums = torch.zeros((arg.illum_num, arg.proj_H, arg.proj_W, 3))
   
 		arg.sensor_height_proj = (torch.sin(torch.atan2(torch.tensor(arg.proj_H),torch.tensor(arg.proj_W)))*(arg.sensor_diag_proj*1e-3))

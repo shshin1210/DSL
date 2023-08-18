@@ -65,16 +65,18 @@ class createData():
             
             returns : torch.tensor ( # pixel, )
         """
+        
+        # depth data range (unit : meter)
+        depth_min = 0.6
+        depth_max = 0.9
+            
+            
         if random == True:
             # depth 끼리 차이 1mm ~ -1mm
             min = 0.001
             max = -0.001
             
             half = self.arg.patch_pixel_num // 2
-            
-            # meter
-            depth_min = 0.6
-            depth_max = 1.
             
             depth = (depth_max - depth_min)* torch.rand((pixel_num//self.arg.patch_pixel_num)) + depth_min
             depth = depth.repeat(9,1)
@@ -87,7 +89,7 @@ class createData():
                         
         else:
             depth = self.load_data.load_depth(i)
-            map_scale = interp1d([depth.min(), depth.max()], [0.6, 1.])
+            map_scale = interp1d([depth.min(), depth.max()], [depth_min, depth_max])
             depth = torch.tensor(map_scale(depth).astype(np.float32))
             
             depth = depth.reshape(self.cam_W * self.cam_H)
