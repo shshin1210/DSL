@@ -132,7 +132,7 @@ class PixelRenderer():
         xy_proj_real_norm = self.normalize.normalization(xyz_proj[:,1,0,:2,...].permute(0,2,1))
         
         # new idx
-        # new_idx, cond = self.get_newidx(uv1)
+        new_idx, cond = self.get_newidx(uv1)
         
         cam_N_img = torch.zeros(size=(self.batch_size, self.pixel_num, self.n_illum, 3), device= self.device)
         
@@ -151,14 +151,15 @@ class PixelRenderer():
 
             hyp_f = illum_hyp_unsq.flatten()
             
-            illum_img = self.grid_sample(uv1, hyp_f, illum_img)
+            # grid sampling
+            # illum_img = self.grid_sample(uv1, hyp_f, illum_img)
             
-            # 여기서 grid sampling?
-            # valid_pattern_img = hyp_f[new_idx]
+            # No grid sampling
+            valid_pattern_img = hyp_f[new_idx]
             
-            # illum_img[cond.flatten()] = valid_pattern_img.flatten()
+            illum_img[cond.flatten()] = valid_pattern_img.flatten()
             
-            # illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
+            illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
             # ==================================== dg intensity ====================================
             illum_img =  illum_img * self.dg_intensity.unsqueeze(dim=3)
             illums_m_img = illum_img.sum(axis = 1).reshape(self.batch_size, self.wvls_n, self.pixel_num).permute(0,2,1)
@@ -193,6 +194,34 @@ class PixelRenderer():
         print(f"render time : {render_end - render_start:.5f} sec")
                 
         return cam_N_img, xy_proj_real_norm, illum_data, shading
+    
+    
+    def get_newidx(self, uv1):
+        
+        r_proj, c_proj = uv1[:,:,:,1], uv1[:,:,:,0]
+        cond = (0<= r_proj)*(r_proj < self.proj_H)*(0<=c_proj)*(c_proj< self.proj_W) 
+        
+        r_proj_valid, c_proj_valid = r_proj[cond], c_proj[cond]
+        r_proj_valid, c_proj_valid = torch.tensor(r_proj_valid), torch.tensor(c_proj_valid)
+
+        batch_samples = torch.linspace(0, self.batch_size-1, self.batch_size,device=self.device)
+        wvl_samples = torch.linspace(0, self.wvls_n-1, self.wvls_n,device=self.device)
+        m_samples = torch.linspace(0, self.m_n-1, self.m_n,device=self.device)
+
+        pixel_samples = torch.linspace(0, self.pixel_num-1, self.pixel_num, device= self.device)
+        grid_b, grid_m, grid_w, grid_pixel = torch.meshgrid(batch_samples,m_samples,wvl_samples,pixel_samples,indexing='ij')
+
+        grid_b_valid = grid_b.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
+        grid_m_valid = grid_m.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
+        grid_w_valid = grid_w.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
+
+        new_idx = self.m_n * self.wvls_n * self.proj_H * self.proj_W * grid_b_valid.long() \
+                + self.wvls_n * self.proj_H * self.proj_W * grid_m_valid.long() \
+                + self.proj_H * self.proj_W * grid_w_valid.long() \
+                + self.proj_W * r_proj_valid.long() \
+                + c_proj_valid.long()
+        
+        return new_idx, cond
     
     def vis(self, data, num, vmin, vmax):
         illum_num = num
@@ -314,7 +343,7 @@ class PixelRenderer():
 
     #     grid_b_valid = grid_b.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
     #     grid_m_valid = grid_m.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
-    #     grid_w_valid = grid_w.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
+    #     grid_w_valid = grid_w.reshape(self.batch_size, self.m_n, self.wvls_n`f`, self.pixel_num)[cond]
    
     #     new_idx = self.m_n * self.wvls_n * self.proj_H * self.proj_W * grid_b_valid \
     #             + self.wvls_n * self.proj_H * self.proj_W * grid_m_valid \
@@ -324,62 +353,62 @@ class PixelRenderer():
 
     #     return new_idx.long(), cond
             
-    # def grid_sample(self, uv1, hyp_f, illum_img):
-    #     uv1_reshape = uv1.reshape(self.batch_size, self.m_n, self.wvls_n, 3, self.cam_H, self.cam_W)
+    def grid_sample(self, uv1, hyp_f, illum_img):
+        uv1_reshape = uv1.reshape(self.batch_size, self.m_n, self.wvls_n, 3, self.cam_H, self.cam_W)
         
-    #     # split integer and decimal
-    #     uv1_integer = uv1_reshape.long()
-    #     u_float, v_float = uv1_reshape[:,:,:,0] - uv1_integer[:,:,:,0], uv1_reshape[:,:,:,1] - uv1_integer[:,:,:,1]
+        # split integer and decimal
+        uv1_integer = uv1_reshape.long()
+        u_float, v_float = uv1_reshape[:,:,:,0] - uv1_integer[:,:,:,0], uv1_reshape[:,:,:,1] - uv1_integer[:,:,:,1]
 
-    #     weights = [
-    #         (1-u_float) * (1-v_float),
-    #         u_float * (1-v_float),
-    #         (1-u_float) * v_float,
-    #         u_float * v_float
-    #     ]
+        weights = [
+            (1-u_float) * (1-v_float),
+            u_float * (1-v_float),
+            (1-u_float) * v_float,
+            u_float * v_float
+        ]
 
-    #     indices = ['A', 'B', 'C', 'D']
-    #     final_illum_img = torch.zeros_like(illum_img)
-    #     for idx, corner in enumerate(indices):
-    #         new_idx, cond = self.get_newidx(uv1.long(), corner)
-    #         valid_pattern_img = hyp_f[new_idx]
-    #         illum_img[cond.flatten()] = valid_pattern_img.flatten()
-    #         final_illum_img += weights[idx].flatten() * illum_img
+        indices = ['A', 'B', 'C', 'D']
+        final_illum_img = torch.zeros_like(illum_img)
+        for idx, corner in enumerate(indices):
+            new_idx, cond = self.get_newidx(uv1.long(), corner)
+            valid_pattern_img = hyp_f[new_idx]
+            illum_img[cond.flatten()] = valid_pattern_img.flatten()
+            final_illum_img += weights[idx].flatten() * illum_img
 
-    #     return final_illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
+        return final_illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
 
-    # def get_newidx(self, uv1, corner):
-    #     r_proj, c_proj = uv1[:,:,:,1].clone(), uv1[:,:,:,0].clone()
+    def get_newidx(self, uv1, corner):
+        r_proj, c_proj = uv1[:,:,:,1].clone(), uv1[:,:,:,0].clone()
 
-    #     if corner == 'B':
-    #         r_proj += 1
-    #     elif corner == 'C':
-    #         c_proj += 1
-    #     elif corner == 'D':
-    #         r_proj += 1
-    #         c_proj += 1
+        if corner == 'B':
+            r_proj += 1
+        elif corner == 'C':
+            c_proj += 1
+        elif corner == 'D':
+            r_proj += 1
+            c_proj += 1
 
-    #     cond = (0 <= r_proj) & (r_proj < self.proj_H) & (0 <= c_proj) & (c_proj < self.proj_W)
-    #     r_proj_valid, c_proj_valid = r_proj[cond], c_proj[cond]
+        cond = (0 <= r_proj) & (r_proj < self.proj_H) & (0 <= c_proj) & (c_proj < self.proj_W)
+        r_proj_valid, c_proj_valid = r_proj[cond], c_proj[cond]
 
-    #     batch_samples = torch.linspace(0, self.batch_size-1, self.batch_size,device=self.device)
-    #     wvl_samples = torch.linspace(0, self.wvls_n-1, self.wvls_n,device=self.device)
-    #     m_samples = torch.linspace(0, self.m_n-1, self.m_n,device=self.device)
+        batch_samples = torch.linspace(0, self.batch_size-1, self.batch_size,device=self.device)
+        wvl_samples = torch.linspace(0, self.wvls_n-1, self.wvls_n,device=self.device)
+        m_samples = torch.linspace(0, self.m_n-1, self.m_n,device=self.device)
 
-    #     pixel_samples = torch.linspace(0, self.pixel_num-1, self.pixel_num, device= self.device)
-    #     grid_b, grid_m, grid_w, grid_pixel = torch.meshgrid(batch_samples,m_samples,wvl_samples,pixel_samples,indexing='ij')
+        pixel_samples = torch.linspace(0, self.pixel_num-1, self.pixel_num, device= self.device)
+        grid_b, grid_m, grid_w, grid_pixel = torch.meshgrid(batch_samples,m_samples,wvl_samples,pixel_samples,indexing='ij')
 
-    #     grid_b_valid = grid_b.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
-    #     grid_m_valid = grid_m.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
-    #     grid_w_valid = grid_w.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
+        grid_b_valid = grid_b.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
+        grid_m_valid = grid_m.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
+        grid_w_valid = grid_w.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
    
-    #     new_idx = self.m_n * self.wvls_n * self.proj_H * self.proj_W * grid_b_valid \
-    #             + self.wvls_n * self.proj_H * self.proj_W * grid_m_valid \
-    #             + self.proj_H * self.proj_W * grid_w_valid \
-    #             + self.proj_W * r_proj_valid \
-    #             + c_proj_valid
+        new_idx = self.m_n * self.wvls_n * self.proj_H * self.proj_W * grid_b_valid \
+                + self.wvls_n * self.proj_H * self.proj_W * grid_m_valid \
+                + self.proj_H * self.proj_W * grid_w_valid \
+                + self.proj_W * r_proj_valid \
+                + c_proj_valid
 
-    #     return new_idx.long(), cond
+        return new_idx.long(), cond
     
 if __name__ == "__main__":
    
