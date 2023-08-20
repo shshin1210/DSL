@@ -4,7 +4,7 @@ warning off;
 
 % image directory
 % date = "test_2023_07_09_15_37_(2)";
-date = "20230817_data/front";
+date = "20230817_data/mid";
 test_fn = date + "_processed";
 % test_fn = date;
 
@@ -39,7 +39,7 @@ for i = 1:numel(pattern_file_list)
 %         img = histeq(img);
         img = imadjust(img,[],[],0.5);
 
-        minradius = 1;
+        minradius = 2;
         maxradius = 10;
         [centers, radii, metric] = imfindcircles(img, [minradius, maxradius], 'EdgeThreshold', 0.027);
         

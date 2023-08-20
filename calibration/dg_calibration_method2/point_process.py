@@ -44,8 +44,8 @@ class PointProcess():
         return processed_points
 
     def one_order(self, wvl_point, zero_arr):
-        if self.position == "front": x_max, x_min = 500, 10
-        elif self.position == "mid": x_max, x_min = 510, 30
+        if self.position == "front": x_max, x_min = 550, 65
+        elif self.position == "mid": x_max, x_min = 570, 85
         else: x_max, x_min = 530, 40  # 530 밑에 위는 544
             # 534
         if x_max < self.proj_px[0]: # x 좌표 비교
@@ -101,12 +101,12 @@ class PointProcess():
         # if 0 not in wvl_point :
         if np.any(np.any(wvl_point!=0, axis = 0)):
             # 겹치는 점 x, y축
-            wvl_point = self.difference(wvl_point, 10, 'x', prev_wvl_point, wvl)
+            wvl_point = self.difference(wvl_point, 360, 'x', prev_wvl_point, wvl)
             
             # 아예 논 외 점 y축
             # sort with y-axis to find avg of each cols
             wvl_point = self.sort_array(wvl_point, "y", axis = 0)
-            wvl_point = self.difference(wvl_point, 50, 'y', prev_wvl_point, wvl)
+            wvl_point = self.difference(wvl_point, 55, 'y', prev_wvl_point, wvl)
         
         wvl_point = self.sort_array(wvl_point, "x", axis = 0)
         return wvl_point
@@ -118,7 +118,7 @@ class PointProcess():
             # if there is any outlier within x-axis
             result = np.any(abs(differences) <= threshold)
             if result == True:
-                print("x outlier detected")
+                print("%d pattern, %d wavelength, x outlier detected"%(self.n_patt, wvl))
                 print("\n before : ", wvl_point)
             
                 # delete which has less intensity
@@ -178,7 +178,7 @@ class PointProcess():
             if (wvl_point.shape[0] == 0) or (self.n_patt > 2000):
                 wvl_point = np.zeros(shape=(self.arg.m_num,2))
         elif self.position == "mid":
-            if (wvl_point.shape[0] == 0) or (self.n_patt > 2010):
+            if (wvl_point.shape[0] == 0) or (self.n_patt > 2000):
                 wvl_point = np.zeros(shape=(self.arg.m_num,2))
         else: 
             if (wvl_point.shape[0] == 0) or (self.n_patt > 2070):

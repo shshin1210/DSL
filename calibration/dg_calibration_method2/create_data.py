@@ -147,10 +147,10 @@ class CreateData():
         # self.process_file()
         
         # # find 3d points of front & back spectralon
-        # front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts, proj_pts = self.find_3d_points()
+        front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts, proj_pts = self.find_3d_points()
         
         # # save 3d points
-        # np.save(os.path.join(self.data_npy_dir,'front_world_3d_pts.npy'), front_world_3d_pts)
+        np.save(os.path.join(self.data_npy_dir,'front_world_3d_pts.npy'), front_world_3d_pts)
         # np.save(os.path.join(self.data_npy_dir,'mid_world_3d_pts.npy'), mid_world_3d_pts)
         # np.save(os.path.join(self.data_npy_dir,'back_world_3d_pts.npy'), back_world_3d_pts)
         # np.save(os.path.join(self.data_npy_dir,'proj_pts.npy'), proj_pts)
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     arg = argument.parse()
     
     bool = False # True : undistort image / False : no undistortion to image
-    date = "0728" # date of data
+    date = "0817" # date of data
     
     # create mat data 
     CreateData(arg, bool, date).createData()

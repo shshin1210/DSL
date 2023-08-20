@@ -85,15 +85,15 @@ class FileProcess():
                 img_undistort_crop = self.crop(img_undistort)
                 
                 # where to save cropped and undistorted image
-                save_dir = os.path.join('%s'%(img_test_path + "_processed"), 'pattern_%04d'%idx2)
-                if not os.path.exists(save_dir):
-                    os.makedirs(save_dir)
-                self.save_img(save_dir, img_undistort_crop, '%dnm.png'%self.wvls[idx])
-
-                # save_dir = os.path.join('%s'%(img_test_path + "_processed2"))
+                # save_dir = os.path.join('%s'%(img_test_path + "_processed"), 'pattern_%04d'%idx2)
                 # if not os.path.exists(save_dir):
                 #     os.makedirs(save_dir)
-                # save_img(save_dir, img_undistort_crop, 'pattern_%04d_%dnm.png'%(idx2, self.wvls[idx]))
+                # self.save_img(save_dir, img_undistort_crop, '%dnm.png'%self.wvls[idx])
+
+                save_dir = os.path.join('%s'%(img_test_path + "_processed2"))
+                if not os.path.exists(save_dir):
+                    os.makedirs(save_dir)
+                self.save_img(save_dir, img_undistort_crop, 'pattern_%04d_%dnm.png'%(idx2, self.wvls[idx]))
 
 if __name__ == "__main__":
     argument = Argument()
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     undistort_flg = False # True : undistort image / False : no undistortion to image
     date = "0817" # date of data
-    position = "front" # front / mid / back
+    position = "mid" # front / mid / back
     
     FileProcess(arg, date).file_process(undistort_flg, position)
 
