@@ -69,7 +69,7 @@ class FileProcess():
         """
                 
         
-        test_fn = "2023%s_data/%s" %(self.date, position)        
+        test_fn = "2023%s_data/%s" %(self.date, position)       
         img_test_path = "C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/calibration/dg_calibration_method2/" + test_fn
         
         # files for each wvls
@@ -84,7 +84,7 @@ class FileProcess():
                 img_undistort = self.undistort(img_path, self.cam_int, self.cam_dist, undistort_flg)
                 img_undistort_crop = self.crop(img_undistort)
                 
-                # where to save cropped and undistorted image
+                # # where to save cropped and undistorted image
                 # save_dir = os.path.join('%s'%(img_test_path + "_processed"), 'pattern_%04d'%idx2)
                 # if not os.path.exists(save_dir):
                 #     os.makedirs(save_dir)
@@ -100,8 +100,8 @@ if __name__ == "__main__":
     arg = argument.parse()
 
     undistort_flg = False # True : undistort image / False : no undistortion to image
-    date = "0817" # date of data
-    position = "mid" # front / mid / back
+    date = "0821" # date of data
+    position = "front" # front / mid / back
     
     FileProcess(arg, date).file_process(undistort_flg, position)
 

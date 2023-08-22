@@ -46,7 +46,7 @@ class PointProcess():
     def one_order(self, wvl_point, zero_arr):
         if self.position == "front": x_max, x_min = 550, 65
         elif self.position == "mid": x_max, x_min = 570, 85
-        else: x_max, x_min = 530, 40  # 530 밑에 위는 544
+        else: x_max, x_min = 580, 95  # 530 밑에 위는 544
             # 534
         if x_max < self.proj_px[0]: # x 좌표 비교
             first_m2 = wvl_point
@@ -181,7 +181,7 @@ class PointProcess():
             if (wvl_point.shape[0] == 0) or (self.n_patt > 2000):
                 wvl_point = np.zeros(shape=(self.arg.m_num,2))
         else: 
-            if (wvl_point.shape[0] == 0) or (self.n_patt > 2070):
+            if (wvl_point.shape[0] == 0) or (self.n_patt > 2047):
                 wvl_point = np.zeros(shape=(self.arg.m_num,2))
 
         # sort with x-axis to find avg of each cols
