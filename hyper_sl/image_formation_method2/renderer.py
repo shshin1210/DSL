@@ -136,10 +136,14 @@ class PixelRenderer():
         
         cam_N_img = torch.zeros(size=(self.batch_size, self.pixel_num, self.n_illum, 3), device= self.device)
         
-        for j in range(self.n_illum):            
+        # for j in range(1):
+        for j in range(self.n_illum): 
+            # other illuminations           
             # illum = cv2.imread('./hyper_sl/image_formation/rendering_prac/MicrosoftTeams-image (11).png', -1)
-            # illum = torch.tensor(illum).to(device = self.arg.device).type(torch.float32)
-            illum = self.load_data.load_illum(j).to(self.device) * self.arg.illum_weight
+            illum = cv2.imread('./dataset/image_formation/illum/lines/line_%02d.png'%(j))
+            illum = torch.tensor(illum).to(device = self.arg.device).type(torch.float32)
+            
+            # illum = self.load_data.load_illum(j).to(self.device) * self.arg.illum_weight
             illum = self.gaussian_blur(illum.permute(2,0,1)).permute(1,2,0)
             illum_img = torch.zeros(self.batch_size, self.m_n, self.wvls_n, self.pixel_num, device= self.device).flatten()
 
@@ -171,12 +175,14 @@ class PixelRenderer():
 
                 illums_w_occ = illums_w_occ.permute(0,1,3,2)
                 
-                cam_m_img = torch.zeros((self.batch_size, self.m_n, self.pixel_num, 3))
+                cam_m_img = torch.zeros((self.batch_size, self.m_n, self.pixel_num, 25))
+                # cam_m_img = torch.zeros((self.batch_size, self.m_n, self.pixel_num, 3))
                 
                 # m order에 따른 cam img : cam_m_img
                 for k in range(self.m_n): 
-                    cam_m_img[:,k,...] =  0.1 * (hyp* (illums_w_occ[:,k,...])@ self.CRF_cam)
-
+                    # cam_m_img[:,k,...] =  0.1 * (hyp* (illums_w_occ[:,k,...])@ self.CRF_cam)
+                    cam_m_img[:,k,...] =  0.1 * (hyp* (illums_w_occ[:,k,...]))
+                    
                 cam_img = cam_m_img.sum(axis=1)
                 cam_N_img[...,j,:] = cam_img
                 
@@ -271,67 +277,44 @@ class PixelRenderer():
         
         return illum_unit
     
+            
     # def grid_sample(self, uv1, hyp_f, illum_img):
-        
+    # reshape 없애기
     #     uv1_reshape = uv1.reshape(self.batch_size, self.m_n, self.wvls_n, 3, self.cam_H, self.cam_W)
         
     #     # split integer and decimal
     #     uv1_integer = uv1_reshape.long()
-    #     u_float = (uv1_reshape - uv1_integer)[:,:,:,1]
-    #     v_float = (uv1_reshape - uv1_integer)[:,:,:,0]
-                
-    #     top_left_weight = (1-u_float) * (1-v_float)
-    #     top_right_weight = u_float * (1-v_float)
-    #     bott_left_weight = (1-u_float) * v_float
-    #     bott_right_weight = u_float * v_float
-        
-    #     A, A_cond = self.get_newidx(uv1.long(), 'A')
-    #     B, B_cond = self.get_newidx(uv1.long(), 'B')
-    #     C, C_cond = self.get_newidx(uv1.long(), 'C')
-    #     D, D_cond = self.get_newidx(uv1.long(), 'D')
+    #     u_float, v_float = uv1_reshape[:,:,:,0] - uv1_integer[:,:,:,0], uv1_reshape[:,:,:,1] - uv1_integer[:,:,:,1]
 
-    #     # 여기서 grid sampling?
-    #     valid_pattern_img_A = hyp_f[A]
-    #     valid_pattern_img_B = hyp_f[B]
-    #     valid_pattern_img_C = hyp_f[C]
-    #     valid_pattern_img_D = hyp_f[D]
+    #     weights = [
+    #         (1-u_float) * (1-v_float),
+    #         u_float * (1-v_float),
+    #         (1-u_float) * v_float,
+    #         u_float * v_float
+    #     ]
 
-    #     illum_img[A_cond.flatten()] = valid_pattern_img_A.flatten()
-    #     illum_img_A = top_left_weight.flatten() * illum_img
+    #     indices = ['A', 'B', 'C', 'D']
+    #     final_illum_img = torch.zeros_like(illum_img)
+    #     for idx, corner in enumerate(indices):
+    #         new_idx, cond = self.get_newidx(uv1.long(), corner)
+    #         valid_pattern_img = hyp_f[new_idx]
+    #         illum_img[cond.flatten()] = valid_pattern_img.flatten()
+    #         final_illum_img += weights[idx].flatten() * illum_img
 
-    #     illum_img[B_cond.flatten()] = valid_pattern_img_B.flatten()
-    #     illum_img_B = top_right_weight.flatten() * illum_img
+    #     return final_illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
 
-    #     illum_img[C_cond.flatten()] = valid_pattern_img_C.flatten()
-    #     illum_img_C = bott_left_weight.flatten() * illum_img
-
-    #     illum_img[D_cond.flatten()] = valid_pattern_img_D.flatten()
-    #     illum_img_D = bott_right_weight.flatten() * illum_img
-        
-    #     illum_img_final = illum_img_A + illum_img_B + illum_img_C + illum_img_D
-    #     illum_img_final = illum_img_final.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
-
-    #     return illum_img_final
-        
     # def get_newidx(self, uv1, corner):
-        
-    #     if corner == 'A':
-    #             r_proj, c_proj = uv1[:,:,:,1], uv1[:,:,:,0]
-    #             cond = (0<= r_proj)*(r_proj < self.proj_H)*(0<=c_proj)*(c_proj< self.proj_W) 
-    #     elif corner == 'B':
-    #             r_proj, c_proj = uv1[:,:,:,1], uv1[:,:,:,0]
-    #             r_proj += 1
-    #             cond = (0<= r_proj)*(r_proj < self.proj_H)*(0<=c_proj)*(c_proj< self.proj_W) 
+    #     r_proj, c_proj = uv1[:,:,:,1].clone(), uv1[:,:,:,0].clone()
+
+    #     if corner == 'B':
+    #         r_proj += 1
     #     elif corner == 'C':
-    #             r_proj, c_proj = uv1[:,:,:,1], uv1[:,:,:,0]
-    #             c_proj += 1
-    #             cond = (0<= r_proj)*(r_proj < self.proj_H)*(0<=c_proj)*(c_proj< self.proj_W) 
-    #     else:
-    #             r_proj, c_proj = uv1[:,:,:,1], uv1[:,:,:,0]
-    #             r_proj += 1
-    #             c_proj += 1
-    #             cond = (0<= r_proj)*(r_proj < self.proj_H)*(0<=c_proj)*(c_proj< self.proj_W) 
-        
+    #         c_proj += 1
+    #     elif corner == 'D':
+    #         r_proj += 1
+    #         c_proj += 1
+
+    #     cond = (0 <= r_proj) & (r_proj < self.proj_H) & (0 <= c_proj) & (c_proj < self.proj_W)
     #     r_proj_valid, c_proj_valid = r_proj[cond], c_proj[cond]
 
     #     batch_samples = torch.linspace(0, self.batch_size-1, self.batch_size,device=self.device)
@@ -343,7 +326,7 @@ class PixelRenderer():
 
     #     grid_b_valid = grid_b.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
     #     grid_m_valid = grid_m.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
-    #     grid_w_valid = grid_w.reshape(self.batch_size, self.m_n, self.wvls_n`f`, self.pixel_num)[cond]
+    #     grid_w_valid = grid_w.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
    
     #     new_idx = self.m_n * self.wvls_n * self.proj_H * self.proj_W * grid_b_valid \
     #             + self.wvls_n * self.proj_H * self.proj_W * grid_m_valid \
@@ -352,63 +335,6 @@ class PixelRenderer():
     #             + c_proj_valid
 
     #     return new_idx.long(), cond
-            
-    def grid_sample(self, uv1, hyp_f, illum_img):
-        uv1_reshape = uv1.reshape(self.batch_size, self.m_n, self.wvls_n, 3, self.cam_H, self.cam_W)
-        
-        # split integer and decimal
-        uv1_integer = uv1_reshape.long()
-        u_float, v_float = uv1_reshape[:,:,:,0] - uv1_integer[:,:,:,0], uv1_reshape[:,:,:,1] - uv1_integer[:,:,:,1]
-
-        weights = [
-            (1-u_float) * (1-v_float),
-            u_float * (1-v_float),
-            (1-u_float) * v_float,
-            u_float * v_float
-        ]
-
-        indices = ['A', 'B', 'C', 'D']
-        final_illum_img = torch.zeros_like(illum_img)
-        for idx, corner in enumerate(indices):
-            new_idx, cond = self.get_newidx(uv1.long(), corner)
-            valid_pattern_img = hyp_f[new_idx]
-            illum_img[cond.flatten()] = valid_pattern_img.flatten()
-            final_illum_img += weights[idx].flatten() * illum_img
-
-        return final_illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
-
-    def get_newidx(self, uv1, corner):
-        r_proj, c_proj = uv1[:,:,:,1].clone(), uv1[:,:,:,0].clone()
-
-        if corner == 'B':
-            r_proj += 1
-        elif corner == 'C':
-            c_proj += 1
-        elif corner == 'D':
-            r_proj += 1
-            c_proj += 1
-
-        cond = (0 <= r_proj) & (r_proj < self.proj_H) & (0 <= c_proj) & (c_proj < self.proj_W)
-        r_proj_valid, c_proj_valid = r_proj[cond], c_proj[cond]
-
-        batch_samples = torch.linspace(0, self.batch_size-1, self.batch_size,device=self.device)
-        wvl_samples = torch.linspace(0, self.wvls_n-1, self.wvls_n,device=self.device)
-        m_samples = torch.linspace(0, self.m_n-1, self.m_n,device=self.device)
-
-        pixel_samples = torch.linspace(0, self.pixel_num-1, self.pixel_num, device= self.device)
-        grid_b, grid_m, grid_w, grid_pixel = torch.meshgrid(batch_samples,m_samples,wvl_samples,pixel_samples,indexing='ij')
-
-        grid_b_valid = grid_b.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
-        grid_m_valid = grid_m.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
-        grid_w_valid = grid_w.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)[cond]
-   
-        new_idx = self.m_n * self.wvls_n * self.proj_H * self.proj_W * grid_b_valid \
-                + self.wvls_n * self.proj_H * self.proj_W * grid_m_valid \
-                + self.proj_H * self.proj_W * grid_w_valid \
-                + self.proj_W * r_proj_valid \
-                + c_proj_valid
-
-        return new_idx.long(), cond
     
 if __name__ == "__main__":
    
@@ -425,18 +351,13 @@ if __name__ == "__main__":
     
     # 기존의 hyperpsectral 정보와 depth로 rendering 하는 코드
     create_data = create_data_patch.createData
-    
-    plane_XYZ = torch.tensor(loadmat('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/hyper_sl/image_formation/rendering_prac/plane_XYZ.mat')['XYZ_q'])
-    plane_XYZ = data_process.crop(plane_XYZ)
-    
+
     pixel_num = arg.cam_H * arg.cam_W
     random = False
     index = 0
     
     # depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0).to(arg.device)
-    # depth[:] = 0.8
-    # depth[:] = plane_XYZ.reshape(-1,3)[:,2].unsqueeze(dim =0)*1e-3
-    depth = torch.tensor(np.load("./calibration/dg_calibration_method2/20230728_data/spectralon_depth_0728_back.npy"), dtype=torch.float32).reshape(-1,3)[...,2].to(arg.device).unsqueeze(dim = 0)
+    depth = torch.tensor(np.load("./calibration/dg_calibration_method2/20230817_data/spectralon_depth_0817_back_2.npy"), dtype=torch.float32).reshape(-1,3)[...,2].to(arg.device).unsqueeze(dim = 0)
     # depth = torch.tensor(np.load("./calibration/gray_code_depth/color_checker_depth_0508.npy"), dtype=torch.float32).reshape(-1,3)[...,2].unsqueeze(dim = 0)    
     
     normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0).to(arg.device)
@@ -450,15 +371,6 @@ if __name__ == "__main__":
     occ = torch.ones_like(occ)
     
     cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0).to(arg.device)
-    
-    import cv2
-    illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/dataset/image_formation/illum/grid.png").astype(np.float32)
-    # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/dataset/image_formation/illum/line_pattern.png").astype(np.float32)
-    # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging/hyper_sl/image_formation/rendering_prac/MicrosoftTeams-image (11).png").astype(np.float32)
-    # illum = cv2.imread("C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/dataset/image_formation/illum/graycode_pattern/pattern_38.png").astype(np.float32)
-    illum = cv2.cvtColor(illum, cv2.COLOR_BGR2RGB)
-    illum = illum / 255.
-    illum = torch.tensor(illum, device='cuda').unsqueeze(dim = 0)
 
     # n_scene, random, pixel_num, eval
     cam_N_img, xy_proj_real_norm, illum_data, shading = PixelRenderer(arg).render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True)
