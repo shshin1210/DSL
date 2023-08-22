@@ -12,6 +12,7 @@ from define_3dpoints import Define3dPoints
 from define_3dlines import Define3dLines
 from file_process import FileProcess
 from hyper_sl.utils.ArgParser import Argument
+from homography_transform import HomographyTransform
 
 class CreateData():
     def __init__(self, arg, bool, date):
@@ -123,8 +124,15 @@ class CreateData():
     def find_3d_points(self):
         # find 3d points of front & back spectralon
         front_world_3d_pts, proj_pts = Define3dPoints(self.arg, self.date, "front").world3d_pts()
+        np.save(os.path.join(self.data_npy_dir,'front_world_3d_pts.npy'), front_world_3d_pts)
+        
         mid_world_3d_pts, proj_pts = Define3dPoints(self.arg, self.date, "mid").world3d_pts()
+        np.save(os.path.join(self.data_npy_dir,'mid_world_3d_pts.npy'), mid_world_3d_pts)
+        
         back_world_3d_pts, proj_pts = Define3dPoints(self.arg, self.date, "back").world3d_pts()
+        np.save(os.path.join(self.data_npy_dir,'back_world_3d_pts.npy'), back_world_3d_pts)
+        
+        np.save(os.path.join(self.data_npy_dir,'proj_pts.npy'), proj_pts)
         
         return front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts, proj_pts
     
@@ -142,19 +150,29 @@ class CreateData():
                 
         return dir_vec
     
+    def extension_visualization(self, dir_vec, start_pts):
+        # extend to projector plane
+        # tensor(0.0078) : focal length of projector
+        t = (0.0078 - start_pts[...,2]) / dir_vec[...,2]
+        points_on_proj = t[:,:,:,np.newaxis] * dir_vec + start_pts
+        plt.figure(figsize = (10,10))
+        plt.subplot(231), plt.scatter(points_on_proj[0,0,:,0], points_on_proj[0,0,:,1]), plt.title('-1 order 450nm'), plt.xlim(0.0475, 0.0625), plt.ylim(0.01, 0.026)
+        plt.subplot(232), plt.scatter(points_on_proj[0,1,:,0], points_on_proj[0,1,:,1]), plt.title('-1 order 500nm'), plt.xlim(0.0475, 0.0625), plt.ylim(0.01, 0.026)
+        plt.subplot(233), plt.scatter(points_on_proj[0,2,:,0], points_on_proj[0,2,:,1]), plt.title('-1 order 550nm'), plt.xlim(0.0475, 0.0625), plt.ylim(0.01, 0.026)
+        plt.subplot(234), plt.scatter(points_on_proj[0,3,:,0], points_on_proj[0,3,:,1]), plt.title('-1 order 600nm'), plt.xlim(0.0475, 0.0625), plt.ylim(0.01, 0.026)
+        plt.subplot(235), plt.scatter(points_on_proj[0,4,:,0], points_on_proj[0,4,:,1]), plt.title('-1 order 650nm'), plt.xlim(0.0475, 0.0625), plt.ylim(0.01, 0.026)
+        
+    
     def createData(self):
         # file processing : cropping, order datas in pattern and wavelengths
         # self.process_file()
         
+        # Homography transformation 적용하기 -> 이후 dot detection
+        HomographyTransform()
+        
         # # find 3d points of front & back spectralon
-        front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts, proj_pts = self.find_3d_points()
-        
-        # # save 3d points
-        np.save(os.path.join(self.data_npy_dir,'front_world_3d_pts.npy'), front_world_3d_pts)
-        # np.save(os.path.join(self.data_npy_dir,'mid_world_3d_pts.npy'), mid_world_3d_pts)
-        # np.save(os.path.join(self.data_npy_dir,'back_world_3d_pts.npy'), back_world_3d_pts)
-        # np.save(os.path.join(self.data_npy_dir,'proj_pts.npy'), proj_pts)
-        
+        # front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts, proj_pts = self.find_3d_points()
+
         # bring saved 3d points
         front_world_3d_pts = np.load(os.path.join(self.data_npy_dir,'front_world_3d_pts.npy')).reshape(arg.m_num, len(self.wvls), self.pts_num, 3)
         mid_world_3d_pts = np.load(os.path.join(self.data_npy_dir,'mid_world_3d_pts.npy')).reshape(arg.m_num, len(self.wvls), self.pts_num, 3)
@@ -164,7 +182,7 @@ class CreateData():
         # # 3d Line class
         # defining_3dlines = Define3dLines(arg, front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts)
         # # visualization 3d points of specific order
-        # # defining_3dlines.visualization(2)
+        # defining_3dlines.visualization(2)
         
         # # define direction vector : m, wvl, # px, 3
         # dir_vec, start_pts = defining_3dlines.define3d_lines()
@@ -177,22 +195,14 @@ class CreateData():
         dir_vec = np.load(os.path.join(self.data_npy_dir,'dir_vec.npy')).reshape(arg.m_num, len(self.wvls), self.pts_num, 3)
         start_pts = np.load(os.path.join(self.data_npy_dir,'start_pts.npy')).reshape(arg.m_num, len(self.wvls), self.pts_num, 3)
         
-        # extend to projector plane
-        # tensor(0.0078) : focal length of projector
-        # t = (0.0078 - start_pts[...,2]) / dir_vec[...,2]
-        # points_on_proj = t[:,:,:,np.newaxis] * dir_vec + start_pts
-        # plt.figure(figsize = (10,10))
-        # plt.subplot(231), plt.scatter(points_on_proj[0,0,:,0], points_on_proj[0,0,:,1]), plt.title('-1 order 450nm'), plt.xlim(0.0475, 0.0625), plt.ylim(0.01, 0.026)
-        # plt.subplot(232), plt.scatter(points_on_proj[0,1,:,0], points_on_proj[0,1,:,1]), plt.title('-1 order 500nm'), plt.xlim(0.0475, 0.0625), plt.ylim(0.01, 0.026)
-        # plt.subplot(233), plt.scatter(points_on_proj[0,2,:,0], points_on_proj[0,2,:,1]), plt.title('-1 order 550nm'), plt.xlim(0.0475, 0.0625), plt.ylim(0.01, 0.026)
-        # plt.subplot(234), plt.scatter(points_on_proj[0,3,:,0], points_on_proj[0,3,:,1]), plt.title('-1 order 600nm'), plt.xlim(0.0475, 0.0625), plt.ylim(0.01, 0.026)
-        # plt.subplot(235), plt.scatter(points_on_proj[0,4,:,0], points_on_proj[0,4,:,1]), plt.title('-1 order 650nm'), plt.xlim(0.0475, 0.0625), plt.ylim(0.01, 0.026)
+        # # extend to projector plane
+        # self.extension_visualization(dir_vec, start_pts)
         
-        # # visualization of direction vector lines and points
+        # visualization of direction vector lines and points
         # defining_3dlines.dir_visualization(dir_vec, start_pts, 0, 0)
     
         # save datas for each depths
-        self.createDepthData(start_pts, dir_vec, proj_pts)
+        # self.createDepthData(start_pts, dir_vec, proj_pts)
         
         # save interpolated parameters
         self.interpolate_data()
