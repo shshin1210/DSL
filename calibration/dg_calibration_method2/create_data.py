@@ -172,7 +172,7 @@ class CreateData():
         # HomographyTransform()
         
         # # find 3d points of front & back spectralon
-        front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts, proj_pts = self.find_3d_points()
+        # front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts, proj_pts = self.find_3d_points()
 
         # bring saved 3d points
         front_world_3d_pts = np.load(os.path.join(self.data_npy_dir,'front_world_3d_pts.npy')).reshape(arg.m_num, len(self.wvls), self.total_px, 3)
