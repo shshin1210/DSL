@@ -108,6 +108,9 @@ class Define3dPoints():
         world_3d_pts_reshape = world_3d_pts.reshape(-1, self.total_px, 3) # m * wvl, # px, 3
         proj_pts = np.zeros(shape=(self.total_px, 2)) # projector sensor plane pxs : # px, 2
         
+        # ====================================================================================================================================================================================
+        undist_pts = np.zeros(shape=(self.arg.m_num, wvls_num, self.total_px, 2)).reshape(-1, self.total_px, 2)
+        
         for i in range(len(os.listdir(self.pattern_npy_dir))):
             # projector pixel points
             proj_px = self.get_proj_px(os.path.join(self.pattern_npy_dir,"pattern_%05d.npy"%i))
@@ -116,14 +119,19 @@ class Define3dPoints():
             # detected pts
             detected_pts = self.get_detected_pts(i, proj_px) # m, wvl, 2
             detected_pts_reshape = detected_pts.reshape(-1, 2) # (x, y 순)
+            
+            world_3d_pts_reshape[:,i] = points_3d[detected_pts_reshape[:,1], detected_pts_reshape[:,0]]
 
-            world_3d_pts_reshape[:,i,:] = points_3d[detected_pts_reshape[:,1], detected_pts_reshape[:,0]]
-
-            # (u, v) = (0, 0) 인 point에 대해서는 말도안되는 값을 넣어줘서 outlier 처리가 될 수 있게끔 처리
+            # ====================================================================================================================================================================================
+            undist_pts[:,i] = detected_pts_reshape
+            
+            # (u, v) = (0, 0) 인 point에 대해서는 말도안되는 값을 넣어줘서 outlier 처리가 될 수 있게끔 처리            
             for j in range(detected_pts_reshape.shape[0]):
-                if (detected_pts_reshape[j] == 0.).all():
+                if (detected_pts_reshape[j] <= 0.).any():
                     world_3d_pts_reshape[j,i,:] = np.array([-0.5,-0.5,-0.5])
-                    
+        
+        np.save('./undist_pts.npy', undist_pts)
+        
         return world_3d_pts_reshape, proj_pts
         
     

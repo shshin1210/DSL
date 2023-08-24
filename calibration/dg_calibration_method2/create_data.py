@@ -172,7 +172,7 @@ class CreateData():
         # HomographyTransform()
         
         # # find 3d points of front & back spectralon
-        # front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts, proj_pts = self.find_3d_points()
+        front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts, proj_pts = self.find_3d_points()
 
         # bring saved 3d points
         front_world_3d_pts = np.load(os.path.join(self.data_npy_dir,'front_world_3d_pts.npy')).reshape(arg.m_num, len(self.wvls), self.total_px, 3)
@@ -183,12 +183,12 @@ class CreateData():
         # # 3d Line class
         defining_3dlines = Define3dLines(arg, front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts)
         # # visualization 3d points of specific order
-        defining_3dlines.visualization(2)
+        # defining_3dlines.visualization(2)
         
-        # define direction vector : m, wvl, # px, 3
-        dir_vec, start_pts = defining_3dlines.define3d_lines()
-        # direction vector outlier
-        dir_vec = self.dir_outlier(dir_vec)
+        # # define direction vector : m, wvl, # px, 3
+        # dir_vec, start_pts = defining_3dlines.define3d_lines()
+        # # direction vector outlier
+        # dir_vec = self.dir_outlier(dir_vec)
         
         np.save(os.path.join(self.data_npy_dir,'dir_vec.npy'), dir_vec)
         np.save(os.path.join(self.data_npy_dir,'start_pts.npy'), start_pts)

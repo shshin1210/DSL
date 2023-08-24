@@ -60,6 +60,10 @@ class PointDistortion():
         return detected_pts
     
     def load_points(self):
+        """
+            load points by number of pattern, wvls, 2
+            
+        """
         # projector points
         proj_pts = np.zeros(shape=(self.total_px, 2)) # projector sensor plane pxs : # px, 2
 
@@ -86,6 +90,10 @@ class PointDistortion():
         return filter_zero_orders, no_filter_zero_orders
     
     def distortion(self, w, opt_param):
+        """
+            distort points by each wavelength
+            
+        """
         k1, k2, p1, p2, k3 = opt_param[w, 0], opt_param[w, 1], opt_param[w, 2], opt_param[w, 3], opt_param[w, 4]
         
         no_filter_ones = torch.ones(size=(self.total_px, 1), device=self.arg.device)
