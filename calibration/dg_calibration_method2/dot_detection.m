@@ -4,7 +4,7 @@ warning off;
 
 % image directory
 % date = "test_2023_07_09_15_37_(2)";
-date = "20230817_data/mid";
+date = "20230822_data/back";
 test_fn = date + "_processed";
 % test_fn = date;
 
