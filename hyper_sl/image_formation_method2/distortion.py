@@ -33,9 +33,9 @@ class Distortion():
         
         return p_list
 
-    def distort_func(self, x, y, z, p, q, unit):
+    def distort_func(self, x, y, z, p, q):
 
-        if unit == "cm":
+        if self.unit == "cm":
             depths = torch.round(self.depth_list * 100).type(torch.int)
             z = torch.round(z * 100).type(torch.int).flatten()
         else:
