@@ -28,15 +28,15 @@ class PointProcess():
         processed_points = np.zeros(shape=(self.arg.m_num, len(self.wvls), 1, 2))
         
         for w in range(len(self.wvls)):
-            wvl_point = np.array(loadmat(os.path.join(self.detected_pts_dir,'%dnm_centroid.mat' %(self.wvls[w])))['centers'])            
+            wvl_point = np.array(loadmat(os.path.join(self.detected_pts_dir,'%dnm_centroid.mat' %(self.wvls[w])))['centers'])    
             wvl_point -= 1
             
             zero, first_m0, first_m2, prev_wvl_point = self.find_order(wvl_point, self.wvls[w], prev_wvl_point)
             
             # zero order
-            processed_points[1] = zero[np.newaxis,:,:]
-            processed_points[0, w, :, :] = first_m0
-            processed_points[2, w, :, :] = first_m2
+            processed_points[1, w] = zero[np.newaxis,:,:]
+            processed_points[0, w] = first_m0
+            processed_points[2, w] = first_m2
         
         # sorting points
         processed_points = self.sort_array(processed_points, "y", axis = 2)
@@ -44,9 +44,14 @@ class PointProcess():
         return processed_points
 
     def one_order(self, wvl_point, zero_arr):
-        if self.position == "front": x_max, x_min = 550, 65
-        elif self.position == "mid": x_max, x_min = 570, 85
-        else: x_max, x_min = 580, 95  # 530 밑에 위는 544
+        # if self.position == "front": x_max, x_min = 550, 65
+        # elif self.position == "mid": x_max, x_min = 570, 85
+        # else: x_max, x_min = 580, 95  # 530 밑에 위는 544
+        
+        if self.position == "front": x_max, x_min = 590, 95
+        elif self.position == "mid": x_max, x_min = 590, 95
+        else: x_max, x_min = 590, 95  # 530 밑에 위는 544
+        
             # 534
         if x_max < self.proj_px[0]: # x 좌표 비교
             first_m2 = wvl_point
@@ -175,13 +180,13 @@ class PointProcess():
         # 아무것도 안찍힌 데이터 처리
         # pattern이 2000 (front) / 2050(mid) 이상부터는 grid 가 찍히지 않음
         if self.position == "front":
-            if (wvl_point.shape[0] == 0) or (self.n_patt > 2000):
+            if (wvl_point.shape[0] == 0) or (self.n_patt > 420):
                 wvl_point = np.zeros(shape=(self.arg.m_num,2))
         elif self.position == "mid":
-            if (wvl_point.shape[0] == 0) or (self.n_patt > 2000):
+            if (wvl_point.shape[0] == 0) or (self.n_patt > 420):
                 wvl_point = np.zeros(shape=(self.arg.m_num,2))
         else: 
-            if (wvl_point.shape[0] == 0) or (self.n_patt > 2047):
+            if (wvl_point.shape[0] == 0) or (self.n_patt > 420):
                 wvl_point = np.zeros(shape=(self.arg.m_num,2))
 
         # sort with x-axis to find avg of each cols
