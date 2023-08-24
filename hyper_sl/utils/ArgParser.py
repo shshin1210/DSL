@@ -95,6 +95,9 @@ class Argument:
 		self.parser.add_argument('--noise_std', type = float, default= 0.015) 
 		self.parser.add_argument('--image_weight', type = float, default= 1.33) 
   
+		# args for dg calibration
+		self.parser.add_argument('--total_px', type = int, default= 29*16) # arg.proj_H//10 * arg.proj_W//10
+
 		################## TODO: clean the following codes
 
 		# for init scene
