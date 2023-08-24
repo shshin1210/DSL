@@ -17,7 +17,11 @@ class Define3dPoints():
         self.date = date
         self.position = position
         self.wvls = np.array([430, 450, 480, 500, 520, 550, 580, 600, 620, 650, 660])
-        
+        # self.total_px = (self.arg.proj_H//10)* (self.arg.proj_W//10)
+        self.total_px = arg.total_px
+        self.epoch = 1099
+        self.cam_int, _ = calibrated_params.bring_params(arg.calibration_param_path, "cam")
+
         # directory 
         self.main_dir = "./calibration/dg_calibration_method2/2023%s_data"%self.date
         self.data_dir = os.path.join(self.main_dir, self.position)
@@ -52,9 +56,26 @@ class Define3dPoints():
         detected_pts_dir = self.point_dir + '/pattern_%04d'%i
         processed_img_dir = self.processed_dir + '/pattern_%04d'%i
         detected_pts = point_process.PointProcess(self.arg, self.data_dir, detected_pts_dir, processed_img_dir, self.wvls, i, proj_px, self.position).point_process()
-        detected_pts = (np.round(detected_pts)).astype(np.int32)
+        undistort_pts = self.undistort(detected_pts=detected_pts)
+        undistort_pts = (np.round(undistort_pts)).astype(np.int32) # m, wvl, 2
+
+        return undistort_pts
+    
+    def undistort(self, detected_pts):
+        undistort_pts = np.zeros(shape=(self.arg.m_num, len(self.wvls), 2))
         
-        return detected_pts
+        for w in range(len(self.wvls)):
+            opt_param = np.load(os.path.join(self.main_dir, 'opt_param/%sparam_%06d.npy'%(self.position, self.epoch))) # wvls, 5
+
+            undistort_detected_pts = cv2.undistortPoints(src = detected_pts[:,w].reshape(-1, 1, 2), cameraMatrix = self.cam_int, distCoeffs= opt_param[w])
+            undistort_pts[:, w] = undistort_detected_pts.squeeze()
+            
+            ones = np.ones(shape=(3, len(self.wvls), 1))
+            undistort_pts1 = np.concatenate((undistort_pts, ones), axis = 2)
+            undistort_pts_uv1 = self.cam_int@undistort_pts1.reshape(-1, 3).transpose(1, 0)
+            undistort_pts_uv = undistort_pts_uv1.transpose(1, 0).reshape(self.arg.m_num, len(self.wvls), 3)[...,:2]
+        
+        return undistort_pts_uv
 
     def visualization(self, world_3d_pts):
         """
@@ -78,15 +99,14 @@ class Define3dPoints():
         """
         # wvls = np.arange(450, 660, 50)
         wvls_num = len(self.wvls)
-        total_px = (self.arg.proj_H//10)*(self.arg.proj_W//10) 
-
+        
         # 3d points
         points_3d = self.get_3d_points()
         
         # New arrays : m, wvl, # px(=1), 2
-        world_3d_pts = np.zeros(shape=(self.arg.m_num, wvls_num, total_px, 3))
-        world_3d_pts_reshape = world_3d_pts.reshape(-1, total_px, 3) # m * wvl, # px, 3
-        proj_pts = np.zeros(shape=(total_px, 2)) # projector sensor plane pxs : # px, 2
+        world_3d_pts = np.zeros(shape=(self.arg.m_num, wvls_num, self.total_px, 3))
+        world_3d_pts_reshape = world_3d_pts.reshape(-1, self.total_px, 3) # m * wvl, # px, 3
+        proj_pts = np.zeros(shape=(self.total_px, 2)) # projector sensor plane pxs : # px, 2
         
         for i in range(len(os.listdir(self.pattern_npy_dir))):
             # projector pixel points
@@ -111,7 +131,7 @@ if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
     
-    date = "0817"
+    date = "0822"
 
     front_world_3d_pts_reshape, proj_pts = Define3dPoints(arg, date, "front").world3d_pts()
     mid_world_3d_pts_reshape, proj_pts = Define3dPoints(arg, date, "mid").world3d_pts()

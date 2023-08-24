@@ -13,7 +13,7 @@ class Define3dLines():
         self.arg = arg
         # self.wvls = np.arange(450, 660, 50)
         self.wvls = np.array([430, 450, 480, 500, 520, 550, 580, 600, 620, 650, 660])
-        self.pts_num = (arg.proj_H // 10) * (arg.proj_W // 10)
+        self.total_px = arg.total_px
         self.m_list = arg.m_list
         
         # 3d points : m, wvl, # pts, 3
@@ -42,11 +42,11 @@ class Define3dLines():
          
         # delete outliers of direction vector (delete z points under 0.)
         idx = (front_world_3d_pts[...,2] > 0.) * (back_world_3d_pts[...,2] > 0.) * (mid_world_3d_pts[...,2] > 0.)
-        for i in range(self.arg.m_num*len(self.wvls)*self.pts_num):
+        for i in range(self.arg.m_num*len(self.wvls)*self.total_px):
             if idx[i] == False:
                 dir_vec[i,:] = 0. # let outlier's direction vector be Zero
 
-        dir_vec = dir_vec.reshape(self.arg.m_num, len(self.wvls), self.pts_num, 3)
+        dir_vec = dir_vec.reshape(self.arg.m_num, len(self.wvls), self.total_px, 3)
 
         return dir_vec, start_pts
     
@@ -127,12 +127,12 @@ class Define3dLines():
             optimizer.zero_grad()
             loss.backward()
             
-            losses.append(loss.item() / (num_pts*self.arg.m_num*len(self.wvls)*self.pts_num))
+            losses.append(loss.item() / (num_pts*self.arg.m_num*len(self.wvls)*self.total_px))
             optimizer.step()
             scheduler.step()
 
             if i % 1000 == 0:
-                print(f" Opt param value : {opt_param}, Epoch : {i}/{epoch}, Loss: {loss.item() / (num_pts*self.arg.m_num*len(self.wvls)*self.pts_num)}, LR: {optimizer.param_groups[0]['lr']}")
+                print(f" Opt param value : {opt_param}, Epoch : {i}/{epoch}, Loss: {loss.item() / (num_pts*self.arg.m_num*len(self.wvls)*self.total_px)}, LR: {optimizer.param_groups[0]['lr']}")
         
         return opt_param[...,:3], opt_param[...,3:]
     
@@ -180,7 +180,7 @@ class Define3dLines():
         m = order_idx
         wvl = wvl_idx
                 
-        for k in range(0, self.pts_num, 20):
+        for k in range(0, self.total_px, 20):
             
             ax.scatter(start_pts[m, wvl, k, 0], start_pts[m, wvl, k, 1], start_pts[m, wvl, k, 2], c = 'cyan', s = 5)
             ax.scatter(self.front_world_3d_pts[m, wvl, k, 0], self.front_world_3d_pts[m, wvl, k,1], self.front_world_3d_pts[m, wvl, k, 2] , c = 'blue', s =5)
@@ -218,12 +218,12 @@ if __name__ == "__main__":
     
     # wvl
     wvls = np.arange(450, 660, 50)
-    pts_num = (arg.proj_H // 10) * (arg.proj_W // 10) -1
+    total_px = (arg.proj_H // 10) * (arg.proj_W // 10) -1
     
     # bring 3d points
-    front_world_3d_pts = np.load('./front_world_3d_pts.npy').reshape(arg.m_num, len(wvls), pts_num, 3)
-    mid_world_3d_pts = np.load('./mid_world_3d_pts.npy').reshape(arg.m_num, len(wvls), pts_num, 3)
-    back_world_3d_pts = np.load('./back_world_3d_pts.npy').reshape(arg.m_num, len(wvls), pts_num, 3)
+    front_world_3d_pts = np.load('./front_world_3d_pts.npy').reshape(arg.m_num, len(wvls), total_px, 3)
+    mid_world_3d_pts = np.load('./mid_world_3d_pts.npy').reshape(arg.m_num, len(wvls), total_px, 3)
+    back_world_3d_pts = np.load('./back_world_3d_pts.npy').reshape(arg.m_num, len(wvls), total_px, 3)
 
     # bring proj pts
     proj_pts = np.load('./proj_pts.npy')

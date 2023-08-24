@@ -12,7 +12,7 @@ from define_3dpoints import Define3dPoints
 from define_3dlines import Define3dLines
 from file_process import FileProcess
 from hyper_sl.utils.ArgParser import Argument
-from homography_transform import HomographyTransform
+# from homography_transform import HomographyTransform
 
 class CreateData():
     def __init__(self, arg, bool, date):
@@ -24,7 +24,8 @@ class CreateData():
         # self.wvls = np.arange(450, 660, 50)
         self.wvls = np.array([430, 450, 480, 500, 520, 550, 580, 600, 620, 650, 660])
         self.interpolated_wvls = np.arange(420, 670, 10)
-        self.pts_num = (arg.proj_H // 10) * (arg.proj_W // 10)
+        # self.total_px = (arg.proj_H // 10) * (arg.proj_W // 10)
+        self.total_px = arg.total_px
         self.m_list = arg.m_list
         self.new_m_list = np.concatenate((self.m_list[:1], self.m_list[2:]))
         self.depth = arg.depth_list
@@ -168,41 +169,41 @@ class CreateData():
         # self.process_file()
         
         # Homography transformation 적용하기 -> 이후 dot detection
-        HomographyTransform()
+        # HomographyTransform()
         
         # # find 3d points of front & back spectralon
-        # front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts, proj_pts = self.find_3d_points()
+        front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts, proj_pts = self.find_3d_points()
 
         # bring saved 3d points
-        front_world_3d_pts = np.load(os.path.join(self.data_npy_dir,'front_world_3d_pts.npy')).reshape(arg.m_num, len(self.wvls), self.pts_num, 3)
-        mid_world_3d_pts = np.load(os.path.join(self.data_npy_dir,'mid_world_3d_pts.npy')).reshape(arg.m_num, len(self.wvls), self.pts_num, 3)
-        back_world_3d_pts = np.load(os.path.join(self.data_npy_dir,'back_world_3d_pts.npy')).reshape(arg.m_num, len(self.wvls), self.pts_num, 3)
+        front_world_3d_pts = np.load(os.path.join(self.data_npy_dir,'front_world_3d_pts.npy')).reshape(arg.m_num, len(self.wvls), self.total_px, 3)
+        mid_world_3d_pts = np.load(os.path.join(self.data_npy_dir,'mid_world_3d_pts.npy')).reshape(arg.m_num, len(self.wvls), self.total_px, 3)
+        back_world_3d_pts = np.load(os.path.join(self.data_npy_dir,'back_world_3d_pts.npy')).reshape(arg.m_num, len(self.wvls), self.total_px, 3)
         proj_pts = np.load(os.path.join(self.data_npy_dir,'proj_pts.npy'))
         
         # # 3d Line class
-        # defining_3dlines = Define3dLines(arg, front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts)
+        defining_3dlines = Define3dLines(arg, front_world_3d_pts, mid_world_3d_pts, back_world_3d_pts)
         # # visualization 3d points of specific order
-        # defining_3dlines.visualization(2)
+        defining_3dlines.visualization(2)
         
-        # # define direction vector : m, wvl, # px, 3
-        # dir_vec, start_pts = defining_3dlines.define3d_lines()
-        # # direction vector outlier
-        # dir_vec = self.dir_outlier(dir_vec)
+        # define direction vector : m, wvl, # px, 3
+        dir_vec, start_pts = defining_3dlines.define3d_lines()
+        # direction vector outlier
+        dir_vec = self.dir_outlier(dir_vec)
         
-        # np.save(os.path.join(self.data_npy_dir,'dir_vec.npy'), dir_vec)
-        # np.save(os.path.join(self.data_npy_dir,'start_pts.npy'), start_pts)
+        np.save(os.path.join(self.data_npy_dir,'dir_vec.npy'), dir_vec)
+        np.save(os.path.join(self.data_npy_dir,'start_pts.npy'), start_pts)
         
-        dir_vec = np.load(os.path.join(self.data_npy_dir,'dir_vec.npy')).reshape(arg.m_num, len(self.wvls), self.pts_num, 3)
-        start_pts = np.load(os.path.join(self.data_npy_dir,'start_pts.npy')).reshape(arg.m_num, len(self.wvls), self.pts_num, 3)
+        dir_vec = np.load(os.path.join(self.data_npy_dir,'dir_vec.npy')).reshape(arg.m_num, len(self.wvls), self.total_px, 3)
+        start_pts = np.load(os.path.join(self.data_npy_dir,'start_pts.npy')).reshape(arg.m_num, len(self.wvls), self.total_px, 3)
         
-        # # extend to projector plane
-        # self.extension_visualization(dir_vec, start_pts)
+        # extend to projector plane
+        self.extension_visualization(dir_vec, start_pts)
         
         # visualization of direction vector lines and points
-        # defining_3dlines.dir_visualization(dir_vec, start_pts, 0, 0)
+        defining_3dlines.dir_visualization(dir_vec, start_pts, 0, 0)
     
         # save datas for each depths
-        # self.createDepthData(start_pts, dir_vec, proj_pts)
+        self.createDepthData(start_pts, dir_vec, proj_pts)
         
         # save interpolated parameters
         self.interpolate_data()
@@ -212,7 +213,7 @@ if __name__ == "__main__":
     arg = argument.parse()
     
     bool = False # True : undistort image / False : no undistortion to image
-    date = "0817" # date of data
+    date = "0822" # date of data
     
     # create mat data 
     CreateData(arg, bool, date).createData()
