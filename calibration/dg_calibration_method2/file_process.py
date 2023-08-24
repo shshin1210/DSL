@@ -76,6 +76,7 @@ class FileProcess():
         files = os.listdir(img_test_path)
         
         for idx, file in enumerate(files):
+
             # files for each grid patterns
             inner_files = os.listdir(os.path.join(img_test_path,file))
             
@@ -84,24 +85,25 @@ class FileProcess():
                 img_undistort = self.undistort(img_path, self.cam_int, self.cam_dist, undistort_flg)
                 img_undistort_crop = self.crop(img_undistort)
                 
-                # # where to save cropped and undistorted image
-                # save_dir = os.path.join('%s'%(img_test_path + "_processed"), 'pattern_%04d'%idx2)
-                # if not os.path.exists(save_dir):
-                #     os.makedirs(save_dir)
-                # self.save_img(save_dir, img_undistort_crop, '%dnm.png'%self.wvls[idx])
-
-                save_dir = os.path.join('%s'%(img_test_path + "_processed2"))
+                # where to save cropped and undistorted image
+                save_dir = os.path.join('%s'%(img_test_path + "_processed"), 'pattern_%04d'%idx2)
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir)
-                self.save_img(save_dir, img_undistort_crop, 'pattern_%04d_%dnm.png'%(idx2, self.wvls[idx]))
+                # self.save_img(save_dir, img_undistort_crop, '%dnm.png'%self.wvls[idx])
+                self.save_img(save_dir, img_undistort_crop, '%s.png'%file)
+
+                # save_dir = os.path.join('%s'%(img_test_path + "_processed2"))
+                # if not os.path.exists(save_dir):
+                #     os.makedirs(save_dir)
+                # self.save_img(save_dir, img_undistort_crop, 'pattern_%04d_%s.png'%(idx2, file))
 
 if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
 
     undistort_flg = False # True : undistort image / False : no undistortion to image
-    date = "0821" # date of data
-    position = "front" # front / mid / back
+    date = "0822" # date of data
+    position = "back" # front / mid / back
     
     FileProcess(arg, date).file_process(undistort_flg, position)
 
