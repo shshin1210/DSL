@@ -25,8 +25,8 @@ for i = 1:numel(file_list)
 
     error = sqrt((xo_recon-xo).^2 + (yo_recon-yo).^2);
 
-%     figure(1); imagesc(reshape(error, [64, 36])); colorbar; title(sprintf('error %s', file_list(i).name(1:end-4)));
-%     pause(1);
+% %     figure(1); imagesc(reshape(error, [64, 36])); colorbar; title(sprintf('error %s', file_list(i).name(1:end-4)));
+% %     pause(1);
 % 
 %     fprintf('reprojection error in px\n');
 %     fprintf('\t mean error:%f, max error:%f, stddev: %f\n', mean(error(:), 'omitnan'), max(error(:)), std(error(:), 'omitnan'));
@@ -43,7 +43,7 @@ for i = 1:numel(file_list)
 %     subplot(1,2,2); plot(xo, yo, '.'); title('GT');
 %     subtitle(sprintf('\t mean:%f, max:%f, stddev: %f\n', mean(error(:), 'omitnan'), max(error(:)), std(error(:), 'omitnan')));
 % %     saveas(gcf, sprintf('./error_visualization/%s.png', file_list(i).name))
-%     pause(1);
+%     pause(0.1);
 
     fprintf('reprojection error in px\n');
     fprintf('\t mean error:%f, max error:%f, stddev: %f\n', mean(error(:), 'omitnan'), max(error(:)), std(error(:), 'omitnan'));

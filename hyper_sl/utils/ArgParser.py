@@ -12,16 +12,12 @@ class Argument:
 		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
 
 		self.parser.add_argument('--model_dir', type=str, default="./model_depth")
-		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_line")
-		# self.parser.add_argument('--model_dir', type = str, default="/log/hyp-3d-imaging/result/model_graycode")
-  
-		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_360")
-		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_3_1")
+
 		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
 
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
 		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
-		self.parser.add_argument('--dg_intensity_dir', type=str, default='./calibration')
+		self.parser.add_argument('--dg_intensity_dir', type=str, default='./calibration/radiometric_cal')
 		# self.parser.add_argument('--dat_dir', type = str, default = './dataset/image_formation/dat')
 		self.parser.add_argument('--dat_dir', type = str, default= "./dataset/image_formation/dat/method2/interpolated")
 		self.parser.add_argument('--illum_data_dir', type = str, default= "./dataset/image_formation/illum_data.npy")

@@ -136,14 +136,15 @@ class PixelRenderer():
         
         cam_N_img = torch.zeros(size=(self.batch_size, self.pixel_num, self.n_illum, 3), device= self.device)
         
-        for j in range(0,4):
-        # for j in range(self.n_illum): 
+        # for j in range(0,1):
+        for j in range(self.n_illum): 
             # other illuminations           
             # illum = cv2.imread('./hyper_sl/image_formation/rendering_prac/MicrosoftTeams-image (11).png', -1)
-            illum = cv2.imread('./dataset/image_formation/illum/lines/line_%02d.png'%(j))
-            illum = torch.tensor(illum).to(device = self.arg.device).type(torch.float32)
+            # illum = cv2.imread('./dataset/image_formation/illum/lines/line_%02d.png'%(j))
+            # illum = cv2.imread('./dataset/image_formation/illum/single_grid.png')
+            # illum = torch.tensor(illum).to(device = self.arg.device).type(torch.float32)
             
-            # illum = self.load_data.load_illum(j).to(self.device) * self.arg.illum_weight
+            illum = self.load_data.load_illum(j).to(self.device) * self.arg.illum_weight
             illum = self.gaussian_blur(illum.permute(2,0,1)).permute(1,2,0)
             illum_img = torch.zeros(self.batch_size, self.m_n, self.wvls_n, self.pixel_num, device= self.device).flatten()
 
@@ -164,7 +165,7 @@ class PixelRenderer():
             
             illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
             # ==================================== dg intensity ====================================
-            # illum_img =  illum_img * self.dg_intensity.unsqueeze(dim=3)
+            illum_img =  illum_img * self.dg_intensity.unsqueeze(dim=3)
             illums_m_img = illum_img.sum(axis = 1).reshape(self.batch_size, self.wvls_n, self.pixel_num).permute(0,2,1)
             
             if not illum_only:
@@ -178,7 +179,7 @@ class PixelRenderer():
                 
                 # m order에 따른 cam img : cam_m_img
                 for k in range(self.m_n): 
-                    cam_m_img[:,k,...] =  0.1 * (hyp* (illums_w_occ[:,k,...])@ self.CRF_cam)
+                    cam_m_img[:,k,...] =  0.4 * (hyp* (illums_w_occ[:,k,...])@ self.CRF_cam)
                     
                 cam_img = cam_m_img.sum(axis=1)
                 cam_N_img[...,j,:] = cam_img
