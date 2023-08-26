@@ -180,7 +180,7 @@ class PixelRenderer():
                 
                 # m order에 따른 cam img : cam_m_img
                 for k in range(self.m_n): 
-                    cam_m_img[:,k,...] =  0.4 * (hyp* (illums_w_occ[:,k,...])@ self.CRF_cam)
+                    cam_m_img[:,k,...] =  0.1 * (hyp* (illums_w_occ[:,k,...])@ self.CRF_cam)
                     
                 cam_img = cam_m_img.sum(axis=1)
                 cam_N_img[...,j,:] = cam_img
