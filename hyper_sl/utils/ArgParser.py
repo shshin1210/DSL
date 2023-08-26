@@ -5,7 +5,7 @@ class Argument:
 	def __init__(self):
 		self.parser = argparse.ArgumentParser()
 
-		self.parser.add_argument('--device', type = str, default="cuda:0")
+		self.parser.add_argument('--device', type = str, default="cuda:5")
 
 		################## PATH
 		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
@@ -13,7 +13,8 @@ class Argument:
 
 		self.parser.add_argument('--model_dir', type=str, default="./model_depth")
 
-		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
+		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern_gray")
+		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
 
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
 		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")

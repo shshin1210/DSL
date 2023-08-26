@@ -1,6 +1,7 @@
 import numpy as np
 import torch, os, sys, cv2
-sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
+sys.path.append(os.getcwd())
+# sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
 
 from hyper_sl.utils import noise,normalize,load_data
 
@@ -355,7 +356,7 @@ if __name__ == "__main__":
     index = 0
     
     # depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0).to(arg.device)
-    depth = torch.tensor(np.load("./calibration/dg_calibration_method2/20230822_data/spectralon_depth_0822_back.npy"), dtype=torch.float32).reshape(-1,3)[...,2].to(arg.device).unsqueeze(dim = 0)
+    depth = torch.tensor(np.load("./20230825_color_checker.npy"), dtype=torch.float32).reshape(-1,3)[...,2].to(arg.device).unsqueeze(dim = 0)
     # depth = torch.tensor(np.load("./calibration/gray_code_depth/color_checker_depth_0508.npy"), dtype=torch.float32).reshape(-1,3)[...,2].unsqueeze(dim = 0)    
     
     normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0).to(arg.device)

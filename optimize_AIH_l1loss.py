@@ -11,7 +11,7 @@ from hyper_sl.image_formation import renderer
 import matplotlib.pyplot as plt
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '5'
 print('cuda visible device count :',torch.cuda.device_count())
 print('current device number :', torch.cuda.current_device())
 
@@ -37,7 +37,7 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
         _, illum_data, cam_coord = data[0], data[1], data[2]
         
         # to device         
-        depth = torch.tensor(np.load("./calibration/color_checker_depth_0508.npy")[...,2].reshape(1,-1)).type(torch.float32)
+        depth = torch.tensor(np.load("./20230825_color_checker.npy")[...,2].reshape(1,-1)).type(torch.float32)
 
         _, _, illum_data, _ = pixel_renderer.render(depth, None, None, None, cam_coord, None, True)
     
