@@ -5,7 +5,7 @@ class Argument:
 	def __init__(self):
 		self.parser = argparse.ArgumentParser()
 
-		self.parser.add_argument('--device', type = str, default="cuda:0")
+		self.parser.add_argument('--device', type = str, default="cuda:5")
 
 		################## PATH
 		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")

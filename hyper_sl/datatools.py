@@ -83,10 +83,10 @@ class pixelData(Dataset):
             return [depth, normal, hyp, occ, cam_coord]
 
         elif self.real == True:
-            N3_arr, illum_data = self.create_data(self.arg, 'real', self.pixel_num, self.random, i = index).create()
-            # cam_coord = self.create_data(self.arg, 'coord', self.pixel_num, random = self.random).create()
+            N3_arr = self.create_data(self.arg, 'real', self.pixel_num, self.random, i = index).create()
+            cam_coord = self.create_data(self.arg, 'coord', self.pixel_num, random = self.random).create()
 
-            return [N3_arr, illum_data, cam_coord]
+            return [N3_arr, cam_coord]
             # return [cam_coord]
             
             

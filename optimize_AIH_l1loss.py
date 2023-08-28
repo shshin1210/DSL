@@ -6,14 +6,14 @@ import os
 from hyper_sl.utils.ArgParser import Argument
 
 import hyper_sl.datatools as dtools 
-from hyper_sl.image_formation import renderer
+from hyper_sl.image_formation_method2 import renderer
 
 import matplotlib.pyplot as plt
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '5'
-print('cuda visible device count :',torch.cuda.device_count())
-print('current device number :', torch.cuda.current_device())
+# os.environ['CUDA_VISIBLE_DEVICES'] = '5'
+# print('cuda visible device count :',torch.cuda.device_count())
+# print('current device number :', torch.cuda.current_device())
 
 def optimizer_l1_loss(arg, b_dir, cam_crf):
     
@@ -34,10 +34,11 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
     # render illumination data
     for i, data in enumerate(eval_loader):
         # datas
-        _, illum_data, cam_coord = data[0], data[1], data[2]
+        N3_arr, cam_coord = data[0], data[1]
+        N3_arr, cam_coord = N3_arr.to(device = arg.device), cam_coord.to(device = arg.device)
         
         # to device         
-        depth = torch.tensor(np.load("./20230825_color_checker.npy")[...,2].reshape(1,-1)).type(torch.float32)
+        depth = torch.tensor(np.load("./20230825_color_checker.npy")[...,2].reshape(1,-1)).type(torch.float32).to(device=arg.device)
 
         _, _, illum_data, _ = pixel_renderer.render(depth, None, None, None, cam_coord, None, True)
     
@@ -56,9 +57,10 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
 
     # Captured image data
     # b = np.load(b_dir) / 65535.
-    b = np.load(b_dir)
+    # b = np.load(b_dir)
     # b = b[:,:,:,::-1]
-    b = torch.tensor(b, device= device)
+    # b = torch.tensor(b, device= device)
+    b = N3_arr
     
     # optimize with l1 loss
     # Reshape to make M, ...
@@ -102,7 +104,7 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
         X_np_all[start_idx:end_idx] = X_est.detach().cpu()
 
     X_np_all = X_np_all.numpy()
-    np.save('./X_np_all_step_3_new', X_np_all)
+    np.save('./X_np_all.npy', X_np_all)
 
     # plot losses over time
     plt.figure(figsize=(15,10))
@@ -127,7 +129,7 @@ if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
     
-    from hyper_sl.image_formation import camera
+    from hyper_sl.image_formation_method2 import camera
     
     cam_crf = camera.Camera(arg).get_CRF()
     cam_crf = torch.tensor(cam_crf, device= arg.device)

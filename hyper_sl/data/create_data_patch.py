@@ -55,8 +55,9 @@ class createData():
             return normal
         
         else:
-            N3_arr, illum_data = self.createReal(self.i)
-            return N3_arr, illum_data
+            N3_arr = self.createReal(self.i)
+            # N3_arr, illum_data = self.createReal(self.i)
+            return N3_arr
         
     def createDepth(self, pixel_num, random, i):
         """ Create Depth for each pixels
@@ -214,10 +215,10 @@ class createData():
         
         for idx, fn in enumerate(scene_files):
             # Camera Undistortion 넣기
-            if "Thumbs" in fn :
+            if ("Thumbs" in fn) or ("@eaDir" in fn) :
                 continue
             else:
-                real_img = cv2.imread(os.path.join(scene_i_dir, fn))
+                real_img = cv2.imread(os.path.join(scene_i_dir, fn), -1)/65535.
                 # real_img = cv2.imread(os.path.join(scene_i_dir, fn), -1) / 65535.
                 # real_img = data_process.crop(real_img)
                 # cv2.imwrite('%s_img.png'%(fn[:-4]), real_img*255.)
@@ -225,11 +226,13 @@ class createData():
                 real_img = cv2.cvtColor(real_img, cv2.COLOR_BGR2RGB).reshape(self.cam_H*self.cam_W,-1)/255.
                 real_img = torch.tensor(real_img.reshape(self.cam_H*self.cam_W,-1))
                 
-                N3_arr[:,idx-1] = real_img
+                N3_arr[:,idx-2] = real_img
 
-        illum_data = torch.zeros(size=(self.cam_H*self.cam_W, self.illum_num, self.wvls_n))
+        # illum_data = torch.zeros(size=(self.cam_H*self.cam_W, self.illum_num, self.wvls_n))
         
-        return N3_arr, illum_data
+        # return N3_arr, illum_data
+        return N3_arr
+    
         
 if __name__ == "__main__":
     
