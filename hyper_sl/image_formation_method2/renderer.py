@@ -184,7 +184,7 @@ class PixelRenderer():
             return None, xy_proj_real_norm, illum_data, None
         
         noise = self.noise.sample(cam_N_img.shape)
-        cam_N_img += noise
+        # cam_N_img += noise
         cam_N_img = torch.clamp(cam_N_img, 0, 1)
         
         render_end = time.time()

@@ -38,8 +38,8 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
     # render illumination data
     for i, data in enumerate(eval_loader):
         # real captured datas
-        N3_arr, cam_coord = data[0], data[1]
-        N3_arr, cam_coord = N3_arr.to(device = arg.device), cam_coord.to(device = arg.device)
+        # N3_arr, cam_coord = data[0], data[1]
+        # N3_arr, cam_coord = N3_arr.to(device = arg.device), cam_coord.to(device = arg.device)
         
         # to device         
         depth = torch.tensor(np.load("./checker_board_20230828.npy")[...,2].reshape(1,-1)).type(torch.float32).to(device=arg.device)
