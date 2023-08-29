@@ -34,8 +34,8 @@ class PointDistortion():
         # np.save('./filter_zero_orders_%s.npy'%position, self.filter_zero_orders)
         # np.save('./no_filter_zero_orders_%s.npy'%position, self.no_filter_zero_orders)
         
-        self.filter_zero_orders = torch.tensor(np.load('./filter_zero_orders_%s.npy'%position), device= self.arg.device)
-        self.no_filter_zero_orders = torch.tensor(np.load('./no_filter_zero_orders_%s.npy'%position), device= self.arg.device)
+        self.filter_zero_orders = torch.tensor(np.load('./calibration/dg_calibration_method2/2023%s_data/filter_zero_orders_%s.npy'%(self.date, position)), device= self.arg.device)
+        self.no_filter_zero_orders = torch.tensor(np.load('./calibration/dg_calibration_method2/2023%s_data/no_filter_zero_orders_%s.npy'%(self.date, position)), device= self.arg.device)
         
     def get_proj_px(self, dir):
         """
