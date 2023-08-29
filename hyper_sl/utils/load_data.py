@@ -87,7 +87,7 @@ class load_data():
         files = sorted(glob.glob(os.path.join(self.illum_path,'*.png')))
         fn = files[n]
         
-        illum = cv2.imread(fn).astype(np.float32)
+        illum = cv2.imread(fn, -1).astype(np.float32)
         illum = illum / 255.
         illum = torch.tensor(illum)
         

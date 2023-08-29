@@ -69,7 +69,7 @@ class PixelRenderer():
         self.dg_intensity = torch.tensor(self.proj.get_dg_intensity(), device=self.device).unsqueeze(dim=0).float()
         
         # gaussian blur
-        self.gaussian_blur = tf.GaussianBlur(kernel_size=(11,11), sigma=(1.5,1.5))
+        self.gaussian_blur = tf.GaussianBlur(kernel_size=(11, 11), sigma=(2, 2))
         
         # extrinsic matrix
         self.extrinsic_proj_real = self.proj.extrinsic_proj_real()
@@ -132,19 +132,12 @@ class PixelRenderer():
         # normalization
         xy_proj_real_norm = self.normalize.normalization(xyz_proj[:,1,0,:2,...].permute(0,2,1))
         
-        # # new idx
-        # new_idx, cond = self.get_newidx_(uv1)
+        # new idx
+        new_idx, cond = self.get_newidx_(uv1)
         
         cam_N_img = torch.zeros(size=(self.batch_size, self.pixel_num, self.n_illum, 3), device= self.device)
         
-        # for j in range(0,1):
         for j in range(self.n_illum): 
-            # other illuminations           
-            # illum = cv2.imread('./hyper_sl/image_formation/rendering_prac/MicrosoftTeams-image (11).png', -1)
-            # illum = cv2.imread('./dataset/image_formation/illum/lines/line_%02d.png'%(j))
-            # illum = cv2.imread('./dataset/image_formation/illum/single_grid.png')
-            # illum = torch.tensor(illum).to(device = self.arg.device).type(torch.float32)
-            
             illum = self.load_data.load_illum(j).to(self.device) * self.arg.illum_weight
             illum = self.gaussian_blur(illum.permute(2,0,1)).permute(1,2,0)
             illum_img = torch.zeros(self.batch_size, self.m_n, self.wvls_n, self.pixel_num, device= self.device).flatten()
@@ -157,12 +150,12 @@ class PixelRenderer():
 
             hyp_f = illum_hyp_unsq.flatten()
             
-            # grid sampling
-            illum_img = self.grid_sample(uv1, hyp_f, illum_img)
+            # # grid sampling
+            # illum_img = self.grid_sample(uv1, hyp_f, illum_img)
             
-            # # No grid sampling
-            # valid_pattern_img = hyp_f[new_idx]
-            # illum_img[cond.flatten()] = valid_pattern_img.flatten()
+            # No grid sampling
+            valid_pattern_img = hyp_f[new_idx]
+            illum_img[cond.flatten()] = valid_pattern_img.flatten()
             
             illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
             # ==================================== dg intensity ====================================
@@ -171,16 +164,16 @@ class PixelRenderer():
             
             if not illum_only:
                 # multipy with occlusion
-                illum_w_occ = illum_img*occ.unsqueeze(dim=1)
-                illums_w_occ = illum_w_occ*shading 
-
+                # illum_img = self.gaussian_blur(illum_img)
+                illum_img = self.gaussian_blur(illum_img.reshape(1, self.m_n * self.wvls_n, self.cam_H, self.cam_W)).reshape(1, self.m_n, self.wvls_n, self.cam_H * self.cam_W)
+                illums_w_occ = illum_img*occ.unsqueeze(dim=1)*shading
                 illums_w_occ = illums_w_occ.permute(0,1,3,2)
                 
                 cam_m_img = torch.zeros((self.batch_size, self.m_n, self.pixel_num, 3))
                 
                 # m order에 따른 cam img : cam_m_img
-                for k in range(self.m_n): 
-                    cam_m_img[:,k,...] =  0.1 * (hyp* (illums_w_occ[:,k,...])@ self.CRF_cam)
+                for k in range(self.m_n):
+                    cam_m_img[:,k,...] =  0.23 * (hyp* (illums_w_occ[:,k,...]) @ self.CRF_cam)
                     
                 cam_img = cam_m_img.sum(axis=1)
                 cam_N_img[...,j,:] = cam_img
@@ -356,9 +349,10 @@ if __name__ == "__main__":
     index = 0
     
     # depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0).to(arg.device)
-    depth = torch.tensor(np.load("./20230825_color_checker.npy"), dtype=torch.float32).reshape(-1,3)[...,2].to(arg.device).unsqueeze(dim = 0)
+    # depth = torch.tensor(np.load("./20230825_color_checker.npy"), dtype=torch.float32).reshape(-1,3)[...,2].to(arg.device).unsqueeze(dim = 0)
     # depth = torch.tensor(np.load("./calibration/gray_code_depth/color_checker_depth_0508.npy"), dtype=torch.float32).reshape(-1,3)[...,2].unsqueeze(dim = 0)    
-    
+    depth = torch.tensor(np.load("./calibration/dg_calibration_method2/20230822_data/spectralon_depth_0822_back.npy"), dtype=torch.float32).reshape(-1,3)[...,2].unsqueeze(dim = 0).to(arg.device)    
+
     normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0).to(arg.device)
     normal = torch.zeros_like(normal)
     normal[:,2] = -1

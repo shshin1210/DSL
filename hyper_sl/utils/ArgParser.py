@@ -1,11 +1,11 @@
 import argparse
-import torch
+import torch, os
 
 class Argument:
 	def __init__(self):
 		self.parser = argparse.ArgumentParser()
 
-		self.parser.add_argument('--device', type = str, default="cuda:5")
+		self.parser.add_argument('--device', type = str, default="cuda:0")
 
 		################## PATH
 		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
@@ -13,7 +13,7 @@ class Argument:
 
 		self.parser.add_argument('--model_dir', type=str, default="./model_depth")
 
-		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern_gray")
+		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_5")
 		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
 
 		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
@@ -70,8 +70,6 @@ class Argument:
 		self.parser.add_argument('--batch_size_test', type = int, default= 8) # 8
 		self.parser.add_argument('--batch_size_eval', type = int, default= 1)
 		self.parser.add_argument('--batch_size_real', type = int, default= 1)
-  
-		self.parser.add_argument('--illum_num', type = int, default= 40)
 
 		self.parser.add_argument('--patch_pixel_num', type = int, default = 9)
 	
@@ -130,8 +128,8 @@ class Argument:
 		arg.wvls = torch.linspace(arg.wvl_min, arg.wvl_max, arg.wvl_num)
 		arg.m_list = torch.linspace(arg.m_min, arg.m_max, arg.m_num)
 		arg.depth_list = torch.arange(arg.depth_min, arg.depth_max, arg.depth_interval)
-		arg.illums = torch.zeros((arg.illum_num, arg.proj_H, arg.proj_W, 3))
-  
+		# arg.illums = torch.zeros((arg.illum_num, arg.proj_H, arg.proj_W, 3))
+		arg.illum_num = len(os.listdir(arg.illum_dir))
 		arg.sensor_height_proj = (torch.sin(torch.atan2(torch.tensor(arg.proj_H),torch.tensor(arg.proj_W)))*(arg.sensor_diag_proj*1e-3))
 		arg.proj_pitch = (arg.sensor_height_proj/ (arg.proj_H))
   
