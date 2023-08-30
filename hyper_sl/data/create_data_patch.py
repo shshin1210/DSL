@@ -218,20 +218,13 @@ class createData():
             if ("Thumbs" in fn) or ("@eaDir" in fn) :
                 continue
             else:
-                real_img = cv2.imread(os.path.join(scene_i_dir, fn), -1)/255.
-                # real_img = cv2.imread(os.path.join(scene_i_dir, fn), -1) / 65535.
+                real_img = cv2.imread(os.path.join(scene_i_dir, fn), -1) / 65535.
                 # real_img = data_process.crop(real_img)
-                # cv2.imwrite('%s_img.png'%(fn[:-4]), real_img*255.)
-                
-                # real_img = cv2.cvtColor(real_img, cv2.COLOR_BGR2RGB).reshape(self.cam_H*self.cam_W,-1)/255.
-                real_img = real_img[:,:,::-1]
-                real_img = torch.tensor(real_img.copy().reshape(self.cam_H*self.cam_W, -1))
+                real_img = real_img[:,:,::-1] # convert rgb
+                real_img = torch.tensor(real_img.copy().reshape(self.cam_H*self.cam_W, -1)) # to tensor
                 
                 N3_arr[:,idx-2] = real_img
-
-        # illum_data = torch.zeros(size=(self.cam_H*self.cam_W, self.illum_num, self.wvls_n))
         
-        # return N3_arr, illum_data
         return N3_arr
     
         

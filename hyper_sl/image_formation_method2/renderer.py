@@ -160,12 +160,15 @@ class PixelRenderer():
             illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
             # ==================================== dg intensity ====================================
             illum_img =  illum_img * self.dg_intensity.unsqueeze(dim=3)
+            # illum_img = self.gaussian_blur(illum_img.reshape(self.batch_size, self.m_n * self.wvls_n, self.cam_H, self.cam_W)).reshape(1, self.m_n, self.wvls_n, self.pixel_num)
+            
             illums_m_img = illum_img.sum(axis = 1).reshape(self.batch_size, self.wvls_n, self.pixel_num).permute(0,2,1)
             
             if not illum_only:
                 # multipy with occlusion
                 # illum_img = self.gaussian_blur(illum_img)
-                illum_img = self.gaussian_blur(illum_img.reshape(1, self.m_n * self.wvls_n, self.cam_H, self.cam_W)).reshape(1, self.m_n, self.wvls_n, self.cam_H * self.cam_W)
+                illum_img = self.gaussian_blur(illum_img.reshape(self.batch_size, self.m_n * self.wvls_n, self.cam_H, self.cam_W)).reshape(1, self.m_n, self.wvls_n, self.pixel_num)
+
                 illums_w_occ = illum_img*occ.unsqueeze(dim=1)*shading
                 illums_w_occ = illums_w_occ.permute(0,1,3,2)
                 
@@ -174,7 +177,7 @@ class PixelRenderer():
                 # m order에 따른 cam img : cam_m_img
                 for k in range(self.m_n):
                     cam_m_img[:,k,...] =  0.23 * (hyp* (illums_w_occ[:,k,...]) @ self.CRF_cam)
-                    
+                    # cam_m_img[:,k,...] =  (hyp* (illums_w_occ[:,k,...]) @ self.CRF_cam)
                 cam_img = cam_m_img.sum(axis=1)
                 cam_N_img[...,j,:] = cam_img
                 
@@ -349,9 +352,9 @@ if __name__ == "__main__":
     index = 0
     
     # depth = create_data(arg, "depth", pixel_num, random = random, i = index).create().unsqueeze(dim = 0).to(arg.device)
-    # depth = torch.tensor(np.load("./20230825_color_checker.npy"), dtype=torch.float32).reshape(-1,3)[...,2].to(arg.device).unsqueeze(dim = 0)
+    depth = torch.tensor(np.load("./checker_board_20230828.npy")[...,2].reshape(1,-1)).type(torch.float32).to(device=arg.device)
     # depth = torch.tensor(np.load("./calibration/gray_code_depth/color_checker_depth_0508.npy"), dtype=torch.float32).reshape(-1,3)[...,2].unsqueeze(dim = 0)    
-    depth = torch.tensor(np.load("./calibration/dg_calibration_method2/20230822_data/spectralon_depth_0822_back.npy"), dtype=torch.float32).reshape(-1,3)[...,2].unsqueeze(dim = 0).to(arg.device)    
+    # depth = torch.tensor(np.load("./calibration/dg_calibration_method2/20230822_data/spectralon_depth_0822_back.npy"), dtype=torch.float32).reshape(-1,3)[...,2].unsqueeze(dim = 0).to(arg.device)    
 
     normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0).to(arg.device)
     normal = torch.zeros_like(normal)

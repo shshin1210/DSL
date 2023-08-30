@@ -7,6 +7,7 @@ from hyper_sl.utils.ArgParser import Argument
 
 import hyper_sl.datatools as dtools 
 from hyper_sl.image_formation_method2 import renderer
+from hyper_sl.data import create_data_patch
 
 import matplotlib.pyplot as plt
 
@@ -27,19 +28,41 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
     # rendering function
     pixel_renderer = renderer.PixelRenderer(arg = arg)
     
+    # create data function
+    create_data = create_data_patch.createData
+    
     # cam crf
     eval_dataset = dtools.pixelData(arg, train = True, eval = True, pixel_num = arg.cam_H* arg.cam_H, random = False, real = True)
     eval_loader = DataLoader(eval_dataset, batch_size= arg.batch_size_eval, shuffle=True)
 
     # render illumination data
     for i, data in enumerate(eval_loader):
-        # datas
-        N3_arr, cam_coord = data[0], data[1]
-        N3_arr, cam_coord = N3_arr.to(device = arg.device), cam_coord.to(device = arg.device)
+        # real captured datas
+        # N3_arr, cam_coord = data[0], data[1]
+        # N3_arr, cam_coord = N3_arr.to(device = arg.device), cam_coord.to(device = arg.device)
+        # np.save('./N3_arr_real.npy', N3_arr.detach().cpu().numpy())
         
         # to device         
-        depth = torch.tensor(np.load("./20230825_color_checker.npy")[...,2].reshape(1,-1)).type(torch.float32).to(device=arg.device)
+        depth = torch.tensor(np.load("./checker_board_20230828.npy")[...,2].reshape(1,-1)).type(torch.float32).to(device=arg.device)
 
+        # simulating checker board
+        pixel_num = arg.cam_H * arg.cam_W
+        random = False
+        index = 0
+            
+        normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0).to(arg.device)
+        normal = torch.zeros_like(normal)
+        normal[:,2] = -1
+        
+        hyp = torch.tensor(np.load("./color_check_hyp_gt.npy")).type(torch.float32).to(device=arg.device).reshape(-1, arg.wvl_num)
+
+        occ = create_data(arg, 'occ', pixel_num, random = random, i = index).create().unsqueeze(dim = 0).to(arg.device)
+        occ = torch.ones_like(occ)
+        
+        cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0).to(arg.device)
+        N3_arr, _, illum_data, _ = pixel_renderer.render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True)
+        np.save('./N3_arr_simulation_low_intensity.npy', N3_arr.detach().cpu().numpy())
+        
         _, _, illum_data, _ = pixel_renderer.render(depth, None, None, None, cam_coord, None, True)
     
     illum_data = illum_data.to(device)
@@ -55,12 +78,12 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
     # cam_crf = cam_crf.permute(0,3,1,2)
     # A = A * cam_crf
 
-    # Captured image data
+    # Captured image data (hdr)
+    # b_dir = './hdr_step3.npy'
     # b = np.load(b_dir) / 65535.
-    # b = np.load(b_dir)
-    # # b = b[:,:,:,::-1]
-    # b = torch.tensor(b, device= device)
-    b = N3_arr    
+    # b = b[:,:,:,::-1]
+    # b = torch.tensor(b.copy(), device= device)
+    b = N3_arr 
     
     # optimize with l1 loss
     # Reshape to make M, ...
@@ -128,7 +151,7 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
             X_np_all[r:,c:]= X_est.detach().cpu().reshape(r,c,1,W,1)
 
     X_np_all = X_np_all.numpy()
-    np.save('./X_np_all_step_tv.npy', X_np_all)
+    np.save('./X_np_all_simulation_tv.npy', X_np_all)
 
     # plot losses over time
     plt.figure(figsize=(15,10))

@@ -40,6 +40,7 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
         # real captured datas
         # N3_arr, cam_coord = data[0], data[1]
         # N3_arr, cam_coord = N3_arr.to(device = arg.device), cam_coord.to(device = arg.device)
+        # np.save('./N3_arr_real.npy', N3_arr.detach().cpu().numpy())
         
         # to device         
         depth = torch.tensor(np.load("./checker_board_20230828.npy")[...,2].reshape(1,-1)).type(torch.float32).to(device=arg.device)
@@ -60,8 +61,9 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
         
         cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0).to(arg.device)
         N3_arr, _, illum_data, _ = pixel_renderer.render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True)
-
-        # _, _, illum_data, _ = pixel_renderer.render(depth, None, None, None, cam_coord, None, True)
+        np.save('./N3_arr_simulation_low_intensity_blur.npy', N3_arr.detach().cpu().numpy())
+        
+        _, _, illum_data, _ = pixel_renderer.render(depth, None, None, None, cam_coord, None, True)
     
     illum_data = illum_data.to(device)
     
@@ -77,10 +79,10 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
     # A = A * cam_crf
 
     # Captured image data (hdr)
+    # b_dir = './hdr_step3.npy'
     # b = np.load(b_dir) / 65535.
-    # b = np.load(b_dir)
     # b = b[:,:,:,::-1]
-    # b = torch.tensor(b, device= device)
+    # b = torch.tensor(b.copy(), device= device)
     b = N3_arr
     
     # optimize with l1 loss
@@ -125,8 +127,8 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
         X_np_all[start_idx:end_idx] = X_est.detach().cpu()
 
     X_np_all = X_np_all.numpy()
-    np.save('./X_np_all.npy', X_np_all)
-
+    # np.save('./X_np_all_real.npy', X_np_all)
+    np.save('./X_np_all_simulation_low_intensity_blur.npy', X_np_all)
     # plot losses over time
     plt.figure(figsize=(15,10))
 
