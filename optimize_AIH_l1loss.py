@@ -36,23 +36,17 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
     eval_loader = DataLoader(eval_dataset, batch_size= arg.batch_size_eval, shuffle=True)
 
     # center_pts
-    center_pts = torch.tensor([[349, 376],[218, 370], [87, 370],[74, 500]]) # R, G, B, W    
+    center_pts = torch.tensor([[407,387],[278,385],[145,375],[141,500]]) # R, G, B, W    
         
     # render illumination data
     for i, data in enumerate(eval_loader):
         # real captured datas
         # N3_arr, cam_coord = data[0], data[1]
         # N3_arr, cam_coord = N3_arr.to(device = arg.device), cam_coord.to(device = arg.device)
-        # pixel data
-        # N3_arr = N3_arr.reshape(-1, arg.cam_H, arg.cam_W, arg.illum_num, 3)[:, center_pts[:,1], center_pts[:,0]]
-        # cam_coord = cam_coord.reshape(1, arg.cam_H, arg.cam_W, 3)[:, center_pts[:,1], center_pts[:,0]]
-
         # np.save('./N3_arr_real_px.npy', N3_arr.detach().cpu().numpy())
         
         # to device         
-        depth = torch.tensor(np.load("./checker_board_20230828.npy")[...,2].reshape(1,-1)).type(torch.float32).to(device=arg.device)
-        # pixel data
-        # depth = torch.tensor(np.load("./checker_board_20230828.npy")[...,2][center_pts[:,1], center_pts[:,0]].reshape(1,-1)).type(torch.float32).to(device=arg.device)
+        depth = torch.tensor(np.load("./checker_board_20230902.npy")[...,2].reshape(1,-1)).type(torch.float32).to(device=arg.device)
 
         # simulating checker board
         pixel_num = arg.cam_H * arg.cam_W
@@ -62,22 +56,15 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
         normal = create_data(arg, "normal", pixel_num, random = random, i = index).create().unsqueeze(dim = 0).to(arg.device)
         normal = torch.zeros_like(normal)
         normal[:,2] = -1
+
         # # pixel data
-        # normal = normal.reshape(1, 3, arg.cam_H, arg.cam_W)[:,:,center_pts[:,1], center_pts[:,0]]
-        
-        # pixel data
         hyp = torch.tensor(np.load("./color_check_hyp_gt.npy")).type(torch.float32).to(device=arg.device).reshape(-1, arg.wvl_num)
-        # hyp = torch.tensor(np.load("./color_check_hyp_gt.npy")).type(torch.float32)[center_pts[:,1], center_pts[:,0]].to(device=arg.device).reshape(-1, arg.wvl_num)
 
         occ = create_data(arg, 'occ', pixel_num, random = random, i = index).create().unsqueeze(dim = 0).to(arg.device)
         occ = torch.ones_like(occ)
-        # # pixel data
-        # occ = occ.reshape(-1, arg.cam_H, arg.cam_W)[:, center_pts[:,1], center_pts[:,0]]
-        
+
         cam_coord = create_data(arg, 'coord', pixel_num, random = random).create().unsqueeze(dim = 0).to(arg.device)
-        # # pixel data
-        # cam_coord = cam_coord.reshape(1, arg.cam_H, arg.cam_W, 3)[:, center_pts[:,1], center_pts[:,0]]
-        
+
         N3_arr, _, illum_data, _ = pixel_renderer.render(depth = depth, normal = normal, hyp = hyp, cam_coord = cam_coord, occ = occ, eval = True)
         np.save('./N3_arr_simulation.npy', N3_arr.detach().cpu().numpy())
         
@@ -94,12 +81,14 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
     A = A * cam_crf
 
     # Captured image data (hdr)
-    # b_dir = './hdr_step3.npy'
+    # b_dir = './calibration/ldr_step5.npy'
     # b = np.load(b_dir) / 65535.
     # b = b[:,:,:,::-1]
-    # pixel data
+    # b = b.transpose(1,2,0,3)
+    # # pixel data
     # b = b[center_pts[:,1], center_pts[:,0]]
     # b = torch.tensor(b.copy(), device= device)
+    
     b = N3_arr.reshape(1, arg.cam_H, arg.cam_W, arg.illum_num, 3)
     b = b[:,center_pts[:,1], center_pts[:,0]]
     
@@ -141,7 +130,7 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
     X_np_all = X_est.detach().cpu()
 
     X_np_all = X_np_all.numpy()
-    # np.save('./X_np_all_real.npy', X_np_all)
+    # np.save('./X_np_all_real_px.npy', X_np_all)
     np.save('./X_np_all_px.npy', X_np_all)
     # plot losses over time
     plt.figure(figsize=(15,10))
