@@ -8,7 +8,8 @@ class Camera():
     def __init__(self, arg):
         self.arg = arg
         self.crf_dir = arg.camera_response
-        
+        self.crf_cnst_dir = arg.response_opt_cnst_dir
+        self.crf_cnst = np.load(os.path.join(arg.response_opt_cnst_dir, "opt_param_detach_%05d.npy"%9500))[:,3:]
         # params
         self.cam_int, _ = calibrated_params.bring_params(arg.calibration_param_path,"cam")
 
@@ -33,7 +34,7 @@ class Camera():
         
 
     def get_CRF(self):
-        CRF = np.load(os.path.join(self.crf_dir, 'CRF.npy')).T
+        CRF = np.load(os.path.join(self.crf_dir, 'CRF.npy')).T * self.crf_cnst
         # CRF = np.load(os.path.join(self.crf_dir, 'CRF_cam.npy'))
         # map_scale = interp1d([CRF.min(), CRF.max()], [0.,1.])
         # CRF = torch.tensor(map_scale(CRF).astype(np.float32))        

@@ -16,6 +16,7 @@ class Projector():
         self.arg = arg
         self.m_n = arg.m_num
         self.wvls_n = arg.wvl_num
+        self.pef_cnst = np.load(os.path.join(arg.response_opt_cnst_dir, "opt_param_detach_%05d.npy"%9500))[:,:3]
         
         # path 
         self.crf_dir = arg.projector_response
@@ -91,8 +92,8 @@ class Projector():
     def get_PRF(self):
         PRF = np.load(os.path.join(self.crf_dir, 'CRF_proj.npy'))
         map_scale = interp1d([PRF.min(), PRF.max()], [0.,1.])
-        PRF = torch.tensor(map_scale(PRF).astype(np.float32))    
-        PRF = PRF[2:27]
+        PRF = torch.tensor(map_scale(PRF).astype(np.float32))
+        PRF = PRF[2:27] * self.pef_cnst
         return PRF
 
     def get_dg_intensity(self):
