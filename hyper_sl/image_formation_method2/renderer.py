@@ -160,15 +160,12 @@ class PixelRenderer():
             illum_img = illum_img.reshape(self.batch_size, self.m_n, self.wvls_n, self.pixel_num)
             # ==================================== dg intensity ====================================
             illum_img =  illum_img * self.dg_intensity.unsqueeze(dim=3)
-            # illum_img = self.gaussian_blur(illum_img.reshape(self.batch_size, self.m_n * self.wvls_n, self.cam_H, self.cam_W)).reshape(1, self.m_n, self.wvls_n, self.pixel_num)
+            illum_img = self.gaussian_blur(illum_img.reshape(self.batch_size, self.m_n * self.wvls_n, self.cam_H, self.cam_W)).reshape(1, self.m_n, self.wvls_n, self.pixel_num)
             
             illums_m_img = illum_img.sum(axis = 1).reshape(self.batch_size, self.wvls_n, self.pixel_num).permute(0,2,1)
             
             if not illum_only:
                 # multipy with occlusion
-                # illum_img = self.gaussian_blur(illum_img)
-                illum_img = self.gaussian_blur(illum_img.reshape(self.batch_size, self.m_n * self.wvls_n, self.cam_H, self.cam_W)).reshape(1, self.m_n, self.wvls_n, self.pixel_num)
-
                 illums_w_occ = illum_img*occ.unsqueeze(dim=1)*shading
                 illums_w_occ = illums_w_occ.permute(0,1,3,2)
                 
@@ -176,8 +173,8 @@ class PixelRenderer():
                 
                 # m order에 따른 cam img : cam_m_img
                 for k in range(self.m_n):
-                    cam_m_img[:,k,...] =  0.23 * (hyp* (illums_w_occ[:,k,...]) @ self.CRF_cam)
-                    # cam_m_img[:,k,...] =  (hyp* (illums_w_occ[:,k,...]) @ self.CRF_cam)
+                    # cam_m_img[:,k,...] =  0.23 * (hyp* (illums_w_occ[:,k,...]) @ self.CRF_cam)
+                    cam_m_img[:,k,...] =  (hyp* (illums_w_occ[:,k,...]) @ self.CRF_cam)
                 cam_img = cam_m_img.sum(axis=1)
                 cam_N_img[...,j,:] = cam_img
                 
@@ -187,7 +184,7 @@ class PixelRenderer():
             return None, xy_proj_real_norm, illum_data, None
         
         noise = self.noise.sample(cam_N_img.shape)
-        cam_N_img += noise
+        # cam_N_img += noise
         cam_N_img = torch.clamp(cam_N_img, 0, 1)
         
         render_end = time.time()
