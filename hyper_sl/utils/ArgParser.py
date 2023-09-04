@@ -29,6 +29,7 @@ class Argument:
 		self.parser.add_argument('--log_dir', type = str, default="/log/hyp-3d-imaging/result/logs")
 		self.parser.add_argument('--camera_response', type = str, default="./dataset/image_formation") 
 		self.parser.add_argument('--projector_response', type = str, default="./dataset/image_formation")  
+		self.parser.add_argument('--response_opt_cnst_dir', type = str, default="./calibration/radiometric_cal/opt_params")
 		self.parser.add_argument('--random_pixel_scene_fn', type = str, default="scene_data.pt")
 		self.parser.add_argument('--random_pixel_xyproj_fn', type = str, default="xy_proj_data.pt")
 		self.parser.add_argument('--random_pixel_xy_real_fn', type = str, default="xy_real_data.pt")
@@ -87,7 +88,7 @@ class Argument:
 		# arguments for training
 		self.parser.add_argument('--illum_weight', type = float, default= 1)
 		self.parser.add_argument('--model_gamma', type= float, default=0.8)
-		self.parser.add_argument('--noise_std', type = float, default= 0.015) 
+		self.parser.add_argument('--noise_std', type = float, default= 0.002) # 0.015 
 		self.parser.add_argument('--image_weight', type = float, default= 1.33) 
   
 		# args for dg calibration
