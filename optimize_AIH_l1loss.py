@@ -94,8 +94,7 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
     
     # optimize with l1 loss
     # Reshape to make M, ...
-    # A = A.reshape(R*C, 1, 3*N, W)
-    # b = b.reshape(R*C, 1, 3*N, 1)
+    # 
     # pixel data
     A = A.reshape(len(center_pts), 1, 3*N, W)
     b = b.reshape(len(center_pts), 1, 3*N, 1)    
@@ -114,8 +113,8 @@ def optimizer_l1_loss(arg, b_dir, cam_crf):
     X_est = torch.randn(len(center_pts), 1, W, 1, requires_grad=True, device=device)
     optimizer = torch.optim.Adam([X_est], lr=lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=decay_step, gamma=0.5)
-
     optimizer.zero_grad()
+    
     for i in range(num_iter):
         loss = loss_f(A @ X_est, b)
         loss.backward()
