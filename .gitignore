@@ -16,3 +16,5 @@ logs/
 *.zip
 dataset/image_formation/dat_dispersion_coord.zip
 *.db
+*.ply
+*.ply
