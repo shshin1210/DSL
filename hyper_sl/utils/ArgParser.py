@@ -48,7 +48,7 @@ class Argument:
 		self.parser.add_argument('--wvl_num', type = int, default= 25) # 25
   
 		self.parser.add_argument('--depth_min', type = float, default= 600*1e-3) # n단위
-		self.parser.add_argument('--depth_max', type = float, default= 910*1e-3) 
+		self.parser.add_argument('--depth_max', type = float, default= 900*1e-3) 
 		self.parser.add_argument('--depth_interval', type = int, default= 0.001) # 1mm 단위 : 0.001
 		
 		self.parser.add_argument('--m_min', type = int, default= -1) 
