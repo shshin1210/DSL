@@ -29,10 +29,10 @@ class DataProcess():
             wvl_dir = os.path.join(self.data_dir, "%dnm/calibration00/capture_%04d.png")           
             wvl_img = np.array([cv2.imread(wvl_dir%(w, i), -1)[:,:,::-1] for w in self.peak_wvl]) / 65535.
             
-            if self.position == "back": # back position needs black image to be subtracted
-                black_dir = os.path.join(self.data_dir, "black/calibration00/black_%dnm.png")
-                black_imgs = np.array([cv2.imread(black_dir%w, -1)[:,:,::-1] for w in self.peak_wvl]) / 65535.
-                wvl_img = abs(wvl_img - black_imgs)
+            # if self.position == "back": # back position needs black image to be subtracted
+            #     black_dir = os.path.join(self.data_dir, "black/calibration00/black_%dnm.png")
+            #     black_imgs = np.array([cv2.imread(black_dir%w, -1)[:,:,::-1] for w in self.peak_wvl]) / 65535.
+            #     wvl_img = abs(wvl_img - black_imgs)
 
             wvl_imgs.append(wvl_img)
         
@@ -88,8 +88,8 @@ class DataProcess():
         # args
         patch_size = 30
         
-        # max_data = self.get_max_data()
-        # np.save(os.path.join(self.npy_dir, 'max_data_%s.npy'%self.position), max_data)
+        max_data = self.get_max_data()
+        np.save(os.path.join(self.npy_dir, 'max_data_%s.npy'%self.position), max_data)
         max_data = np.load(os.path.join(self.npy_dir, 'max_data_%s.npy'%self.position))
         
         peak_illum_idx = np.zeros(shape=(3, len(self.peak_wvl), self.cam_H * self.cam_W))
@@ -111,9 +111,9 @@ class DataProcess():
                 max_idx_pfirst = np.argmax(max_data[w, idx_pfirst:, i]) + idx_pfirst
 
                 # 여기서 intensity 비교
-                if max_data[w, max_idx_mfirst, i] < 0.07:
+                if max_data[w, max_idx_mfirst, i] < 0.06:
                     max_idx_mfirst = 0
-                if max_data[w, max_idx_pfirst, i] < 0.07:
+                if max_data[w, max_idx_pfirst, i] < 0.06:
                     max_idx_pfirst = 318
                     
                 peak_illum_idx[0,w,i] = max_idx_mfirst
