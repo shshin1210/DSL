@@ -36,7 +36,8 @@ class PositionCalibration():
         # dir
         self.data_dir = "./calibration/position_calibration/2023%s/%s_depth/spectralon"
         self.dat_dir = "./dataset/image_formation/dat/method3"
-        
+        self.npy_dir = "./calibration/position_calibration/2023%s/npy_data"%date
+
         # peak illumination index informations
         self.front_peak_illum_idx = front_peak_illum_idx # 3(m order), wvl(2), HxW
         self.mid_peak_illum_idx = mid_peak_illum_idx
@@ -113,10 +114,11 @@ class PositionCalibration():
     
     def interpolate_image(self, depth_peak_illum_idx_final):
         """
-            make a HxW image
+            make a HxW image with 20 sample points using interpolation method
         """
-        # diffs = self.interpolate_diffs(depth_peak_illum_idx_final)
-        diffs = np.load('./diffs.npy')
+        diffs = self.interpolate_diffs(depth_peak_illum_idx_final)
+        np.save(os.path.join(self.npy_dir,'diffs.npy'), diffs)
+        # diffs = np.load(os.path.join(self.npy_dir,'diffs.npy'))
         new_peak_illum_idx = self.make_new_peak_illum_idx(depth_peak_illum_idx_final, diffs)
 
         # depth, m, H, W, wvl
@@ -204,13 +206,16 @@ class PositionCalibration():
             orig_peak_image_illum_idx[:,1,i,0] = depth_new_peak_image_illum_idx[:,0,i,0] - abs(depth_new_peak_image_illum_idx[:,0,i,0] - (depth_new_peak_image_illum_idx[:,1,i,0]-1))
             orig_peak_image_illum_idx[:,1,i,1] = depth_new_peak_image_illum_idx[:,0,i,0] - abs(depth_new_peak_image_illum_idx[:,0,i,0] - (depth_new_peak_image_illum_idx[:,1,i,1]-1))
         
-        orig_peak_image_illum_idx[:,0,i] = depth_new_peak_image_illum_idx[:,0,i]
+        orig_peak_image_illum_idx[:,0] = depth_new_peak_image_illum_idx[:,0] # 여기가 원래 [:,0,i] 였음..?!
         
         return orig_peak_image_illum_idx
 
     def pick_valid(self, depth_peak_illum_idx_final):
+        """
+            pick the valid order -1(original) or +1(new) 
+        """
         # depth_new_peak_image_illum_idx = self.interpolate_image(depth_peak_illum_idx_final)
-        depth_new_peak_image_illum_idx = np.load('./depth_new_peak_image_illum_idx.npy').reshape(len(self.depth_arange), 2, self.cam_H * self.cam_W, 2)
+        depth_new_peak_image_illum_idx = np.load(os.path.join(self.npy_dir,'./depth_new_peak_image_illum_idx.npy')).reshape(len(self.depth_arange), 2, self.cam_H * self.cam_W, 2)
         orig_peak_image_illum_idx = self.original_illum_idx(depth_new_peak_image_illum_idx)
                 
         peak_image_illum_idx = np.zeros_like(depth_new_peak_image_illum_idx)
@@ -218,40 +223,68 @@ class PositionCalibration():
         depth_new_peak_image_illum_idx_cp = depth_new_peak_image_illum_idx.copy()
         orig_peak_image_illum_idx_cp = orig_peak_image_illum_idx.copy()
 
-        for d in range(len(self.depth_arange)):
-            for i in range(self.cam_H*self.cam_W):
-                if depth_new_peak_image_illum_idx[d,1,i,0] > 317:
-                    depth_new_peak_image_illum_idx_cp[d,1,i,0] = 317
-                    depth_new_peak_image_illum_idx_cp[d,1,i,1] = 317
-                    
-                elif depth_new_peak_image_illum_idx[d,1,i,1] > 317:
-                    depth_new_peak_image_illum_idx_cp[d,1,i,1] = 317
-                    
-                elif orig_peak_image_illum_idx[d,1,i,0] < 0:
-                    orig_peak_image_illum_idx_cp[d,1,i,0] = 0
-                    orig_peak_image_illum_idx_cp[d,1,i,1] = 0
-                    
-                elif orig_peak_image_illum_idx[d,1,i,1] < 0:
-                    orig_peak_image_illum_idx_cp[d,1,i,1] = 0
-                    
-                new_diff = abs(depth_new_peak_image_illum_idx_cp[d,1,i,0] - depth_new_peak_image_illum_idx_cp[d,1,i,1])
-                orig_diff = abs(orig_peak_image_illum_idx_cp[d,1,i,0] - orig_peak_image_illum_idx_cp[d,1,i,1])
-                
-                if new_diff > orig_diff:
-                    peak_image_illum_idx[d,1,i,0] = depth_new_peak_image_illum_idx[d,1,i,0]
-                    peak_image_illum_idx[d,1,i,1] = depth_new_peak_image_illum_idx[d,1,i,1]
-                
-                elif new_diff <= orig_diff:
-                    peak_image_illum_idx[d,1,i,0] = orig_peak_image_illum_idx[d,1,i,0]
-                    peak_image_illum_idx[d,1,i,1] = orig_peak_image_illum_idx[d,1,i,1]
-            
-            peak_image_illum_idx[d,0,i] = depth_new_peak_image_illum_idx[d,0,i]
+        # peak_image_illum_idx_tmp = np.load(os.path.join(self.npy_dir,'./peak_image_illum_idx.npy'))
         
-        np.save('./peak_image_illum_idx.npy', peak_image_illum_idx)
+        # vectorization                  
+        depth_new_peak_image_illum_idx_cp[:,1,:,0][depth_new_peak_image_illum_idx[:,1,:,0] > 317] = 317
+        depth_new_peak_image_illum_idx_cp[:,1,:,1][depth_new_peak_image_illum_idx[:,1,:,0] > 317] = 317
+        depth_new_peak_image_illum_idx_cp[:,1,:,1][depth_new_peak_image_illum_idx[:,1,:,1] > 317] = 317
+
+        orig_peak_image_illum_idx_cp[:,1,:,0][orig_peak_image_illum_idx[:,1,:,0] < 0] = 0
+        orig_peak_image_illum_idx_cp[:,1,:,1][orig_peak_image_illum_idx[:,1,:,0] < 0] = 0
+        orig_peak_image_illum_idx_cp[:,1,:,1][orig_peak_image_illum_idx[:,1,:,1] < 0] = 0
+
+        new_diff = abs(depth_new_peak_image_illum_idx_cp[:,1,:,0] - depth_new_peak_image_illum_idx_cp[:,1,:,1])
+        orig_diff = abs(orig_peak_image_illum_idx_cp[:,1,:,0] - orig_peak_image_illum_idx_cp[:,1,:,1])
+        
+        mask_1 = new_diff > orig_diff
+        peak_image_illum_idx[:,1,:,0][mask_1] = depth_new_peak_image_illum_idx[:,1,:,0][mask_1]
+        peak_image_illum_idx[:,1,:,1][mask_1] = depth_new_peak_image_illum_idx[:,1,:,1][mask_1]
+
+        mask_2 = new_diff <= orig_diff
+        peak_image_illum_idx[:,1,:,0][mask_2] = orig_peak_image_illum_idx[:,1,:,0][mask_2]
+        peak_image_illum_idx[:,1,:,1][mask_2] = orig_peak_image_illum_idx[:,1,:,1][mask_2]
+
+        peak_image_illum_idx[:,0] = depth_new_peak_image_illum_idx[:,0]
+        
+        # for d in range(len(self.depth_arange)):
+        #     for i in range(self.cam_H*self.cam_W):
+        #         if depth_new_peak_image_illum_idx[d,1,i,0] > 317:
+        #             depth_new_peak_image_illum_idx_cp[d,1,i,0] = 317
+        #             depth_new_peak_image_illum_idx_cp[d,1,i,1] = 317
+                    
+        #         elif depth_new_peak_image_illum_idx[d,1,i,1] > 317:
+        #             depth_new_peak_image_illum_idx_cp[d,1,i,1] = 317
+                    
+        #         elif orig_peak_image_illum_idx[d,1,i,0] < 0:
+        #             orig_peak_image_illum_idx_cp[d,1,i,0] = 0
+        #             orig_peak_image_illum_idx_cp[d,1,i,1] = 0
+                    
+        #         elif orig_peak_image_illum_idx[d,1,i,1] < 0:
+        #             orig_peak_image_illum_idx_cp[d,1,i,1] = 0
+
+        #         new_diff = abs(depth_new_peak_image_illum_idx_cp[d,1,i,0] - depth_new_peak_image_illum_idx_cp[d,1,i,1])
+        #         orig_diff = abs(orig_peak_image_illum_idx_cp[d,1,i,0] - orig_peak_image_illum_idx_cp[d,1,i,1])
+                
+        #         if new_diff > orig_diff:
+        #             peak_image_illum_idx[d,1,i,0] = depth_new_peak_image_illum_idx[d,1,i,0]
+        #             peak_image_illum_idx[d,1,i,1] = depth_new_peak_image_illum_idx[d,1,i,1]
+                
+        #         elif new_diff <= orig_diff:
+        #             peak_image_illum_idx[d,1,i,0] = orig_peak_image_illum_idx[d,1,i,0]
+        #             peak_image_illum_idx[d,1,i,1] = orig_peak_image_illum_idx[d,1,i,1]
+            
+        # peak_image_illum_idx[:,0] = depth_new_peak_image_illum_idx[:,0]
+
+        # np.save(os.path.join(self.npy_dir,'./peak_image_illum_idx.npy'), peak_image_illum_idx)
+        return peak_image_illum_idx
         
     def full_wavelength_interpolation(self, depth_peak_illum_idx_final):
-        # peak_image_illum_idx = self.pick_valid(self, depth_peak_illum_idx_final)
-        peak_image_illum_idx = np.load('./peak_image_illum_idx.npy') # 301, 2, 516200, 2
+        """
+            interpolate for 430nm ~ 660nm 5 nm interval
+        """
+        peak_image_illum_idx = self.pick_valid(depth_peak_illum_idx_final)
+        # peak_image_illum_idx = np.load(os.path.join(self.npy_dir,'./peak_image_illum_idx.npy')) # 301, 2, 516200, 2
         
         position_430nm = peak_image_illum_idx[:,1,:,0]
         position_660nm = peak_image_illum_idx[:,1,:,1]
@@ -259,15 +292,15 @@ class PositionCalibration():
         start_idx = position_430nm
         end_idx = position_660nm
 
-        # first_illum_idx_final = []
-        # for i in range(self.cam_H* self.cam_W):
-        #     interval_array = np.linspace(start_idx[:,i], end_idx[:,i], 47).T
-        #     interval_array = np.round(interval_array).astype(np.int16)
-        #     first_illum_idx_final.append(interval_array)
-        # first_illum_idx_final = np.array(first_illum_idx_final)
-        # np.save('./first_illum_idx_final.npy', first_illum_idx_final)
+        first_illum_idx_final = np.zeros(shape=(self.cam_H*self.cam_W, len(self.depth_arange), len(self.new_wvls)), dtype = np.int16)
+        for i in range(self.cam_H* self.cam_W):
+            interval_array = np.linspace(start_idx[:,i], end_idx[:,i], 47).T
+            interval_array = np.round(interval_array).astype(np.int16)
+            first_illum_idx_final[i] = interval_array
+        first_illum_idx_final = np.array(first_illum_idx_final)
+        np.save(os.path.join(self.npy_dir,'./first_illum_idx_final.npy'), first_illum_idx_final)
         
-        first_illum_idx_final = np.load('./first_illum_idx_final.npy')
+        # first_illum_idx_final = np.load(os.path.join(self.npy_dir,'./first_illum_idx_final.npy'))
 
         first_illum_idx_final_reshape = first_illum_idx_final.reshape(self.cam_H, self.cam_W, len(self.depth_arange), len(self.new_wvls))
         
@@ -277,7 +310,7 @@ class PositionCalibration():
         # to make 47, cam_H, cam_W, 3 array
         first_illum_idx_final_transp = first_illum_idx_final_reshape.transpose(3,2,0,1)
         
-        np.save('first_illum_idx_final_transp.npy', first_illum_idx_final_transp)
+        np.save(os.path.join(self.npy_dir, 'first_illum_idx_final_transp.npy'), first_illum_idx_final_transp)
         return first_illum_idx_final_transp
     
 if __name__ == "__main__":
@@ -288,12 +321,16 @@ if __name__ == "__main__":
     
     # front_peak_illum_idx = DataProcess(arg, date, "front").get_first_idx()
     # mid_peak_illum_idx = DataProcess(arg, date, "mid").get_first_idx()
+    # mid2_peak_illum_idx = DataProcess(arg, date, "mid2").get_first_idx()
+    # mid3_peak_illum_idx = DataProcess(arg, date, "mid3").get_first_idx()
     # back_peak_illum_idx = DataProcess(arg, date, "back").get_first_idx()
     
     front_peak_illum_idx = np.load("./calibration/position_calibration/2023%s/npy_data/peak_illum_idx_front.npy"%date)
     mid_peak_illum_idx = np.load("./calibration/position_calibration/2023%s/npy_data/peak_illum_idx_mid.npy"%date)
+    mid2_peak_illum_idx = np.load("./calibration/position_calibration/2023%s/npy_data/peak_illum_idx_mid2.npy"%date)
+    mid3_peak_illum_idx = np.load("./calibration/position_calibration/2023%s/npy_data/peak_illum_idx_mid3.npy"%date)
     back_peak_illum_idx = np.load("./calibration/position_calibration/2023%s/npy_data/peak_illum_idx_back.npy"%date)
     
-    depth_peak_illum_idx_final = DepthInterpolation(arg, date, front_peak_illum_idx, mid_peak_illum_idx, back_peak_illum_idx).get_depth_peak_illum()
+    depth_peak_illum_idx_final = DepthInterpolation(arg, date, front_peak_illum_idx, mid_peak_illum_idx, mid2_peak_illum_idx, mid3_peak_illum_idx, back_peak_illum_idx).get_depth_peak_illum()
     
     PositionCalibration().full_wavelength_interpolation(depth_peak_illum_idx_final)
