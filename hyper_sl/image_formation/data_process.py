@@ -1,7 +1,5 @@
 import cv2, os, sys
 
-sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
-
 from hyper_sl.utils.ArgParser import Argument
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,14 +31,13 @@ class DataProcess():
         self.position = position
         # self.wvl_list = np.array([430, 660])
         self.wvl_list = np.array([430, 600, 610, 620, 640, 650, 660])
-        self.n_illum = 318 # arg.illum_num 나중에 argparser에서 illum_dir 바꾸기!!!!!!!!!!!!!!!!!!
+        self.n_illum = arg.illum_num # arg.illum_num 나중에 argparser에서 illum_dir 바꾸기!!!!!!!!!!!!!!!!!!
         self.cam_H = arg.cam_H
         self.cam_W = arg.cam_W
         
         # dir
-        self.data_dir = "./calibration/position_calibration/2023%s/%s_depth/"%(date, position)
-        self.depth_dir = "./calibration/position_calibration/2023%s/%s_depth/spectralon/2023%s_spectralon_%s"%(date, position,date, position)
-        self.npy_dir = "./calibration/position_calibration/2023%s/npy_data"%date
+        self.data_dir = "./dataset/image_formation/2023%s/%s_depth"%(self.date, self.position)
+        self.npy_dir = "./dataset/image_formation/2023%s/npy_data"%date
         
     def get_data(self):
         """
@@ -112,7 +109,7 @@ class DataProcess():
         
         max_data = self.get_max_data()
         np.save(os.path.join(self.npy_dir, 'max_data_%s.npy'%self.position), max_data)
-        max_data = np.load(os.path.join(self.npy_dir, 'max_data_%s.npy'%self.position))
+        # max_data = np.load(os.path.join(self.npy_dir, 'max_data_%s.npy'%self.position))
         
         peak_illum_idx = np.zeros(shape=(3, len(self.wvl_list), self.cam_H * self.cam_W))
         peak_illum_idx[1] = self.get_zero_idx(max_data)[np.newaxis,:] # put zero illumination index
@@ -133,9 +130,9 @@ class DataProcess():
                 max_idx_pfirst = np.argmax(max_data[w, idx_pfirst:, i]) + idx_pfirst
 
                 # if intensity lower than 0.08 -> invalid
-                if max_data[w, max_idx_mfirst, i] < 0.08:
+                if max_data[w, max_idx_mfirst, i] < 0.07:
                     max_idx_mfirst = 0
-                if max_data[w, max_idx_pfirst, i] < 0.08:
+                if max_data[w, max_idx_pfirst, i] < 0.07:
                     max_idx_pfirst = 317
                     
                 peak_illum_idx[0,w,i] = max_idx_mfirst
@@ -152,7 +149,7 @@ if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
     
-    date = "0922"
+    date = "1007"
     position = "back"
     
     peak_illum_idx = DataProcess(arg, date, position).get_first_idx()

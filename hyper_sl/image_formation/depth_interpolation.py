@@ -1,7 +1,5 @@
 import cv2, os, sys
 
-sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
-
 from hyper_sl.utils.ArgParser import Argument
 import numpy as np
 import matplotlib.pyplot as plt
@@ -44,20 +42,11 @@ class DepthInterpolation():
         self.depth_arange = np.arange(self.depth_start, self.depth_end + 1, 1)
         self.sample_pts = np.array([[10 + i*87, 50 + j*53] for j in range(10) for i in range(11)])
         
-        # # delete points
-        # for idx, i in enumerate(self.sample_pts[:,0]):
-        #     if (i == 358) or (i == 445):
-        #         if i == 358:
-        #             self.sample_pts[idx,0] = 320
-        #         elif i == 445:
-        #             self.sample_pts[idx,0] = 500
-        
         self.sample_pts_flatt = np.array([[self.sample_pts[i,0]+self.sample_pts[i,1]*self.cam_W] for i in range(self.sample_pts.shape[0])]).squeeze()
         
         # dir
-        self.data_dir = "./calibration/position_calibration/2023%s/%s_depth/spectralon"
-        self.dat_dir = "./dataset/image_formation/dat/method3"
-        self.npy_dir = "./calibration/position_calibration/2023%s/npy_data"%date
+        self.to_depth_dir = "./dataset/image_formation/2023%s/%s_depth/spectralon"
+        self.npy_dir = "./dataset/image_formation/2023%s/npy_data"%date
 
         # peak illumination index informations / 3(m order), wvl, HxW
         self.front_peak_illum_idx = front_peak_illum_idx
@@ -119,7 +108,7 @@ class DepthInterpolation():
         """
             bring depth values (mm) for each spectralon position
         """
-        depth_dir = os.path.join(self.data_dir%(self.date, position), "2023%s_spectralon_%s.npy"%(self.date, position))
+        depth_dir = os.path.join(self.to_depth_dir%(self.date, position), "2023%s_spectralon_%s.npy"%(self.date, position))
         depth = np.load(depth_dir)[:,:,2].reshape(self.cam_H * self.cam_W) # only get z(=depth) value
 
         return depth
@@ -133,8 +122,8 @@ class DepthInterpolation():
             depth(600mm-900mm at 1mm interval), 2(m=-1 or 1 and 0), wvl(430nm, 600nm - 660nm), sample pts
         """
         depth_peak_illum_idx = self.depth_interpolation() # 301, 3, wvls, sample_pts
-        np.save(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'), depth_peak_illum_idx)
-        depth_peak_illum_idx = np.load(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'))
+        # np.save(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'), depth_peak_illum_idx)
+        # depth_peak_illum_idx = np.load(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'))
         
                                                     # depth, m order (-1 or 1 and zero), wvl(430, 660), pts
         depth_peak_illum_idx_final = np.zeros(shape=(len(self.depth_arange), 2, len(self.wvl_list), self.sample_pts.shape[0])) 
@@ -165,13 +154,13 @@ if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
     
-    date = "0922"
+    date = "1007"
     
-    # front_peak_illum_idx = DataProcess(arg, date, "front").get_first_idx()
-    # mid_peak_illum_idx = DataProcess(arg, date, "mid").get_first_idx()
-    # mid2_peak_illum_idx = DataProcess(arg, date, "mid2").get_first_idx()
-    # mid3_peak_illum_idx = DataProcess(arg, date, "mid3").get_first_idx()
-    # back_peak_illum_idx = DataProcess(arg, date, "back").get_first_idx()
+    front_peak_illum_idx = DataProcess(arg, date, "front").get_first_idx()
+    mid_peak_illum_idx = DataProcess(arg, date, "mid").get_first_idx()
+    mid2_peak_illum_idx = DataProcess(arg, date, "mid2").get_first_idx()
+    mid3_peak_illum_idx = DataProcess(arg, date, "mid3").get_first_idx()
+    back_peak_illum_idx = DataProcess(arg, date, "back").get_first_idx()
     
     front_peak_illum_idx = np.load("./calibration/position_calibration/2023%s/npy_data/peak_illum_idx_front.npy"%date)
     mid_peak_illum_idx = np.load("./calibration/position_calibration/2023%s/npy_data/peak_illum_idx_mid.npy"%date)

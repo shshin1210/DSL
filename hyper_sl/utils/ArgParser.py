@@ -9,39 +9,20 @@ class Argument:
 
 		################## PATH
 		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
-		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
-
-		self.parser.add_argument('--model_dir', type=str, default="./model_depth")
 
 		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_5")
 		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
 
-		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
-		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
 		self.parser.add_argument('--dg_intensity_dir', type=str, default='./dataset/image_formation')
-		# self.parser.add_argument('--dat_dir', type = str, default = './dataset/image_formation/dat')
-		self.parser.add_argument('--dat_dir', type = str, default= "./dataset/image_formation/dat/method2/interpolated")
-		self.parser.add_argument('--illum_data_dir', type = str, default= "./dataset/image_formation/illum_data.npy")
-		self.parser.add_argument('--img_hyp_texture_dir', type = str, default="./dataset/image_formation/img_hyp_text")
-		self.parser.add_argument('--random_pixel_train_dir', type = str, default="./random_datasets/random_pixel_train")
-		self.parser.add_argument('--random_pixel_val_dir', type = str, default="./random_datasets/random_pixel_val")
-		self.parser.add_argument('--random_pixel_eval_dir', type = str, default="./random_datasets/random_pixel_eval")
-		self.parser.add_argument('--log_dir', type = str, default="/log/hyp-3d-imaging/result/logs")
 		self.parser.add_argument('--camera_response', type = str, default="./dataset/image_formation") 
 		self.parser.add_argument('--projector_response', type = str, default="./dataset/image_formation")  
-		self.parser.add_argument('--response_opt_cnst_dir', type = str, default="./calibration/radiometric_cal/opt_params")
-		self.parser.add_argument('--random_pixel_scene_fn', type = str, default="scene_data.pt")
-		self.parser.add_argument('--random_pixel_xyproj_fn', type = str, default="xy_proj_data.pt")
-		self.parser.add_argument('--random_pixel_xy_real_fn', type = str, default="xy_real_data.pt")
-		self.parser.add_argument('--random_pixel_hyp_norm', type = str, default="hyp_norm.pt")
-		self.parser.add_argument('--random_pixel_illum', type = str, default="illum.pt")
-		self.parser.add_argument('--random_pixel_hyp_gt', type = str, default="hyp_gt.pt")
+		
 		self.parser.add_argument('--real_data_dir', type=str, default="./dataset/data/real_data")
 
-		################## TRAINING & TESTING
+		################## arguments
+		# self.parser.add_argument('--')
+  
 		self.parser.add_argument('--real_data_scene', type = bool, default= True)
-		self.parser.add_argument('--feature_num', type = int, default=100)
-		self.parser.add_argument('--load_dataset', action='store_true', default= False)
 
 		self.parser.add_argument('--wvl_min', type = float, default= 430e-9) # 420e-9
 		self.parser.add_argument('--wvl_max', type = float, default= 660e-9) # 660e-9
@@ -61,6 +42,35 @@ class Argument:
   
 		self.parser.add_argument('--proj_W', type = int, default= 1280//2) # 640
 		self.parser.add_argument('--proj_H', type = int, default= 720//2) # 360
+  
+  
+  
+		################## TODO: clean the following codes /// old ones
+		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
+		self.parser.add_argument('--model_dir', type=str, default="./model_depth")
+  
+		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
+		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
+  
+		# self.parser.add_argument('--dat_dir', type = str, default = './dataset/image_formation/dat')
+		self.parser.add_argument('--dat_dir', type = str, default= "./dataset/image_formation/dat/method2/interpolated")
+		self.parser.add_argument('--illum_data_dir', type = str, default= "./dataset/image_formation/illum_data.npy")
+		self.parser.add_argument('--img_hyp_texture_dir', type = str, default="./dataset/image_formation/img_hyp_text")
+		self.parser.add_argument('--random_pixel_train_dir', type = str, default="./random_datasets/random_pixel_train")
+		self.parser.add_argument('--random_pixel_val_dir', type = str, default="./random_datasets/random_pixel_val")
+		self.parser.add_argument('--random_pixel_eval_dir', type = str, default="./random_datasets/random_pixel_eval")
+		self.parser.add_argument('--log_dir', type = str, default="/log/hyp-3d-imaging/result/logs")
+		
+		self.parser.add_argument('--response_opt_cnst_dir', type = str, default="./calibration/radiometric_cal/opt_params")
+		self.parser.add_argument('--random_pixel_scene_fn', type = str, default="scene_data.pt")
+		self.parser.add_argument('--random_pixel_xyproj_fn', type = str, default="xy_proj_data.pt")
+		self.parser.add_argument('--random_pixel_xy_real_fn', type = str, default="xy_real_data.pt")
+		self.parser.add_argument('--random_pixel_hyp_norm', type = str, default="hyp_norm.pt")
+		self.parser.add_argument('--random_pixel_illum', type = str, default="illum.pt")
+		self.parser.add_argument('--random_pixel_hyp_gt', type = str, default="hyp_gt.pt")
+
+		self.parser.add_argument('--feature_num', type = int, default=100)
+		self.parser.add_argument('--load_dataset', action='store_true', default= False)
   
 		self.parser.add_argument('--scene_train_num', type = int, default= 200) # 200
 		self.parser.add_argument('--scene_test_num', type = int, default= 20) # 20

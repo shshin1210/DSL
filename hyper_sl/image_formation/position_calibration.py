@@ -1,7 +1,6 @@
 import cv2, os, sys
 
 sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
-
 from hyper_sl.utils.ArgParser import Argument
 import numpy as np
 import matplotlib.pyplot as plt
@@ -32,18 +31,11 @@ class PositionCalibration():
         self.depth_end = 900     
         self.depth_arange = np.arange(self.depth_start, self.depth_end + 1, 1)
         self.sample_pts = np.array([[10 + i*87, 50 + j*53] for j in range(10) for i in range(11)])
-        
-        # # delete points
-        # for idx, i in enumerate(self.sample_pts[:,0]):
-        #     if i == 358:
-        #         self.sample_pts[idx,0] = 320
             
         self.sample_pts_flatt = np.array([[self.sample_pts[i,0]+self.sample_pts[i,1]*self.cam_W] for i in range(self.sample_pts.shape[0])]).squeeze()
         
         # dir
-        self.data_dir = "./calibration/position_calibration/2023%s/%s_depth/spectralon"
-        self.dat_dir = "./dataset/image_formation/dat/method3"
-        self.npy_dir = "./calibration/position_calibration/2023%s/npy_data"%date
+        self.npy_dir = "./dataset/image_formation/2023%s/npy_data"%date
 
     def interpolation_diff_image(self, sample_pts, difference_430nm_660nm):
         """
@@ -222,7 +214,8 @@ class PositionCalibration():
             pick the valid order -1(original) or +1(new) 
         """
         depth_new_peak_image_illum_idx = self.interpolate_image(depth_peak_illum_idx_final).reshape(len(self.depth_arange), 2, self.cam_H * self.cam_W, 2)
-        depth_new_peak_image_illum_idx = np.load(os.path.join(self.npy_dir,'./depth_new_peak_image_illum_idx.npy')).reshape(len(self.depth_arange), 2, self.cam_H * self.cam_W, 2)
+        np.save(os.path.join(self.npy_dir,'depth_new_peak_image_illum_idx.npy'), depth_new_peak_image_illum_idx)
+        # depth_new_peak_image_illum_idx = np.load(os.path.join(self.npy_dir,'./depth_new_peak_image_illum_idx.npy'))
         orig_peak_image_illum_idx = self.original_illum_idx(depth_new_peak_image_illum_idx)
                 
         peak_image_illum_idx = np.zeros_like(depth_new_peak_image_illum_idx)
@@ -276,7 +269,7 @@ class PositionCalibration():
         first_illum_idx_final = np.array(first_illum_idx_final)
         
         np.save(os.path.join(self.npy_dir, 'first_illum_idx_final.npy'))
-        first_illum_idx_final = np.load(os.path.join(self.npy_dir,'first_illum_idx_final.npy'))
+        # first_illum_idx_final = np.load(os.path.join(self.npy_dir,'first_illum_idx_final.npy'))
         
         first_illum_idx_final_reshape = first_illum_idx_final.reshape(self.cam_H, self.cam_W, len(self.depth_arange), len(self.new_wvls))
 
@@ -290,11 +283,11 @@ if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
     
-    date = "0922"
+    date = "1007"
     
-    front_peak_illum_idx = DataProcess(arg, date, "front").get_first_idx()
-    mid_peak_illum_idx = DataProcess(arg, date, "mid").get_first_idx()
-    mid2_peak_illum_idx = DataProcess(arg, date, "mid2").get_first_idx()
+    # front_peak_illum_idx = DataProcess(arg, date, "front").get_first_idx()
+    # mid_peak_illum_idx = DataProcess(arg, date, "mid").get_first_idx()
+    # mid2_peak_illum_idx = DataProcess(arg, date, "mid2").get_first_idx()
     mid3_peak_illum_idx = DataProcess(arg, date, "mid3").get_first_idx()
     back_peak_illum_idx = DataProcess(arg, date, "back").get_first_idx()
     
