@@ -16,6 +16,7 @@ class Projector():
         self.arg = arg
         self.m_n = arg.m_num
         self.wvls_n = arg.wvl_num
+        self.pef_cnst = np.load(os.path.join(arg.response_opt_cnst_dir, "opt_param_detach_%05d.npy"%9500))[:,:3]
         
         # path 
         self.crf_dir = arg.projector_response
@@ -56,113 +57,49 @@ class Projector():
         extrinsic_proj_real = torch.linalg.inv(extrinsic_proj_real)
 
         return extrinsic_proj_real
+
+    def get_xyz_proj(self, uv1):
+        sensor_XY = uv1[:,:,:,:2] * self.arg.proj_pitch # B, m, wvl, uv1, # px
+        sensor_Z = torch.zeros_like(sensor_XY[:,:,:,0])
+        sensor_Z[:] = self.focal_length_proj()
+        
+        xyz_proj = torch.stack((sensor_XY[:,:,:,0], sensor_XY[:,:,:,1], sensor_Z), dim = 3)
+
+        return xyz_proj     
     
-    # dg coord to projector coord
-    def extrinsic_diff(self):
-
-        extrinsic_diff = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/dg_extrinsic_single_test_2023_07_09_15_37_(2)_%06d.npy'%210), device=self.device)
-        # extrinsic_diff = torch.tensor(np.load('./calibration/dg_calibration/dg_extrinsic/dg_extrinsic_single_test_2023_07_08_22_06_%06d.npy'%510), device=self.device)
-
-        extrinsic_diff = torch.linalg.inv(extrinsic_diff)
-
-        return extrinsic_diff
-
-    def XYZ_to_dg(self, X,Y,Z):
-        """
-            Input : world coordinate X,Y,Z 3d points
-            output : dg coordinate X,Y,Z 3d points
-        """
-        XYZ1 = torch.stack((X,Y,Z,torch.ones_like(X)), dim = 1).to(device=self.device)
+    def make_uv1(self, sensor_U_distorted, sensor_V_distorted, zero_uv1):
+        ones_uv = torch.stack((sensor_U_distorted, sensor_V_distorted), dim = 3)
         
-        # world coord XYZ1 to projector coord
-        XYZ1_proj = torch.linalg.inv(self.extrinsic_proj_real())@XYZ1            
+        zero_uv = zero_uv1[:,:2].unsqueeze(dim = 1).unsqueeze(dim = 1) # B, uv, # px
+        zero_uv = zero_uv.repeat(1,1,25,1,1)
+
+        uv = torch.cat((ones_uv[:,0].unsqueeze(dim = 1), zero_uv[:,0].unsqueeze(dim = 1), ones_uv[:,1].unsqueeze(dim = 1)), dim = 1)
+        ones = torch.ones_like(uv[:,:,:,0])
         
-        # proj coord XYZ1 to dg coord XYZ1
-        XYZ1_dg = torch.linalg.inv(self.extrinsic_diff())@XYZ1_proj
-        
-        return XYZ1_dg[:,:3]
+        uv1 = torch.stack((uv[:,:,:,0], uv[:,:,:,1], ones), dim = 3)
+
+        return uv1
     
-    def intersections_dg(self, optical_center_virtual, XYZ_dg):
-        optical_center_virtual = optical_center_virtual.unsqueeze(dim = 0).unsqueeze(dim = 4)
-        XYZ_dg = XYZ_dg.unsqueeze(dim = 1).unsqueeze(dim = 1)
-        
-        dir_vec = XYZ_dg - optical_center_virtual
-        norm = dir_vec.norm(dim = 3)
-        dir_vec_unit = dir_vec/norm.unsqueeze(dim = 3)
-        
-        t = - optical_center_virtual[...,2,:] / dir_vec_unit[...,2,:]
-        intersection_points_dg = dir_vec_unit*(t.unsqueeze(dim = 3)) + optical_center_virtual
-
-        return intersection_points_dg      
-        
-    def intersect_points_to_proj(self, intersection_points_dg_real1):
-        intersection_points_proj_real = self.extrinsic_diff()@intersection_points_dg_real1
-        
-        return intersection_points_proj_real[...,:3,:]
-    
-    def projection(self, intersection_points_proj_real):
-        dir_vec = intersection_points_proj_real
-        norm = intersection_points_proj_real.norm(dim = 3)
-        
-        dir_vec_unit =  dir_vec/norm.unsqueeze(dim = 3)
-        
-        t = (self.focal_length_proj() - intersection_points_proj_real[...,2,:]) / dir_vec_unit[...,2,:]
-        
-        xyz_proj = dir_vec_unit * t.unsqueeze(dim = 3) + intersection_points_proj_real
-        
-        return xyz_proj
-    
-    def zero_order_projection(self, X, Y, Z):
-        
-        # XYZ_dg -> proj coord -> center 연결 -> proj plane 만나는 점        
-        # world coord XYZ1 to projector coord
+    def projection(self, X, Y, Z):
         XYZ1 = torch.stack((X,Y,Z,torch.ones_like(X)), dim = 1).to(device=self.device)
         XYZ1_proj = torch.linalg.inv(self.extrinsic_proj_real())@XYZ1       
 
         suv = self.intrinsic_proj_real().to(self.device) @ XYZ1_proj[:,:3]
-        gt_uv1 = suv/ suv[...,2,:].unsqueeze(dim = 1)
+        zero_uv1 = suv/ suv[...,2,:].unsqueeze(dim = 1)
         
-        return gt_uv1
-     
-    def xy_to_uv(self, xyz_proj):
-        suv = self.intrinsic_proj_real().to(self.device) @ xyz_proj
-        uv1 = suv/ suv[...,2,:].unsqueeze(dim = 3)
-        
-        return uv1
-
-    #### Get virtual projector center
-    def get_virtual_center(self, P, dir, wvls_N, m_N):
-        """P and dir are NxD arrays defining N lines.
-        D is the dimension of the space. This function 
-        returns the least squares intersection of the N
-        """        
-        
-        # optical center 구할 때 
-        # P : [m, number of px]
-        # dir : [xyz, m, wvl, number of px]       
-        
-        torch_eye = torch.eye(dir.shape[2], device=self.device)
-
-        projs = torch_eye - torch.unsqueeze(dir, dim = 4)*torch.unsqueeze(dir, dim = 3)
-        
-        R = projs.sum(axis = 0)
-        P = P.unsqueeze(dim = 1).unsqueeze(dim = 1)
-        q = (projs @ torch.unsqueeze(P, dim = 4)).sum(axis=0) # px sum
-        
-        p = torch.linalg.lstsq(R,q,rcond=None)[0]
-        p = p.squeeze().permute(1,0,2)
-
-        return p
-        
+        return zero_uv1
     
     def get_PRF(self):
         PRF = np.load(os.path.join(self.crf_dir, 'CRF_proj.npy'))
         map_scale = interp1d([PRF.min(), PRF.max()], [0.,1.])
-        PRF = torch.tensor(map_scale(PRF).astype(np.float32))    
-        PRF = PRF[2:27]
+        PRF = torch.tensor(map_scale(PRF).astype(np.float32))
+        PRF = PRF[2:27] * self.pef_cnst
         return PRF
 
     def get_dg_intensity(self):
-        dg_intensity = np.load(os.path.join(self.dg_intensity_dir, 'intensity_dg_0503.npy'))
+        intensity = np.load(os.path.join(self.dg_intensity_dir, '20230825_intensity_dg.npy'))
+        
+        dg_intensity = np.ones(shape=(self.m_n, self.wvls_n))
+        dg_intensity[0], dg_intensity[2] = intensity.squeeze(), intensity.squeeze()
         
         return dg_intensity
