@@ -40,8 +40,9 @@ class DepthInterpolation():
         self.depth_start = 600
         self.depth_end = 900     
         self.depth_arange = np.arange(self.depth_start, self.depth_end + 1, 1)
-        self.sample_pts = np.array([[10 + i*87, 50 + j*53] for j in range(10) for i in range(11)])
         
+        # self.sample_pts = np.array([[10 + i*87, 50 + j*53] for j in range(10) for i in range(11)])
+        self.sample_pts = np.array([[10 + i*120, 50 + j*51] for j in range(10) for i in range(8)])
         self.sample_pts_flatt = np.array([[self.sample_pts[i,0]+self.sample_pts[i,1]*self.cam_W] for i in range(self.sample_pts.shape[0])]).squeeze()
         
         # dir
@@ -121,8 +122,8 @@ class DepthInterpolation():
             shape :
             depth(600mm-900mm at 1mm interval), 2(m=-1 or 1 and 0), wvl(430nm, 600nm - 660nm), sample pts
         """
-        # depth_peak_illum_idx = self.depth_interpolation() # 301, 3, wvls, sample_pts
-        # np.save(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'), depth_peak_illum_idx)
+        depth_peak_illum_idx = self.depth_interpolation() # 301, 3, wvls, sample_pts
+        np.save(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'), depth_peak_illum_idx)
         depth_peak_illum_idx = np.load(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'))
         
                                                     # depth, m order (-1 or 1 and zero), wvl(430, 660), pts

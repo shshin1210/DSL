@@ -30,8 +30,9 @@ class PositionCalibration():
         self.depth_start = 600
         self.depth_end = 900     
         self.depth_arange = np.arange(self.depth_start, self.depth_end + 1, 1)
-        self.sample_pts = np.array([[10 + i*87, 50 + j*53] for j in range(10) for i in range(11)])
-            
+        
+        # self.sample_pts = np.array([[10 + i*87, 50 + j*53] for j in range(10) for i in range(11)])
+        self.sample_pts = np.array([[10 + i*120, 50 + j*51] for j in range(10) for i in range(8)])
         self.sample_pts_flatt = np.array([[self.sample_pts[i,0]+self.sample_pts[i,1]*self.cam_W] for i in range(self.sample_pts.shape[0])]).squeeze()
         
         # dir
@@ -285,11 +286,11 @@ if __name__ == "__main__":
     
     date = "1007"
     
-    # front_peak_illum_idx = DataProcess(arg, date, "front").get_first_idx()
-    # mid_peak_illum_idx = DataProcess(arg, date, "mid").get_first_idx()
-    # mid2_peak_illum_idx = DataProcess(arg, date, "mid2").get_first_idx()
-    # mid3_peak_illum_idx = DataProcess(arg, date, "mid3").get_first_idx()
-    # back_peak_illum_idx = DataProcess(arg, date, "back").get_first_idx()
+    front_peak_illum_idx = DataProcess(arg, date, "front").get_first_idx()
+    mid_peak_illum_idx = DataProcess(arg, date, "mid").get_first_idx()
+    mid2_peak_illum_idx = DataProcess(arg, date, "mid2").get_first_idx()
+    mid3_peak_illum_idx = DataProcess(arg, date, "mid3").get_first_idx()
+    back_peak_illum_idx = DataProcess(arg, date, "back").get_first_idx()
     
     front_peak_illum_idx = np.load("./dataset/image_formation/2023%s/npy_data/peak_illum_idx_front.npy"%date)
     mid_peak_illum_idx = np.load("./dataset/image_formation/2023%s/npy_data/peak_illum_idx_mid.npy"%date)

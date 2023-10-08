@@ -32,7 +32,7 @@ class DataProcess():
         self.position = position
         # self.wvl_list = np.array([430, 660])
         self.wvl_list = np.array([430, 600, 610, 620, 640, 650, 660])
-        self.n_illum = arg.illum_num # arg.illum_num 나중에 argparser에서 illum_dir 바꾸기!!!!!!!!!!!!!!!!!!
+        self.n_illum = arg.illum_num
         self.cam_H = arg.cam_H
         self.cam_W = arg.cam_W
         
@@ -109,6 +109,17 @@ class DataProcess():
         patch_size = 30
         
         max_data = self.get_max_data()
+        
+        # make all intensity in a valid range
+        for w_idx in range(len(self.wvl_list)):
+            for idx, i in enumerate(self.sample_pts_flatt):
+                if (np.median(max_data[w_idx,:,i]) > 0.07) and (np.median(max_data[w_idx,:,i]) < 0.09):
+                    max_data[w_idx,:,i] = max_data[w_idx,:,i] - 0.02
+                if (np.median(max_data[w_idx,:,i]) >= 0.09):
+                    max_data[w_idx,:,i] = max_data[w_idx,:,i] - 0.03
+                if(max_data[w_idx,:,i].min() <= 0.06):
+                    max_data[w_idx,:,i] = max_data[w_idx,:,i] + 0.008
+                
         np.save(os.path.join(self.npy_dir, 'max_data_%s.npy'%self.position), max_data)
         # max_data = np.load(os.path.join(self.npy_dir, 'max_data_%s.npy'%self.position))
         
@@ -131,9 +142,9 @@ class DataProcess():
                 max_idx_pfirst = np.argmax(max_data[w, idx_pfirst:, i]) + idx_pfirst
 
                 # if intensity lower than 0.08 -> invalid
-                if max_data[w, max_idx_mfirst, i] < 0.07:
+                if max_data[w, max_idx_mfirst, i] < 0.08:
                     max_idx_mfirst = 0
-                if max_data[w, max_idx_pfirst, i] < 0.07:
+                if max_data[w, max_idx_pfirst, i] < 0.08:
                     max_idx_pfirst = 317
                     
                 peak_illum_idx[0,w,i] = max_idx_mfirst
