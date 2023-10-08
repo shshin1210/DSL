@@ -11,22 +11,33 @@ class Argument:
 		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
 
 		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_5")
-		# self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/graycode_pattern")
 
 		self.parser.add_argument('--dg_intensity_dir', type=str, default='./dataset/image_formation')
-		self.parser.add_argument('--camera_response', type = str, default="./dataset/image_formation") 
-		self.parser.add_argument('--projector_response', type = str, default="./dataset/image_formation")  
-		
-		self.parser.add_argument('--real_data_dir', type=str, default="./dataset/data/real_data")
-
-		################## arguments
-		# self.parser.add_argument('--')
+		self.parser.add_argument('--response_function_dir', type = str, default="./dataset/image_formation") 
+		self.parser.add_argument('--response_function_opt_param_dir', type = str, default="./calibration/radiometric_cal/opt_params/opt_param_0915_detach_09500.npy")
   
-		self.parser.add_argument('--real_data_scene', type = bool, default= True)
+		self.parser.add_argument('--real_data_dir', type=str, default="./dataset/data")
+		self.parser.add_argument('--position_calibrated_data_dir', type = str, default="./dataset/image_formation/2023%s/npy_data")
+  
+		self.parser.add_argument('--real_data_date', type = str, default="1003")
+		self.parser.add_argument('--calibrated_date', type =str, default="1007")
+  
+		self.parser.add_argument('--exp_min', type = int, default=160)
+		self.parser.add_argument('--exp_max', type = int, default=320)
+  
+		self.parser.add_argument('--intensity_min', type=float, default=0.2)
+		self.parser.add_argument('--intensity_max', type=float, default=0.8)
 
-		self.parser.add_argument('--wvl_min', type = float, default= 430e-9) # 420e-9
+		self.parser.add_argument('--intensity_normalization_pts', type=list, default=[91, 533])
+
+		self.parser.add_argument('--invalid_intensity_ratio', type = float, default= 0.01)
+  
+		self.parser.add_argument('--weight_D', type=float, default=0.5)
+  
+		self.parser.add_argument('--wvl_min', type = float, default= 430e-9) # 430e-9
 		self.parser.add_argument('--wvl_max', type = float, default= 660e-9) # 660e-9
-		self.parser.add_argument('--wvl_num', type = int, default= 25) # 25
+		self.parser.add_argument('--wvl_num', type = int, default= 24) # 24 개 (for 10nm interval) 47개 (for 5nm interval)
+		self.parser.add_argument('--new_wvl_num', type = int, default=47)
   
 		self.parser.add_argument('--depth_min', type = float, default= 600*1e-3) # n단위
 		self.parser.add_argument('--depth_max', type = float, default= 900*1e-3) 
@@ -43,86 +54,9 @@ class Argument:
 		self.parser.add_argument('--proj_W', type = int, default= 1280//2) # 640
 		self.parser.add_argument('--proj_H', type = int, default= 720//2) # 360
   
-  
-  
-		################## TODO: clean the following codes /// old ones
-		self.parser.add_argument('--output_dir', type = str, default="./dataset/data/result_np")
-		self.parser.add_argument('--model_dir', type=str, default="./model_depth")
-  
-		self.parser.add_argument('--image_formation_dir', type = str, default="./dataset/image_formation/result")
-		self.parser.add_argument('--precomputed_proj_coordinates_dir', type = str, default="./dataset/image_formation/xy_vproj")
-  
-		# self.parser.add_argument('--dat_dir', type = str, default = './dataset/image_formation/dat')
-		self.parser.add_argument('--dat_dir', type = str, default= "./dataset/image_formation/dat/method2/interpolated")
-		self.parser.add_argument('--illum_data_dir', type = str, default= "./dataset/image_formation/illum_data.npy")
-		self.parser.add_argument('--img_hyp_texture_dir', type = str, default="./dataset/image_formation/img_hyp_text")
-		self.parser.add_argument('--random_pixel_train_dir', type = str, default="./random_datasets/random_pixel_train")
-		self.parser.add_argument('--random_pixel_val_dir', type = str, default="./random_datasets/random_pixel_val")
-		self.parser.add_argument('--random_pixel_eval_dir', type = str, default="./random_datasets/random_pixel_eval")
-		self.parser.add_argument('--log_dir', type = str, default="/log/hyp-3d-imaging/result/logs")
-		
-		self.parser.add_argument('--response_opt_cnst_dir', type = str, default="./calibration/radiometric_cal/opt_params")
-		self.parser.add_argument('--random_pixel_scene_fn', type = str, default="scene_data.pt")
-		self.parser.add_argument('--random_pixel_xyproj_fn', type = str, default="xy_proj_data.pt")
-		self.parser.add_argument('--random_pixel_xy_real_fn', type = str, default="xy_real_data.pt")
-		self.parser.add_argument('--random_pixel_hyp_norm', type = str, default="hyp_norm.pt")
-		self.parser.add_argument('--random_pixel_illum', type = str, default="illum.pt")
-		self.parser.add_argument('--random_pixel_hyp_gt', type = str, default="hyp_gt.pt")
-
-		self.parser.add_argument('--feature_num', type = int, default=100)
-		self.parser.add_argument('--load_dataset', action='store_true', default= False)
-  
-		self.parser.add_argument('--scene_train_num', type = int, default= 200) # 200
-		self.parser.add_argument('--scene_test_num', type = int, default= 20) # 20
-		self.parser.add_argument('--scene_eval_num', type = int, default= 1)
-		self.parser.add_argument('--scene_real_num', type = int, default= 1)
-
-		self.parser.add_argument('--batch_size_train', type = int, default= 16) # 16
-		self.parser.add_argument('--batch_size_test', type = int, default= 8) # 8
-		self.parser.add_argument('--batch_size_eval', type = int, default= 1)
-		self.parser.add_argument('--batch_size_real', type = int, default= 1)
-
-		self.parser.add_argument('--patch_pixel_num', type = int, default = 9)
-	
-		self.parser.add_argument('--num_train_px_per_iter', type = int, default= 9*500) # 4500
-  
-		self.parser.add_argument('--model_lr', type = float, default= 5*1e-4) # 5*1e-4
-		self.parser.add_argument('--model_step_size', type = int, default = 300)
-  
-		self.parser.add_argument('--illum_lr', type = float, default= 5*1e-4)
-		self.parser.add_argument('--illum_step_size', type = int, default = 250)
-
-		self.parser.add_argument('--weight_hyp', type = float, default= 0)
-		self.parser.add_argument('--weight_depth', type=float, default= 1)
-
-		# arguments for training
-		self.parser.add_argument('--illum_weight', type = float, default= 1)
-		self.parser.add_argument('--model_gamma', type= float, default=0.8)
-		self.parser.add_argument('--noise_std', type = float, default= 0.002) # 0.015 
-		self.parser.add_argument('--image_weight', type = float, default= 1.33) 
-  
-		# args for dg calibration
-		self.parser.add_argument('--total_px', type = int, default= 29*16) # arg.proj_H//10 * arg.proj_W//10
-
 		################## TODO: clean the following codes
 
-		# for init scene
-		self.parser.add_argument('--N_scene', type=int, default=10)
-		self.parser.add_argument('--N_obj', type=int, default=20)
-		self.parser.add_argument('--bg_size', type=int, default=2.8)
-
-		# data directory path6.6
-		self.parser.add_argument('--abs')
-		self.parser.add_argument('--rgb_dir', type= str, default="C:/Users/owner/Documents/GitHub/Scalable-Hyperspectral-3D-Imaging/dataset/data/rgb_texture")
-  		# ================================= NEED DATA
-		self.parser.add_argument('--obj_path', type=str, default="//bean.postech.ac.kr/data/ches7283/models-OBJ/models")
-		self.parser.add_argument('--mat_path', type=str, default= "./dataset/m_files/")
-  		
-    	# for Camera calibaration
-		self.parser.add_argument('--fov', type=float, default=30.3) # 30.3d
 		self.parser.add_argument('--focal_length', type=float, default= 12) # 16mm
-
-		self.parser.add_argument('--param_path', type = str, default="./calibration/parameters")
 		
   		# for Camera calibaration
 		self.parser.add_argument('--sensor_width', type=float, default=5.32) # 7.18mm
@@ -136,12 +70,13 @@ class Argument:
 		
 	def parse(self):
 		arg = self.parser.parse_args()
+  
 		arg.wvls = torch.linspace(arg.wvl_min, arg.wvl_max, arg.wvl_num)
+		arg.new_wvls = torch.linspace(arg.wvl_min, arg.wvl_max, arg.new_wvl_num)
 		arg.m_list = torch.linspace(arg.m_min, arg.m_max, arg.m_num)
 		arg.depth_list = torch.arange(arg.depth_min, arg.depth_max, arg.depth_interval)
-		# arg.illums = torch.zeros((arg.illum_num, arg.proj_H, arg.proj_W, 3))
 		arg.illum_num = len(os.listdir(arg.illum_dir))
 		arg.sensor_height_proj = (torch.sin(torch.atan2(torch.tensor(arg.proj_H),torch.tensor(arg.proj_W)))*(arg.sensor_diag_proj*1e-3))
 		arg.proj_pitch = (arg.sensor_height_proj/ (arg.proj_H))
-  
+
 		return arg

@@ -121,9 +121,9 @@ class DepthInterpolation():
             shape :
             depth(600mm-900mm at 1mm interval), 2(m=-1 or 1 and 0), wvl(430nm, 600nm - 660nm), sample pts
         """
-        depth_peak_illum_idx = self.depth_interpolation() # 301, 3, wvls, sample_pts
+        # depth_peak_illum_idx = self.depth_interpolation() # 301, 3, wvls, sample_pts
         # np.save(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'), depth_peak_illum_idx)
-        # depth_peak_illum_idx = np.load(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'))
+        depth_peak_illum_idx = np.load(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'))
         
                                                     # depth, m order (-1 or 1 and zero), wvl(430, 660), pts
         depth_peak_illum_idx_final = np.zeros(shape=(len(self.depth_arange), 2, len(self.wvl_list), self.sample_pts.shape[0])) 

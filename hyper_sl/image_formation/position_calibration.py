@@ -288,14 +288,14 @@ if __name__ == "__main__":
     # front_peak_illum_idx = DataProcess(arg, date, "front").get_first_idx()
     # mid_peak_illum_idx = DataProcess(arg, date, "mid").get_first_idx()
     # mid2_peak_illum_idx = DataProcess(arg, date, "mid2").get_first_idx()
-    mid3_peak_illum_idx = DataProcess(arg, date, "mid3").get_first_idx()
-    back_peak_illum_idx = DataProcess(arg, date, "back").get_first_idx()
+    # mid3_peak_illum_idx = DataProcess(arg, date, "mid3").get_first_idx()
+    # back_peak_illum_idx = DataProcess(arg, date, "back").get_first_idx()
     
-    front_peak_illum_idx = np.load("./calibration/position_calibration/2023%s/npy_data/peak_illum_idx_front.npy"%date)
-    mid_peak_illum_idx = np.load("./calibration/position_calibration/2023%s/npy_data/peak_illum_idx_mid.npy"%date)
-    mid2_peak_illum_idx = np.load("./calibration/position_calibration/2023%s/npy_data/peak_illum_idx_mid2.npy"%date)
-    mid3_peak_illum_idx = np.load("./calibration/position_calibration/2023%s/npy_data/peak_illum_idx_mid3.npy"%date)
-    back_peak_illum_idx = np.load("./calibration/position_calibration/2023%s/npy_data/peak_illum_idx_back.npy"%date)
+    front_peak_illum_idx = np.load("./dataset/image_formation/2023%s/npy_data/peak_illum_idx_front.npy"%date)
+    mid_peak_illum_idx = np.load("./dataset/image_formation/2023%s/npy_data/peak_illum_idx_mid.npy"%date)
+    mid2_peak_illum_idx = np.load("./dataset/image_formation/2023%s/npy_data/peak_illum_idx_mid2.npy"%date)
+    mid3_peak_illum_idx = np.load("./dataset/image_formation/2023%s/npy_data/peak_illum_idx_mid3.npy"%date)
+    back_peak_illum_idx = np.load("./dataset/image_formation/2023%s/npy_data/peak_illum_idx_back.npy"%date)
     
     depth_peak_illum_idx_final = DepthInterpolation(arg, date, front_peak_illum_idx, mid_peak_illum_idx, mid2_peak_illum_idx, mid3_peak_illum_idx, back_peak_illum_idx).get_depth_peak_illum()
     
