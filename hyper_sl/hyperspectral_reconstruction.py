@@ -43,15 +43,15 @@ class HyperspectralReconstruction():
         self.CRF = camera.Camera(arg).get_CRF()
         
         # hdr imgs
-        self.hdr_imgs = np.load('./hdr_step5.npy')
-        # self.hdr_imgs = hdr.HDR(arg).make_hdr()
-        # np.save('./hdr_step5.npy', self.hdr_imgs)
+        # self.hdr_imgs = np.load('./hdr_step5.npy')
+        self.hdr_imgs = hdr.HDR(arg).make_hdr()
+        np.save('./hdr_step5.npy', self.hdr_imgs)
         
     def get_depth(self):
         """
             bring gray code depth reconstructed depth values
         """
-        depth = np.load(os.path.join(self.real_data_dir, './2023%s_color_checker.npy'%self.date))[:,:,2]*1e+3
+        depth = np.load(os.path.join(self.real_data_dir, './2023%s_depth.npy'%self.date))[:,:,2]*1e+3
         depth = np.round(depth).reshape(self.cam_H* self.cam_W).astype(np.int16)
         
         return depth
@@ -70,7 +70,7 @@ class HyperspectralReconstruction():
 
         # save
         np.save('./hdr_imgs_filtered.npy', hdr_imgs_filtered)
-        
+        # hdr_imgs_filtered = np.load('./hdr_imgs_filtered.npy')
         print("median filtered to hdr image")
 
         return hdr_imgs_filtered
@@ -160,6 +160,7 @@ class HyperspectralReconstruction():
         
         # datas        
         hdr_imgs = self.median_filter(self.hdr_imgs / 65535.)
+        np.save('./hdr_imgs_filtered_%s.npy'%self.date, hdr_imgs)
         # hdr_imgs = np.load('./hdr_imgs_filtered.npy')
         
         zero_illum_idx, first_illum_idx = self.peak_illumination_index(hdr_imgs)
@@ -214,6 +215,8 @@ class HyperspectralReconstruction():
         total_hyp_ref = csj_x.squeeze()
         total_hyp_ref = total_hyp_ref.reshape(self.cam_H, self.cam_W, self.new_wvl_num)
 
+        total_hyp_ref = np.load('./total_hyp_ref_%s.npy'%self.date)
+        # np.save('./total_hyp_ref_%s.npy'%self.date, total_hyp_ref.detach().cpu().numpy())        
         return total_hyp_ref
     
 if __name__ == "__main__":
@@ -223,4 +226,4 @@ if __name__ == "__main__":
     
     total_hyp_ref = HyperspectralReconstruction(arg).SVD()
     
-    print('test')
+    print('test') 
