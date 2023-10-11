@@ -110,16 +110,27 @@ class DataProcess():
         
         max_data = self.get_max_data()
         
-        # make all intensity in a valid range
-        for w_idx in range(len(self.wvl_list)):
-            for idx, i in enumerate(self.sample_pts_flatt):
-                if (np.median(max_data[w_idx,:,i]) > 0.07) and (np.median(max_data[w_idx,:,i]) < 0.09):
-                    max_data[w_idx,:,i] = max_data[w_idx,:,i] - 0.02
-                if (np.median(max_data[w_idx,:,i]) >= 0.09):
-                    max_data[w_idx,:,i] = max_data[w_idx,:,i] - 0.03
-                if(max_data[w_idx,:,i].min() <= 0.06):
-                    max_data[w_idx,:,i] = max_data[w_idx,:,i] + 0.008
-                
+        medians = np.median(max_data, axis=1)  # Find median along the second axis for each pixel and wavelength
+
+        mask1 = (medians > 0.07) & (medians < 0.09)
+        mask2 = medians >= 0.09
+        mask3 = np.min(max_data, axis=1) <= 0.06
+
+        # Adjusting the masks to match the shape of max_data
+        mask1 = mask1[:, np.newaxis, :]
+        mask2 = mask2[:, np.newaxis, :]
+        mask3 = mask3[:, np.newaxis, :]
+
+        # Further broadcast the masks to the shape of max_data
+        mask1_broadcasted = np.repeat(mask1, 318, axis=1)
+        mask2_broadcasted = np.repeat(mask2, 318, axis=1)
+        mask3_broadcasted = np.repeat(mask3, 318, axis=1)
+
+        # Applying the conditions to update max_data
+        max_data[mask1_broadcasted] -= 0.02
+        max_data[mask2_broadcasted] -= 0.03
+        max_data[mask3_broadcasted] += 0.008
+        
         np.save(os.path.join(self.npy_dir, 'max_data_%s.npy'%self.position), max_data)
         # max_data = np.load(os.path.join(self.npy_dir, 'max_data_%s.npy'%self.position))
         

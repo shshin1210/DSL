@@ -69,9 +69,13 @@ class DepthInterpolation():
         # vis_list = []
         # vis_range = []
         
+        ## DEBUG HERE =====================================================================================================================================
+        
         for m in range(len(self.m_list)):
             for w in range(len(self.wvl_list)):   
                 for idx, i in enumerate(self.sample_pts_flatt):
+                    if w==6 and i == 453500:
+                        print('here')
                     # previous depth range and interpolated depth range
                     depth_range = np.round(np.array([depth[p,i] for p in range(len(self.positions))])).astype(np.int32)
                     new_depth_range = np.arange(depth_range[0], depth_range[-1] + 1, 1) 
@@ -84,7 +88,7 @@ class DepthInterpolation():
                     # only bring 600mm to 900mm depths
                     idx_start, idx_end = np.where(new_depth_range == self.depth_start)[0][0], np.where(new_depth_range == self.depth_end)[0][0]
                     # non linear fitting
-                    params, cov = curve_fit(self.fitting_function, depth_range, all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range), -1).flatten(), maxfev = 50000000, method='trf')
+                    params, cov = curve_fit(self.fitting_function, depth_range, all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range), -1).flatten(), maxfev = 500000000, method='dogbox')
                     interp_depth = self.fitting_function(new_depth_range, *params)[idx_start:idx_end+1]
                     
                     # save depth
@@ -122,30 +126,33 @@ class DepthInterpolation():
             shape :
             depth(600mm-900mm at 1mm interval), 2(m=-1 or 1 and 0), wvl(430nm, 600nm - 660nm), sample pts
         """
-        depth_peak_illum_idx = self.depth_interpolation() # 301, 3, wvls, sample_pts
-        np.save(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'), depth_peak_illum_idx)
+        # depth_peak_illum_idx = self.depth_interpolation() # 301, 3, wvls, sample_pts
+        # np.save(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'), depth_peak_illum_idx)
         depth_peak_illum_idx = np.load(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'))
         
                                                     # depth, m order (-1 or 1 and zero), wvl(430, 660), pts
         depth_peak_illum_idx_final = np.zeros(shape=(len(self.depth_arange), 2, len(self.wvl_list), self.sample_pts.shape[0])) 
         
         # masking out to get +1 or -1
-        
         # difference between 430nm, 660nm for +1 and -1
         mfirst_diff = abs(depth_peak_illum_idx[:,0,0] - depth_peak_illum_idx[:,0,-1])
         pfirst_diff = abs(depth_peak_illum_idx[:,2,0] - depth_peak_illum_idx[:,2,-1])
-        
+
+        pfirst_diff = pfirst_diff[:,np.newaxis,:]
+        mfirst_diff = mfirst_diff[:,np.newaxis,:]
+
+        # Further broadcast the masks to the shape of max_data
+        pfirst_diff = np.repeat(pfirst_diff, 7, axis=1)
+        mfirst_diff = np.repeat(mfirst_diff, 7, axis=1)
+
         # if difference of 430nm and 660nm is larger, take that first order
         mask_pfirst = mfirst_diff <= pfirst_diff        
-        depth_peak_illum_idx_final[:,1,0][mask_pfirst] = depth_peak_illum_idx[:,2,0][mask_pfirst]
-        depth_peak_illum_idx_final[:,1,1][mask_pfirst] = depth_peak_illum_idx[:,2,1][mask_pfirst]
+        depth_peak_illum_idx_final[:,1][mask_pfirst] = depth_peak_illum_idx[:,2][mask_pfirst]
+        depth_peak_illum_idx_final[:,1][mask_pfirst] = depth_peak_illum_idx[:,2][mask_pfirst]
 
         mask_mfirst = mfirst_diff > pfirst_diff
-        # mask_mfirst = self.sample_pts[:,0] > 400
-        # mask_mfirst = np.repeat(mask_mfirst[np.newaxis,:], 301, axis = 0)
-        depth_peak_illum_idx_final[:,1,0][mask_mfirst] = depth_peak_illum_idx[:,0,0][mask_mfirst]
-        depth_peak_illum_idx_final[:,1,1][mask_mfirst] = depth_peak_illum_idx[:,0,1][mask_mfirst]
-
+        depth_peak_illum_idx_final[:,1][mask_mfirst] = depth_peak_illum_idx[:,0][mask_mfirst]
+        depth_peak_illum_idx_final[:,1][mask_mfirst] = depth_peak_illum_idx[:,0][mask_mfirst]
         # input zero order
         depth_peak_illum_idx_final[:,0] = depth_peak_illum_idx[:,1].mean(axis = 1)[:,np.newaxis,:]
         
