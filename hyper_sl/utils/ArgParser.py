@@ -19,7 +19,7 @@ class Argument:
 		self.parser.add_argument('--real_data_dir', type=str, default="./dataset/data")
 		self.parser.add_argument('--position_calibrated_data_dir', type = str, default="./dataset/image_formation/2023%s/npy_data")
   
-		self.parser.add_argument('--real_data_date', type = str, default="1011(2)")
+		self.parser.add_argument('--real_data_date', type = str, default="1003")
 		self.parser.add_argument('--calibrated_date', type =str, default="1007")
   
 		self.parser.add_argument('--exp_min', type = int, default=160)

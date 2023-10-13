@@ -31,8 +31,8 @@ class PositionCalibration():
         self.depth_end = 900     
         self.depth_arange = np.arange(self.depth_start, self.depth_end + 1, 1)
         
-        # self.sample_pts = np.array([[10 + i*87, 50 + j*53] for j in range(10) for i in range(11)])
         self.sample_pts = np.array([[10 + i*120, 50 + j*51] for j in range(10) for i in range(8)])
+        # self.sample_pts = np.array([[10 + i*60, 50 + j*51] for j in range(10) for i in range(15)])
         self.sample_pts_flatt = np.array([[self.sample_pts[i,0]+self.sample_pts[i,1]*self.cam_W] for i in range(self.sample_pts.shape[0])]).squeeze()
         
         # dir
@@ -77,16 +77,18 @@ class PositionCalibration():
             # 크기 : sample points
             difference_430nm_660nm = abs(depth_peak_illum_idx_final[d,1,0] - depth_peak_illum_idx_final[d,1,-1])
             
+            mask = (depth_peak_illum_idx_final[d,0,0] >= depth_peak_illum_idx_final[d,1,0]) # m = -1 order
+            difference_430nm_660nm[mask] = abs(depth_peak_illum_idx_final[d,1,0][mask] - depth_peak_illum_idx_final[d,1,-1][mask]) + 1
+
             # depth, m, wvl, sample pts
             # 만약에 반복되는 숫자가 있다면? cnt 0 and 318
             for i in range(len(self.sample_pts_flatt)):
-                cnt_0 = np.count_nonzero(depth_peak_illum_idx_final[d,1,:,i] == 0)
-                cnt_317 = np.count_nonzero(depth_peak_illum_idx_final[d,1,:,i] == 317)
+                cnt_0 = np.count_nonzero(np.round(depth_peak_illum_idx_final[d,1,:,i]).astype(np.int16) == 0)
+                cnt_317 = np.count_nonzero(np.round(depth_peak_illum_idx_final[d,1,:,i]).astype(np.int16) == 317)
                 
-                if (cnt_0 > 0):
-                    cnt_0 += 5
-                if (cnt_317 > 0):
-                    cnt_317 += 5
+                if (cnt_0 > 0) or (cnt_317 > 0):
+                    cnt_0 *= 4
+                    cnt_317 *= 4
                     
                 difference_430nm_660nm[i] += (cnt_0 + cnt_317)
                 
@@ -288,14 +290,14 @@ class PositionCalibration():
         # to make 47, cam_H, cam_W, 3 array
         first_illum_idx_final_transp = first_illum_idx_final_reshape.transpose(3,2,0,1)
         
-        np.save(os.path.join(self.npy_dir, 'first_illum_idx_final_transp.npy'), first_illum_idx_final_transp)
+        np.save(os.path.join(self.npy_dir, 'first_illum_idx_final_transp_%s.npy'%self.date), first_illum_idx_final_transp)
         return first_illum_idx_final_transp
     
 if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
     
-    date = "1007"
+    date = arg.calibrated_date
     
     # front_peak_illum_idx = DataProcess(arg, date, "front").get_first_idx()
     # mid_peak_illum_idx = DataProcess(arg, date, "mid").get_first_idx()

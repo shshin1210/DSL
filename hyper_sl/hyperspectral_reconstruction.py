@@ -43,15 +43,17 @@ class HyperspectralReconstruction():
         self.CRF = camera.Camera(arg).get_CRF()
         
         # hdr imgs
-        # self.hdr_imgs = np.load('./hdr_step5.npy')
-        self.hdr_imgs = hdr.HDR(arg).make_hdr()
-        np.save('./hdr_step5.npy', self.hdr_imgs)
+        self.hdr_imgs = np.load('./hdr_step5.npy')
+        # self.hdr_imgs = hdr.HDR(arg).make_hdr()
+        # np.save('./hdr_step5.npy', self.hdr_imgs)
         
     def get_depth(self):
         """
             bring gray code depth reconstructed depth values
         """
-        depth = np.load(os.path.join(self.real_data_dir, './2023%s_depth.npy'%self.date))[:,:,2]*1e+3
+        depth = np.load(os.path.join(self.real_data_dir, './2023%s_color_checker.npy'%self.date))[:,:,2]*1e+3
+        # depth = np.load(os.path.join(self.real_data_dir, './2023%s_depth.npy'%self.date))[:,:,2]*1e+3
+
         depth = np.round(depth).reshape(self.cam_H* self.cam_W).astype(np.int16)
         
         return depth
@@ -62,15 +64,15 @@ class HyperspectralReconstruction():
         """
         
         # median filter
-        hdr_imgs_filtered_R = np.array([ndimage.median_filter(image[:,:,0], size=4) for image in hdr_imgs])
-        hdr_imgs_filtered_G = np.array([ndimage.median_filter(image[:,:,1], size=4) for image in hdr_imgs])
-        hdr_imgs_filtered_B = np.array([ndimage.median_filter(image[:,:,2], size=4) for image in hdr_imgs])
+        # hdr_imgs_filtered_R = np.array([ndimage.median_filter(image[:,:,0], size=4) for image in hdr_imgs])
+        # hdr_imgs_filtered_G = np.array([ndimage.median_filter(image[:,:,1], size=4) for image in hdr_imgs])
+        # hdr_imgs_filtered_B = np.array([ndimage.median_filter(image[:,:,2], size=4) for image in hdr_imgs])
 
-        hdr_imgs_filtered = np.stack((hdr_imgs_filtered_R, hdr_imgs_filtered_G, hdr_imgs_filtered_B), axis = 3)
+        # hdr_imgs_filtered = np.stack((hdr_imgs_filtered_R, hdr_imgs_filtered_G, hdr_imgs_filtered_B), axis = 3)
 
-        # save
-        np.save('./hdr_imgs_filtered.npy', hdr_imgs_filtered)
-        # hdr_imgs_filtered = np.load('./hdr_imgs_filtered.npy')
+        # # save
+        # np.save('./hdr_imgs_filtered.npy', hdr_imgs_filtered)
+        hdr_imgs_filtered = np.load('./hdr_imgs_filtered.npy')
         print("median filtered to hdr image")
 
         return hdr_imgs_filtered
