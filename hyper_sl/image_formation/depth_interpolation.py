@@ -42,8 +42,8 @@ class DepthInterpolation():
         self.depth_end = 900     
         self.depth_arange = np.arange(self.depth_start, self.depth_end + 1, 1)
         
-        self.sample_pts = np.array([[10 + i*120, 50 + j*51] for j in range(10) for i in range(8)])
-        # self.sample_pts = np.array([[10 + i*60, 50 + j*51] for j in range(10) for i in range(15)])
+        # self.sample_pts = np.array([[10 + i*120, 50 + j*51] for j in range(10) for i in range(8)])
+        self.sample_pts = np.array([[10 + i*60, 50 + j*51] for j in range(10) for i in range(15)])
         self.sample_pts_flatt = np.array([[self.sample_pts[i,0]+self.sample_pts[i,1]*self.cam_W] for i in range(self.sample_pts.shape[0])]).squeeze()
         
         # dir
@@ -85,8 +85,9 @@ class DepthInterpolation():
                         new_depth_range = np.arange(depth_range[0], depth_range[-1] + 1, 1) 
                         idx_start, idx_end = np.where(new_depth_range == self.depth_start)[0][0], np.where(new_depth_range == self.depth_end)[0][0]
                         cnt_317 = np.count_nonzero(all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten().astype(np.int16) == 317)
-                        
-                        if (1 < cnt_317 < 4):
+                        cnt_0 = np.count_nonzero(all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten().astype(np.int16) == 0)
+
+                        if (1 < cnt_317 <= 4) or (1 < cnt_0 <= 4):
                             polynom = np.interp(new_depth_range, depth_range, all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten(), 6)
                             depth_peak_illum_idx[:, m, w, idx] = polynom[idx_start:idx_end+1]
                             
@@ -135,7 +136,7 @@ class DepthInterpolation():
 
         #             # save depth
         #             depth_peak_illum_idx[:, m, w, idx] = final_depth 
-                    
+                
         #             # for visualization
         #             # vis_depth = self.fitting_function(new_depth_range, *params)
         #             # vis_list.append(vis_depth)

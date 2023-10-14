@@ -31,8 +31,8 @@ class PositionCalibration():
         self.depth_end = 900     
         self.depth_arange = np.arange(self.depth_start, self.depth_end + 1, 1)
         
-        self.sample_pts = np.array([[10 + i*120, 50 + j*51] for j in range(10) for i in range(8)])
-        # self.sample_pts = np.array([[10 + i*60, 50 + j*51] for j in range(10) for i in range(15)])
+        # self.sample_pts = np.array([[10 + i*120, 50 + j*51] for j in range(10) for i in range(8)])
+        self.sample_pts = np.array([[10 + i*60, 50 + j*51] for j in range(10) for i in range(15)])
         self.sample_pts_flatt = np.array([[self.sample_pts[i,0]+self.sample_pts[i,1]*self.cam_W] for i in range(self.sample_pts.shape[0])]).squeeze()
         
         # dir
@@ -75,10 +75,10 @@ class PositionCalibration():
         for d in range(len(self.depth_arange)):
             
             # 크기 : sample points
-            difference_430nm_660nm = abs(depth_peak_illum_idx_final[d,1,0] - depth_peak_illum_idx_final[d,1,-1])
+            difference_430nm_660nm = abs(depth_peak_illum_idx_final[d,1,0] - depth_peak_illum_idx_final[d,1,-1]) + 1
             
-            mask = (depth_peak_illum_idx_final[d,0,0] >= depth_peak_illum_idx_final[d,1,0]) # m = -1 order
-            difference_430nm_660nm[mask] = abs(depth_peak_illum_idx_final[d,1,0][mask] - depth_peak_illum_idx_final[d,1,-1][mask]) + 1
+            # mask = (depth_peak_illum_idx_final[d,0,0] >= depth_peak_illum_idx_final[d,1,0]) # m = -1 order
+            # difference_430nm_660nm[mask] = abs(depth_peak_illum_idx_final[d,1,0][mask] - depth_peak_illum_idx_final[d,1,-1][mask]) + 1
 
             # depth, m, wvl, sample pts
             # 만약에 반복되는 숫자가 있다면? cnt 0 and 318
@@ -87,8 +87,8 @@ class PositionCalibration():
                 cnt_317 = np.count_nonzero(np.round(depth_peak_illum_idx_final[d,1,:,i]).astype(np.int16) == 317)
                 
                 if (cnt_0 > 0) or (cnt_317 > 0):
-                    cnt_0 *= 4
-                    cnt_317 *= 4
+                    cnt_0 *= 2
+                    cnt_317 *= 2
                     
                 difference_430nm_660nm[i] += (cnt_0 + cnt_317)
                 
