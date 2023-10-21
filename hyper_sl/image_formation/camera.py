@@ -39,24 +39,10 @@ class Camera():
         
     #     X, Y, Z = XYZ[:,0,:], XYZ[:,1,:], XYZ[:,2,:]
     #     return X, Y, Z
-        
-    def cubic_interpolation(self, x_new, x_points, y_points, n):
-        tck = interpolate.splrep(x_points, y_points, k=n)   # Estimate the polynomial of nth degree by using x_points and y_points
-        y_new = interpolate.splev(x_new, tck)
-        return y_new
 
     def get_CRF(self):
-        CRF = np.load(os.path.join(self.response_function_dir, 'CRF.npy'))[:,1:].T
+        CRF = np.load(os.path.join(self.response_function_dir, 'CRF.npy'))
 
-        # interpolated CRF for 5nm
-        CRF_R = self.cubic_interpolation(self.new_wvls, self.wvls, CRF[:,0], 4)
-        CRF_G = self.cubic_interpolation(self.new_wvls, self.wvls, CRF[:,1], 4)
-        CRF_B = self.cubic_interpolation(self.new_wvls, self.wvls, CRF[:,2], 4)
-
-        CRF_intp = np.stack((CRF_R, CRF_G, CRF_B))
-
-        optimzied_crf = CRF_intp.T * self.opt_param_final[:,3:-2]
-
-        return optimzied_crf
+        return CRF
         
         
