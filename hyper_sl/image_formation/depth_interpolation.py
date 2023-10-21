@@ -66,13 +66,7 @@ class DepthInterpolation():
         depth = np.array([self.get_depth(position) for position in self.positions]) * 1e+3
         
         depth_peak_illum_idx = np.zeros(shape=(len(self.depth_arange), len(self.m_list), len(self.wvl_list), len(self.sample_pts_flatt)))
-        # for visualization
-        # vis_list = []
-        # vis_range = []
-        
-        ## DEBUG HERE =====================================================================================================================================
-        
-        
+
         for m in range(len(self.m_list)):
                 for w in range(len(self.wvl_list)): 
                     for idx, i in enumerate(self.sample_pts_flatt):  
@@ -97,50 +91,6 @@ class DepthInterpolation():
                             final_depth = interp_depth[idx_start:idx_end+1]
                             depth_peak_illum_idx[:, m, w, idx] = final_depth 
 
-                        # polynom = np.interp(new_depth_range, depth_range, all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten(), 6)
-
-                        # depth_peak_illum_idx[:, m, w, idx] = final_depth 
-                        # depth_peak_illum_idx_linear[:, m, w, idx] = polynom[idx_start:idx_end+1]
-
-
-        # for m in range(len(self.m_list)):
-        #     for w in range(len(self.wvl_list)):   
-        #         for idx, i in enumerate(self.sample_pts_flatt):
-
-        #             # previous depth range and interpolated depth range
-        #             depth_range = np.round(np.array([depth[p,i] for p in range(len(self.positions))])).astype(np.int32)
-        #             new_depth_range = np.arange(depth_range[0], depth_range[-1] + 1, 1) 
-                    
-        #             # exceptions
-        #             if (False in (np.sort(depth_range) == depth_range)) or (depth_range[0] > self.depth_start) or (depth_range[-1] < self.depth_end):
-        #                 depth_range = np.array([self.depth_start, self.depth_start + 100, self.depth_end])
-        #                 new_depth_range = np.arange(self.depth_start, self.depth_end + 1, 1)
-                        
-        #             # only bring 600mm to 900mm depths
-        #             idx_start, idx_end = np.where(new_depth_range == self.depth_start)[0][0], np.where(new_depth_range == self.depth_end)[0][0]
-        #             # non linear fitting
-        #             # print(all_position_peak_illum_idx[:,m,w,i])
-                    
-        #             # non linear fitting
-        #             if all_position_peak_illum_idx[:,m,w,i].mean() < 1 : 
-        #                 all_position_peak_illum_idx[:,m,w,i] = np.array([0, 0, 0, 0, 0])
-                        
-        #             # params, cov = curve_fit(self.fitting_function, depth_range, all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten(), maxfev = 500000000)
-        #             # interp_depth = self.fitting_function(new_depth_range, *params)
-        #             polynom = np.interp(new_depth_range, depth_range, all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten(), 6)
-
-        #             # print(interp_depth[::30])
-                    
-        #             # final_depth = interp_depth[idx_start:idx_end+1]
-        #             final_depth = polynom[idx_start:idx_end+1]
-
-        #             # save depth
-        #             depth_peak_illum_idx[:, m, w, idx] = final_depth 
-                
-        #             # for visualization
-        #             # vis_depth = self.fitting_function(new_depth_range, *params)
-        #             # vis_list.append(vis_depth)
-        #             # vis_range.append(new_depth_range)
                     
         return depth_peak_illum_idx
     
