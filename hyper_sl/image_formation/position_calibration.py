@@ -114,11 +114,11 @@ class PositionCalibration():
                 difference_zero_430nm = abs(depth_peak_illum_idx_final[d,0,0,i] - depth_peak_illum_idx_final[d,1,0,i])
                 
                 if depth_peak_illum_idx_final[d,0,0,i] > depth_peak_illum_idx_final[d,1,0,i]: # mfirst
-                    new_peak_illum_idx[d,1,0,i] = depth_peak_illum_idx_final[d,0,0,i] + (difference_zero_430nm + 1)
-                    new_peak_illum_idx[d,1,1,i] = depth_peak_illum_idx_final[d,0,0,i] + (difference_zero_430nm + 1) + diffs[d,i]
+                    new_peak_illum_idx[d,1,0,i] = depth_peak_illum_idx_final[d,0,0,i] + (difference_zero_430nm)
+                    new_peak_illum_idx[d,1,1,i] = depth_peak_illum_idx_final[d,0,0,i] + (difference_zero_430nm + 2) + diffs[d,i]
                 else: # pfirst
-                    new_peak_illum_idx[d,1,0,i] = depth_peak_illum_idx_final[d,1,0,i] # 430nm
-                    new_peak_illum_idx[d,1,1,i] = depth_peak_illum_idx_final[d,1,0,i] + diffs[d,i] 
+                    new_peak_illum_idx[d,1,0,i] = depth_peak_illum_idx_final[d,1,0,i] - 3 # 430nm
+                    new_peak_illum_idx[d,1,1,i] = depth_peak_illum_idx_final[d,1,0,i] + 1 + diffs[d,i] 
                                             #   depth_peak_illum_idx_final[d,1,-1,i] # 660nm
                     
                 new_peak_illum_idx[d,0,0,i] = depth_peak_illum_idx_final[d,0,0,i]
@@ -130,9 +130,9 @@ class PositionCalibration():
         """
             make a HxW image with 20 sample points using interpolation method
         """
-        diffs = self.interpolate_diffs(depth_peak_illum_idx_final)
-        np.save(os.path.join(self.npy_dir,'diffs.npy'), diffs)
-        # diffs = np.load(os.path.join(self.npy_dir,'diffs.npy'))
+        # diffs = self.interpolate_diffs(depth_peak_illum_idx_final)
+        # np.save(os.path.join(self.npy_dir,'diffs.npy'), diffs)
+        diffs = np.load(os.path.join(self.npy_dir,'diffs.npy'))
         
         new_peak_illum_idx = self.make_new_peak_illum_idx(depth_peak_illum_idx_final, diffs)
 
@@ -271,6 +271,7 @@ class PositionCalibration():
             interpolate for 430nm ~ 660nm 5 nm interval
         """
         peak_image_illum_idx = self.pick_valid(depth_peak_illum_idx_final)
+        # peak_image_illum_idx = np.load('./peak_image_illum_idx_test.npy')
         
         position_430nm = peak_image_illum_idx[:,1,:,0]
         position_660nm = peak_image_illum_idx[:,1,:,1]
@@ -290,7 +291,7 @@ class PositionCalibration():
         # to make 47, cam_H, cam_W, 3 array
         first_illum_idx_final_transp = first_illum_idx_final_reshape.transpose(3,2,0,1)
         
-        np.save(os.path.join(self.npy_dir, 'first_illum_idx_final_transp_%s.npy'%self.date), first_illum_idx_final_transp)
+        np.save(os.path.join(self.npy_dir, 'first_illum_idx_final_transp_%s.npy'%"test"), first_illum_idx_final_transp)
         return first_illum_idx_final_transp
     
 if __name__ == "__main__":

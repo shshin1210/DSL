@@ -136,7 +136,7 @@ class DataProcess():
         
         peak_illum_idx = np.zeros(shape=(3, len(self.wvl_list), self.cam_H * self.cam_W))
         peak_illum_idx[1] = self.get_zero_idx(max_data)[np.newaxis,:] # put zero illumination index
-                
+
         for w in range(len(self.wvl_list)):
             for i in range(self.cam_H*self.cam_W):
                 # 2, illum index, H, W
