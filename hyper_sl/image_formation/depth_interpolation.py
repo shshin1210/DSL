@@ -44,12 +44,15 @@ class DepthInterpolation():
         
         # self.sample_pts = np.array([[10 + i*120, 50 + j*51] for j in range(10) for i in range(8)])
         self.sample_pts = np.array([[10 + i*60, 50 + j*51] for j in range(10) for i in range(15)])
-        self.sample_pts_flatt = np.array([[self.sample_pts[i,0]+self.sample_pts[i,1]*self.cam_W] for i in range(self.sample_pts.shape[0])]).squeeze()
+        # self.sample_pts = np.array([[10 + i, 50 + j] for j in range(461) for i in range(841)])
         
+        self.sample_pts_flatt = np.array([[self.sample_pts[i,0]+self.sample_pts[i,1]*self.cam_W] for i in range(self.sample_pts.shape[0])]).squeeze()
+
         # dir
         self.to_depth_dir = "./dataset/image_formation/2023%s/%s_depth/spectralon"
         self.npy_dir = "./dataset/image_formation/2023%s/npy_data"%date
-
+        self.dat_dir = arg.dat_dir
+        
         # peak illumination index informations / 3(m order), wvl, HxW
         self.front_peak_illum_idx = front_peak_illum_idx
         self.mid_peak_illum_idx = mid_peak_illum_idx
@@ -66,12 +69,12 @@ class DepthInterpolation():
         depth = np.array([self.get_depth(position) for position in self.positions]) * 1e+3
         
         depth_peak_illum_idx = np.zeros(shape=(len(self.depth_arange), len(self.m_list), len(self.wvl_list), len(self.sample_pts_flatt)))
-
+        
         for m in range(len(self.m_list)):
                 for w in range(len(self.wvl_list)): 
-                    for idx, i in enumerate(self.sample_pts_flatt):  
+                    for idx, i in enumerate(self.sample_pts_flatt): 
                         depth_range = np.round(np.array([depth[p,i] for p in range(5)])).astype(np.int32)
-                                        
+                                                
                         # non linear fitting
                         if all_position_peak_illum_idx[:,m,w,i].mean() < 1 : 
                             all_position_peak_illum_idx[:,m,w,i] = np.array([0, 0, 0, 0, 0])
@@ -81,17 +84,22 @@ class DepthInterpolation():
                         cnt_317 = np.count_nonzero(all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten().astype(np.int16) == 317)
                         cnt_0 = np.count_nonzero(all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten().astype(np.int16) == 0)
 
-                        if (1 < cnt_317 <= 4) or (1 < cnt_0 <= 4):
+                        if (1 < cnt_317 <= 5) or (1 < cnt_0 <= 5):
                             polynom = np.interp(new_depth_range, depth_range, all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten(), 6)
                             depth_peak_illum_idx[:, m, w, idx] = polynom[idx_start:idx_end+1]
                             
                         else: 
-                            params, cov = curve_fit(self.fitting_function, depth_range, all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten(), maxfev = 500000)
+                            # savemat(os.path.join(self.dat_dir, 'depth_m%d_wvl%d_pts%04d.mat'%(self.m_list[m], self.wvl_list[w], idx)), {'x': depth_range, 'y': all_position_peak_illum_idx[:,m,w,i]})
+                            params = loadmat(os.path.join(self.dat_dir, 'param_depth_m%d_wvl%d_pts%04d.mat'%(self.m_list[m], self.wvl_list[w], idx)))['p'][0]
                             interp_depth = self.fitting_function(new_depth_range, *params)
                             final_depth = interp_depth[idx_start:idx_end+1]
                             depth_peak_illum_idx[:, m, w, idx] = final_depth 
+                            
+                            # params, cov, infodict, mesg, ier = curve_fit(self.fitting_function, depth_range, all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten(), maxfev = 1000, full_output = True)
+                            # interp_depth = self.fitting_function(new_depth_range, *params)
+                            # final_depth = interp_depth[idx_start:idx_end+1]
+                            # depth_peak_illum_idx[:, m, w, idx] = final_depth 
 
-                    
         return depth_peak_illum_idx
     
     # fitting function
@@ -99,7 +107,7 @@ class DepthInterpolation():
         """
             non-linear fitting function
         """
-        return a*(x**b) + c
+        return a*np.power(x, b) + c
     
     # bring depth values
     def get_depth(self, position):
@@ -119,8 +127,8 @@ class DepthInterpolation():
             shape :
             depth(600mm-900mm at 1mm interval), 2(m=-1 or 1 and 0), wvl(430nm, 600nm - 660nm), sample pts
         """
-        depth_peak_illum_idx = self.depth_interpolation() # 301, 3, wvls, sample_pts
-        np.save(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'), depth_peak_illum_idx)
+        # depth_peak_illum_idx = self.depth_interpolation() # 301, 3, wvls, sample_pts
+        # np.save(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'), depth_peak_illum_idx)
         depth_peak_illum_idx = np.load(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'))
         
                                                     # depth, m order (-1 or 1 and zero), wvl(430, 660), pts
