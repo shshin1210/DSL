@@ -349,7 +349,10 @@ end
 % from this point down, A and AT are always function handles.
 
 % Precompute A'*y since it'll be used a lot
-Aty = AT(y);
+Aty = AT(y)*20;
+
+
+% dummy = psi_function(Aty,tau);
 
 % if phi was given, check to see if it is a handle and that it 
 % accepts two arguments

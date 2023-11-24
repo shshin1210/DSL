@@ -28,6 +28,14 @@ function [imgdenoise]=cassidenoise(imgnoise,tau,iter)
 % imgnoise=rand(400,400,37);
 % tic, [imgdenoise]=mycalltoTVnewMatrix2cpu(imgnoise,tau,iter); toc
 
+%=================== Hard coded for the target dataset =================
+R = 580;
+C = 890;
+% R = 580/2;
+% C = 890/2;
+imgnoise = reshape(imgnoise, R, C, []);
+%======================================================================
+
 x = imgnoise(:,:,1);
 [uy ux] = size(x);
 uz=size(imgnoise,3);
@@ -46,6 +54,11 @@ for i = 1:uz
     
     imgdenoise(:,:,i) = x - projk(x,tau/2,grad,div,iter,pn);
 end
+
+%===================Vectorize: Hard coded for the target dataset ======
+imgdenoise = imgdenoise(:);
+%======================================================================
+
 end
 
 % Subfunctions:

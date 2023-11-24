@@ -11,7 +11,7 @@ class Argument:
 		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
 
 		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_5")
-		self.parser.add_argument('--dat_dir', type = str, default='./dataset/image_formation/dat')
+		self.parser.add_argument('--dat_dir', type = str, default='./dataset/image_formation/dat2')
   
 		self.parser.add_argument('--dg_intensity_dir', type=str, default='./dataset/image_formation')
 		self.parser.add_argument('--response_function_dir', type = str, default="./dataset/image_formation") 

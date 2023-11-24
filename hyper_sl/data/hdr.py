@@ -55,7 +55,7 @@ class HDR():
         exp_img_black_path = os.path.join(self.real_data_dir, 'step2_%sms_black_crop/calibration00/capture_%04d.png')
 
         exp_images = np.array([cv2.imread(exp_img_path%(self.intensity[k]*100, 0), -1)[:,:,::-1] for k in range(len(self.intensity))])
-        exp_black_images = np.array([cv2.imread(exp_img_black_path%(160, 0), -1)[:,:,::-1] for k in self.ex_time])
+        exp_black_images = np.array([cv2.imread(exp_img_black_path%(self.ex_time[0], 0), -1)[:,:,::-1] for k in self.ex_time])
 
         # remove black image
         exp_images_bgrm = self.safe_subtract(exp_images, exp_black_images)

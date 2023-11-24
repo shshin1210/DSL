@@ -1,45 +1,39 @@
-function output = recon_spectrum_CASSI_single(data_path, result_path)
+function output = recon_spectrum_CASSI_single(data_path, data_fn, result_path, result_fn)
+addpath('TWIST\');
 
 %% parameters
-if nargin < 1
-    data_path = './data/balloons_ms/';
-    result_path = './results/';
-end
+data_path = './hyp_shading_gt/';
+% data_fn = 'ARAD_1K_0901.mat';
+result_path = './Results/';
 if ~exist(result_path, 'dir')
     mkdir(result_path);
 end
-addpath('util\');
-% addpath('recon\');
-addpath('TWIST\');
-% addpath('model\');
 
 % depth = hdf5read(data_path, 'depth');
 % depth_n = hdf5read(data_path, 'depth_n');
 
-
-msim_list = dir([data_path '*.png']);
-nChannels = numel(msim_list);
-im0 = imread([data_path msim_list(1).name]);
-[N,M] = size(im0);
-% prepare multi-spectral images
-hs = [];
-for i = 1:nChannels
-    im = im2double(imread([data_path msim_list(i).name]));
-    hs = cat(3, hs, im);
+%%
+n1 = 580;
+n2 = 890;
+m = 24;
+hs = zeros(n1,n2,m);
+for i = 1:m
+    hs(:,:,i) = im2double(imread(fullfile(data_path, sprintf('%02d.png', i-1))));
 end
 
-% hs = permute(h5read(data_path, '/hs'), [3 2 1]);
-% wvls2b = h5read(data_path, '/wvls2b');
-wvls2b = 400:10:700;
-% code = im2double(imread('code.png'));
-code = rand(N, M);
-code(:)= code>0.5;
+% dat = load([data_path, data_fn]);
+% hs = dat.cube; 
+% wvls2b = dat.bands; 
+% wvls2b = uint32(1000*dat.bands); 
+wvls2b = 430:10:660;
+code = load('coded_mask.mat').coded_mask;
 % wvls2b = wvls2b(:, 1:25);
 % hs = hs(:, :, 1:25);
 
 %% rescale
 % scaler = 0.5;
-% hs = imresize(hs, scaler, 'bilinear');
+scaler = 1;
+hs = imresize(hs, scaler, 'bilinear');
 % depth = imresize(depth, scaler, 'nearest');
 gt = hs;
 
@@ -47,8 +41,10 @@ gt = hs;
 [n1, n2, m] = size(hs);
 code = code(1:n1, 1:n2);
 Cu = zeros(n1, n2, m);
+k = 2;
+
 for i=1:m
-    Cu(:, :, i) = imtranslate(code, [i-13, 0]);
+    Cu(:, :, i) = imtranslate(code, [floor(i/k)-floor(m/(k*2)), 0]);
 end
 
 y = R(gt, n1, n2, m, Cu) / m;
@@ -60,16 +56,18 @@ y = R(gt, n1, n2, m, Cu) / m;
 % iterA = 40; % max iteration for TwIST
 % tolA = 1e-5; % Iteration stop criteria in TwIST
 
-tau = 3e-1; %0.05;
-tv_iter = 40; % numger of iteration in a single denoise (for tvdenoise.m)
+tau = 0.01;
+tv_iter = 10; % numger of iteration in a single denoise (for tvdenoise.m)
 iterA = 200; % max iteration for TwIST
-tolA = 1e-4; % Iteration stop criteria in TwIST
+tolA = 1e-5; % Iteration stop criteria in TwIST
 
 A = @(f) R(f,n1,n2,m,Cu);
 AT = @(y) RT(y,n1,n2,m,Cu);
 % Psi = @(x,th) cassidenoise(x,th,tv_iter,n1,n2,m);
 Psi = @(x,th) cassidenoise(x,th,tv_iter);
 Phi = @(x) TVnorm3D(x,n1,n2,m);
+
+% dummy = Psi(hs, 0.1);
 
 [x_recon,dummy,obj_twist,times_twist,dummy,mse_twist] = TwIST( ...
     y,A,tau,...
@@ -84,8 +82,27 @@ Phi = @(x) TVnorm3D(x,n1,n2,m);
     'Debias',0,...
     'Verbose', 1);
 
-x_recon = reshape(x_recon, [n1, n2, m]);
-save([result_path, 'cassi.mat'], 'x_recon', 'wvls2b', 'gt');
+x_recon = reshape(x_recon, [n1, n2, m])*m;
+params.lambdas = wvls2b;
+params.illuminant = 'd65';
+params.cmf = 'Judd_Vos';
+srgb_recon = spec2srgb(x_recon, params);
+srgb_gt = spec2srgb(hs, params);
+
+imwrite(srgb_recon, strcat(result_path, "srgb_recon2.png"));
+imwrite(srgb_gt, strcat(result_path, "srgb_gt.png"));
+
+% output = [x_recon, hs, srgb_recon, srgb_gt];
+
+save(strcat(result_path, 'result.mat'), 'x_recon', 'wvls2b', 'gt');
+
+for i = 1:m
+    hs_i = hs(:,:,i);
+    figure(1); 
+    subplot(1,2,1); imagesc(x_recon(:,:,i), [min(hs_i(:)), max(hs_i(:))]); colorbar;
+    subplot(1,2,2); imagesc(hs_i); colorbar;
+end
+
 end
 
 function y = TVnorm3D(x,n1,n2,m)

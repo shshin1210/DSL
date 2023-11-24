@@ -1,15 +1,11 @@
-import cv2, os, sys
+import os, sys
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.io import loadmat, savemat
 
 sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
 
 from hyper_sl.utils.ArgParser import Argument
-import numpy as np
-import matplotlib.pyplot as plt
-from data_process import DataProcess
-from scipy import interpolate
-from scipy.io import loadmat, savemat
-from tqdm import tqdm
-from scipy.optimize import curve_fit
 
 
 """
@@ -43,8 +39,9 @@ class DepthInterpolation():
         self.depth_arange = np.arange(self.depth_start, self.depth_end + 1, 1)
         
         # self.sample_pts = np.array([[10 + i*120, 50 + j*51] for j in range(10) for i in range(8)])
-        self.sample_pts = np.array([[10 + i*60, 50 + j*51] for j in range(10) for i in range(15)])
-        # self.sample_pts = np.array([[10 + i, 50 + j] for j in range(461) for i in range(841)])
+        # self.sample_pts = np.array([[10 + i*60, 50 + j*51] for j in range(10) for i in range(15)])
+        # self.sample_pts = np.array([[10 + i*20, 50 + j*20] for j in range(24) for i in range(43)])        
+        self.sample_pts = np.array([[10 + i*10, 50 + j*10] for j in range(48) for i in range(85)])
         
         self.sample_pts_flatt = np.array([[self.sample_pts[i,0]+self.sample_pts[i,1]*self.cam_W] for i in range(self.sample_pts.shape[0])]).squeeze()
 
@@ -59,47 +56,62 @@ class DepthInterpolation():
         self.mid2_peak_illum_idx = mid2_peak_illum_idx
         self.mid3_peak_illum_idx = mid3_peak_illum_idx
         self.back_peak_illum_idx = back_peak_illum_idx
-
+    
     def depth_interpolation(self):
         """
             depth interpolation from 600mm to 900mm at 1mm interval
         
         """
         all_position_peak_illum_idx = np.stack((self.front_peak_illum_idx, self.mid_peak_illum_idx, self.mid2_peak_illum_idx, self.mid3_peak_illum_idx, self.back_peak_illum_idx), axis = 0)
+        all_position_peak_illum_idx = all_position_peak_illum_idx[:,:,:,self.sample_pts_flatt]
+        all_position_peak_illum_idx = all_position_peak_illum_idx.reshape(len(self.positions), -1)
+        
         depth = np.array([self.get_depth(position) for position in self.positions]) * 1e+3
+        depth = depth[:,self.sample_pts_flatt]
         
         depth_peak_illum_idx = np.zeros(shape=(len(self.depth_arange), len(self.m_list), len(self.wvl_list), len(self.sample_pts_flatt)))
+        depth_peak_illum_idx = depth_peak_illum_idx.reshape(len(self.depth_arange), -1)
         
-        for m in range(len(self.m_list)):
-                for w in range(len(self.wvl_list)): 
-                    for idx, i in enumerate(self.sample_pts_flatt): 
-                        depth_range = np.round(np.array([depth[p,i] for p in range(5)])).astype(np.int32)
-                                                
-                        # non linear fitting
-                        if all_position_peak_illum_idx[:,m,w,i].mean() < 1 : 
-                            all_position_peak_illum_idx[:,m,w,i] = np.array([0, 0, 0, 0, 0])
-                            
-                        new_depth_range = np.arange(depth_range[0], depth_range[-1] + 1, 1) 
-                        idx_start, idx_end = np.where(new_depth_range == self.depth_start)[0][0], np.where(new_depth_range == self.depth_end)[0][0]
-                        cnt_317 = np.count_nonzero(all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten().astype(np.int16) == 317)
-                        cnt_0 = np.count_nonzero(all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten().astype(np.int16) == 0)
+        sample_pts_flatt_m = np.repeat(self.sample_pts_flatt[np.newaxis,:], 3, axis = 0)
+        sample_pts_flatt_mw = np.repeat(sample_pts_flatt_m[:,np.newaxis,:], len(self.wvl_list), axis = 1)
+        sample_pts_flatt_mw = sample_pts_flatt_mw.flatten()
+        
+        rand_num = np.array([28365, 35266, 51627, 52903, 57131, 60735, 85174, 13415, 3876, 85086, 37227])
+        
+        fig, ax = plt.subplots()
+        
+        for idx, val in enumerate(sample_pts_flatt_mw): # 여기서 idx가 index, i 가 실제 value
+            depth_range = np.round(np.array([depth[p,np.where(self.sample_pts_flatt == val)[0][0]] for p in range(5)])).astype(np.int32)
+        
+            # non linear fitting
+            if all_position_peak_illum_idx[:,idx].mean() < 1 : 
+                all_position_peak_illum_idx[:,idx] = np.array([0, 0, 0, 0, 0])
+                        
+            new_depth_range = np.arange(depth_range[0], depth_range[-1] + 1, 1) 
+            idx_start, idx_end = np.where(new_depth_range == self.depth_start)[0][0], np.where(new_depth_range == self.depth_end)[0][0]
+            cnt_317 = np.count_nonzero(all_position_peak_illum_idx[:,idx].reshape(len(depth_range)).flatten().astype(np.int16) == 317)
+            cnt_0 = np.count_nonzero(all_position_peak_illum_idx[:,idx].reshape(len(depth_range)).flatten().astype(np.int16) == 0)
 
-                        if (1 < cnt_317 <= 5) or (1 < cnt_0 <= 5):
-                            polynom = np.interp(new_depth_range, depth_range, all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten(), 6)
-                            depth_peak_illum_idx[:, m, w, idx] = polynom[idx_start:idx_end+1]
-                            
-                        else: 
-                            # savemat(os.path.join(self.dat_dir, 'depth_m%d_wvl%d_pts%04d.mat'%(self.m_list[m], self.wvl_list[w], idx)), {'x': depth_range, 'y': all_position_peak_illum_idx[:,m,w,i]})
-                            params = loadmat(os.path.join(self.dat_dir, 'param_depth_m%d_wvl%d_pts%04d.mat'%(self.m_list[m], self.wvl_list[w], idx)))['p'][0]
-                            interp_depth = self.fitting_function(new_depth_range, *params)
-                            final_depth = interp_depth[idx_start:idx_end+1]
-                            depth_peak_illum_idx[:, m, w, idx] = final_depth 
-                            
-                            # params, cov, infodict, mesg, ier = curve_fit(self.fitting_function, depth_range, all_position_peak_illum_idx[:,m,w,i].reshape(len(depth_range)).flatten(), maxfev = 1000, full_output = True)
-                            # interp_depth = self.fitting_function(new_depth_range, *params)
-                            # final_depth = interp_depth[idx_start:idx_end+1]
-                            # depth_peak_illum_idx[:, m, w, idx] = final_depth 
+            if (1 < cnt_317 <= 5) or (1 < cnt_0 <= 5):
+                polynom = np.interp(new_depth_range, depth_range, all_position_peak_illum_idx[:,idx].reshape(len(depth_range)).flatten(), 6)
+                depth_peak_illum_idx[:,idx] = polynom[idx_start:idx_end+1]
+                
+            else:
+                # savemat(os.path.join(self.dat_dir, 'depth_pts_%05d.mat'%(idx)), {'x': depth_range, 'y': all_position_peak_illum_idx[:,idx]})
+                params = loadmat(os.path.join(self.dat_dir, 'param_depth_pts_%05d.mat'%(idx)))['p'][0]
+                interp_depth = self.fitting_function(new_depth_range, *params)
+                final_depth = interp_depth[idx_start:idx_end+1]
+                depth_peak_illum_idx[:, idx] = final_depth 
+                
+                if idx in rand_num:
+                    plt.ylim([0,318])
+                    plt.plot(new_depth_range, interp_depth), plt.title('%d'%(sample_pts_flatt_mw[idx]))
+                    plt.scatter(depth_range, all_position_peak_illum_idx[:,idx], s = 60, marker='*')
+                    plt.grid(linestyle = '--', c = 'whitesmoke')
+                    ax.tick_params(axis='both', which='major', labelsize=15,direction='in')
 
+                    plt.savefig('%05d.svg'%idx)
+                    
         return depth_peak_illum_idx
     
     # fitting function
@@ -127,37 +139,11 @@ class DepthInterpolation():
             shape :
             depth(600mm-900mm at 1mm interval), 2(m=-1 or 1 and 0), wvl(430nm, 600nm - 660nm), sample pts
         """
-        # depth_peak_illum_idx = self.depth_interpolation() # 301, 3, wvls, sample_pts
+        depth_peak_illum_idx = self.depth_interpolation() # 301, 3, wvls, sample_pts
         # np.save(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'), depth_peak_illum_idx)
-        depth_peak_illum_idx = np.load(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'))
+        # depth_peak_illum_idx = np.load(os.path.join(self.npy_dir,'./depth_peak_illum_idx.npy'))
         
-                                                    # depth, m order (-1 or 1 and zero), wvl(430, 660), pts
-        depth_peak_illum_idx_final = np.zeros(shape=(len(self.depth_arange), 2, len(self.wvl_list), self.sample_pts.shape[0])) 
-        
-        # masking out to get +1 or -1
-        # difference between 430nm, 660nm for +1 and -1
-        mfirst_diff = abs(depth_peak_illum_idx[:,0,0] - depth_peak_illum_idx[:,0,-1])
-        pfirst_diff = abs(depth_peak_illum_idx[:,2,0] - depth_peak_illum_idx[:,2,-1])
-
-        pfirst_diff = pfirst_diff[:,np.newaxis,:]
-        mfirst_diff = mfirst_diff[:,np.newaxis,:]
-
-        # Further broadcast the masks to the shape of max_data
-        pfirst_diff = np.repeat(pfirst_diff, 7, axis=1)
-        mfirst_diff = np.repeat(mfirst_diff, 7, axis=1)
-
-        # if difference of 430nm and 660nm is larger, take that first order
-        mask_pfirst = mfirst_diff <= pfirst_diff        
-        depth_peak_illum_idx_final[:,1][mask_pfirst] = depth_peak_illum_idx[:,2][mask_pfirst]
-        depth_peak_illum_idx_final[:,1][mask_pfirst] = depth_peak_illum_idx[:,2][mask_pfirst]
-
-        mask_mfirst = mfirst_diff > pfirst_diff
-        depth_peak_illum_idx_final[:,1][mask_mfirst] = depth_peak_illum_idx[:,0][mask_mfirst]
-        depth_peak_illum_idx_final[:,1][mask_mfirst] = depth_peak_illum_idx[:,0][mask_mfirst]
-        # input zero order
-        depth_peak_illum_idx_final[:,0] = depth_peak_illum_idx[:,1].mean(axis = 1)[:,np.newaxis,:]
-        
-        return depth_peak_illum_idx_final # depth, m order (-1 or 1 and zero), wvl(430, 600 - 660), pts
+        return depth_peak_illum_idx
         
 if __name__ == "__main__":
     argument = Argument()

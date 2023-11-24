@@ -172,7 +172,7 @@ if __name__ == "__main__":
     argument = Argument()
     arg = argument.parse()
     
-    date = "1007"
+    date = arg.calibrated_date
     position = "back"
     
     peak_illum_idx = DataProcess(arg, date, position).get_first_idx()

@@ -26,17 +26,25 @@ opts.Display = 'Off';
 [fitresult, gof] = fit( xData, yData, ft, opts );
 
 % 데이터의 피팅을 플로팅하십시오.
-% figure( 'Name', 'untitled fit 1' );
-% h = plot( fitresult, xData, yData );
-% legend( h, 'y vs. x', 'Depth fitting', 'Location', 'NorthEast', 'Interpreter', 'none' );
-% % 좌표축에 레이블을 지정하십시오.
-% xlabel( 'x', 'Interpreter', 'none' );
-% ylabel( 'y', 'Interpreter', 'none' );
-% grid on
+figure( 'Name', 'untitled fit 1' );
+h = plot( fitresult, xData, yData );
+legend( h, 'y vs. x', 'Depth fitting', 'Location', 'NorthEast', 'Interpreter', 'none' );
+% 좌표축에 레이블을 지정하십시오.
+xlabel( 'x', 'Interpreter', 'none' );
+ylabel( 'y', 'Interpreter', 'none' );
+grid on
 
 if (gof.rmse > 1.)
-    newx = x(2:numel(x));
-    newy = y(2:numel(y));
+    if(y(1) == 0)
+        newy = y(2:end);
+        newy(end) = y(end) + 1;
+        newx = x(2:end);
+    else
+        newy = y(1:end);
+        newy(end) = y(end) + 1;
+        newx = x(1:end);
+    end
+
     [xData, yData] = prepareCurveData( newx, newy );
     % fittype과 옵션을 설정하십시오.
     ft = fittype( 'power2' );
@@ -52,6 +60,9 @@ if (gof.rmse > 1.)
 end
 
 fprintf('root mean square %f\n', gof.rmse);
-pause(0.05);
+
+saveas(gcf, 'gof.rmse.svg');
+
+% pause(0.01);
 
 

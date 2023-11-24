@@ -1,25 +1,34 @@
-algo_fun = @(data_path, result_path) recon_spectrum_CASSI_single(data_path, result_path);
+algo_fun = @(data_path, data_fn, result_path, result_fn) recon_spectrum_CASSI_single(data_path, data_fn, result_path, result_fn);
+algo_fun_rgb = @(data_path, data_fn, result_path, result_fn) recon_spectrum_CASSI_single_rgb(data_path, data_fn, result_path, result_fn);
 
-data_dir = './data';
-result_dir = './results';
+% data_dir = './Valid_spectral/';
+data_dir = './HSIdata/poisson0_diffraction_limited_F5.6/Train_Metamer_Spec/';
+result_dir = './Results/poisson0_diffraction_limited_F5.6_test/';
+% result_dir = './Results/test2/';
 
-files=dir(data_dir);
-files = files(3:end); % remove . and .. folders
+file = dir([data_dir '*.mat']);
 
-for i = 1:numel(files)
-    file = files(i);
-    data_path = [data_dir '/' file.name '/'];
-    result_path = [result_dir '/'  file.name '/'];
+for i = 1:size(file,1)
+    data_fn = file(i).name;
+    result_fn = strcat(data_fn(1:end-4),  "_result.mat");
+    if ~isfile(fullfile(result_dir, result_fn))
+        fprintf('Current data: %s\n', data_fn);
 
-    if ~exist(result_path, 'dir')
-        mkdir(result_path);
+        cp = tic();
+        algo_fun(data_dir, data_fn, result_dir, result_fn);
+        toc(cp);
     end
-    
-    
-    fprintf('Current data: %s\n', data_path);
-    
-    cp = tic();
-    algo_fun(data_path, result_path);
-    toc(cp);
 
+
+    result_fn = strcat(data_fn(1:end-4),  "_rgb_result.mat");
+    if ~isfile(fullfile(result_dir, result_fn))
+
+        fprintf('Current data: %s\n', data_fn);
+
+        cp = tic();
+        algo_fun_rgb(data_dir, data_fn, result_dir, result_fn);
+        toc(cp);
+    end
 end
+
+
