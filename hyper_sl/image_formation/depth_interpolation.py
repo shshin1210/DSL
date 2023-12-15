@@ -76,7 +76,7 @@ class DepthInterpolation():
         sample_pts_flatt_mw = np.repeat(sample_pts_flatt_m[:,np.newaxis,:], len(self.wvl_list), axis = 1)
         sample_pts_flatt_mw = sample_pts_flatt_mw.flatten()
         
-        rand_num = np.array([28365, 35266, 51627, 52903, 57131, 60735, 85174, 13415, 3876, 85086, 37227])
+        # rand_num = np.array([28365, 35266, 51627, 52903, 57131, 60735, 85174, 13415, 3876, 85086, 37227])
         
         fig, ax = plt.subplots()
         
@@ -103,14 +103,14 @@ class DepthInterpolation():
                 final_depth = interp_depth[idx_start:idx_end+1]
                 depth_peak_illum_idx[:, idx] = final_depth 
                 
-                if idx in rand_num:
-                    plt.ylim([0,318])
-                    plt.plot(new_depth_range, interp_depth), plt.title('%d'%(sample_pts_flatt_mw[idx]))
-                    plt.scatter(depth_range, all_position_peak_illum_idx[:,idx], s = 60, marker='*')
-                    plt.grid(linestyle = '--', c = 'whitesmoke')
-                    ax.tick_params(axis='both', which='major', labelsize=15,direction='in')
+                # if idx in rand_num:
+                #     plt.ylim([0,318])
+                #     plt.plot(new_depth_range, interp_depth), plt.title('%d'%(sample_pts_flatt_mw[idx]))
+                #     plt.scatter(depth_range, all_position_peak_illum_idx[:,idx], s = 60, marker='*')
+                #     plt.grid(linestyle = '--', c = 'whitesmoke')
+                #     ax.tick_params(axis='both', which='major', labelsize=15,direction='in')
 
-                    plt.savefig('%05d.svg'%idx)
+                #     plt.savefig('%05d.svg'%idx)
                     
         return depth_peak_illum_idx
     
