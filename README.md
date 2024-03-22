@@ -48,5 +48,5 @@ To reconstruct hyperspectral reflectance:
 python hyper_sl/hyperspectral_reconstruction.py
 ```
 
-Please use the yaml file for configuration changes.
+[Argparse] (https://github.com/shshin1210/DSL/blob/main/hyper_sl/utils/ArgParser.py)
 
