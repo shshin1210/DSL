@@ -1,5 +1,5 @@
 # Dispersed Structured Light for Hyperspectral 3D Imaging
-[DSL](project page url) (Dispersed Structured Light for Hyperspectral 3D Imaging) is a method that reconstructs high quality depth and hyperspectral information.
+[DSL](https://shshin1210.github.io/DSL/) (Dispersed Structured Light for Hyperspectral 3D Imaging) is a method that reconstructs high quality depth and hyperspectral information.
 You should follow the [requirements.txt](https://github.com/shshin1210/DSL/blob/main/requirements.txt) provided there.
 
 ## Installation
