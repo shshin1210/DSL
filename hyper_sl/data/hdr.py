@@ -67,10 +67,10 @@ class HDR():
         
         """
         # calculate radiance_weight
-        exp_img_path = np.array([self.path_to_intensity1, self.path_to_intensity2])
-        exp_img_black_path = np.array([self.path_to_black_exp1, self.path_to_black_exp2])
+        exp_img_path = np.array([os.listdir(self.path_to_intensity1), os.listdir(self.path_to_intensity2)])
+        exp_img_black_path = np.array([os.listdir(self.path_to_black_exp1), os.listdir(self.path_to_black_exp2)])
 
-        exp_images = np.array([cv2.imread(exp_img_path[k], -1)[:,:,::-1] for k in range(len(self.intensity))])
+        exp_images = np.array([cv2.imread(exp_img_path[k][0], -1)[:,:,::-1] for k in range(len(self.intensity))])
         exp_black_images = np.array([cv2.imread(exp_img_black_path[k], -1)[:,:,::-1] for k in self.ex_time])
 
         # remove black image

@@ -19,18 +19,17 @@ class Argument:
 		self.parser.add_argument('--position_calibrated_data_dir', help='directory of calibrated data driven correspondence model', type = str, default="./dataset/image_formation/first_order_correspondence_model.npy")
 
 		# PATH for HDR imaging
-		self.parser.add_argument('--path_to_intensity1', help='path to white pattern captured image png for intensity1', type = str, default="./dataset/data/intensity1/*.png")
-		self.parser.add_argument('--path_to_intensity2', help='path to white pattern captured image png for intensity2', type = str, default="./dataset/data/intensity2/*.png")
+		self.parser.add_argument('--path_to_intensity1', help='path to white pattern captured image png directory for intensity1', type = str, default="./dataset/data/intensity1")
+		self.parser.add_argument('--path_to_intensity2', help='path to white pattern captured image png directory for intensity2', type = str, default="./dataset/data/intensity2")
   
-		self.parser.add_argument('--path_to_black_exp1', help='path to black pattern captured image png under exposure1', type = str, default="./dataset/data/black_exposure1/*.png")
-		self.parser.add_argument('--path_to_black_exp2', help='path to black pattern captured image png under exposure2', type = str, default="./dataset/data/black_exposure2/*.png")
+		self.parser.add_argument('--path_to_black_exp1', help='path to black pattern captured image png directory under exposure1', type = str, default="./dataset/data/black_exposure1")
+		self.parser.add_argument('--path_to_black_exp2', help='path to black pattern captured image png directory under exposure2', type = str, default="./dataset/data/black_exposure2")
 
-		self.parser.add_argument('--path_to_ldr_exp1', help='path to ldr images under exposure1', type = str, default="./dataset/data/ldr_exposure1")
-		self.parser.add_argument('--path_to_ldr_exp2', help='path to ldr images under exposure1', type = str, default="./dataset/data/ldr_exposure2")
+		self.parser.add_argument('--path_to_ldr_exp1', help='path to ldr images under white scanline pattern with exposure1', type = str, default="./dataset/data/ldr_exposure1")
+		self.parser.add_argument('--path_to_ldr_exp2', help='path to ldr images under white scanline pattern with exposure1', type = str, default="./dataset/data/ldr_exposure2")
 
 		# PATH for hyperspectral reconstruction
 		self.parser.add_argument('--path_to_depth', help='path to depth npy data for specific scene', type = str, default="./dataset/data/depth.npy")
-		self.parser.add_argument('--path_to_intensity1', help='path to white pattern captured image png for intensity1', type = str, default="./dataset/data/intensity1/*.png")
 
 		# for HDR imaging
 		self.parser.add_argument('--exp_min', help= 'minimum exposure', type = int, default=160)
