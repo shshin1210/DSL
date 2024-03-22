@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({            
+          tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}            
+      });
+  </script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML' async></script>
+
+  <meta charset="utf-8">
+  <meta name="description"
+        content="Neural Spectro-polarimetric Fields (NeSpoF) models the physically-valid Stokes vector at specific position, direction, and wavelength.">
+  <meta name="keywords" content="NeSpoF, NeRF">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Neural Spectro-polarimetric Fields</title>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-PYVRSFMDRL');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <!-- <link rel="icon" href="./static/images/favicon.svg"> -->
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">Neural Spectro-polarimetric Fields</h1>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://youngchan-k.github.io">Youngchan Kim</a>,
+            </span>
+            <span class="author-block">
+              <a href="https://jinwonjoon.github.io/">Wonjoon Jin</a>,</span>
+            <span class="author-block">
+              <a href="https://www.scho.pe.kr/">Sunghyun Cho</a>,
+            </span>
+            <span class="author-block">
+              <a href="https://www.shbaek.com/">Seung-Hwan Baek</a>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">POSTECH</span>
+            <!-- <span class="author-block"><sup>2</sup>Google Research</span> -->
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">SIGGRAPH ASIA 2023</span>
+            <!-- <span class="author-block"><sup>2</sup>Google Research</span> -->
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2306.12562"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span>
+
+              <!-- Arxiv Link. -->
+              <!-- <span class="link-block">
+                <a href="https://arxiv.org/pdf/2306.12562"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span> -->
+              
+              <!-- Supple Link. -->
+              <span class="link-block">
+                <a href="https://youngchan-k.github.io/assets/paper/SIGA2023/NeSpoF_supple.pdf"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Supple</span>
+                </a>
+              </span>
+              
+              <!-- Video Link. -->
+              <!-- <span class="link-block">
+                <a href="ht tps://youngchan-k.github.io/assets/video/NeSpoF_fast_forward.mov"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-youtube"></i>
+                  </span>
+                  <span>Fast Forward</span>
+                </a>
+              </span> -->
+
+              <!-- <span class="link-block">
+                <a href="https://youngchan-k.github.io/assets/video/NeSpoF_fast_forward.mov"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-youtube"></i>
+                  </span>
+                  <span>Presentation</span>
+                </a>
+              </span> -->
+
+              <!-- Code Link. -->
+              <span class="link-block">
+                <a href="https://github.com/youngchan-k/NeSpoF"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                  </a>
+              </span>
+              
+              <!-- Dataset Link. -->
+              <span class="link-block">
+                <a href="https://drive.google.com/drive/folders/1W7apuXPA3EkyUs8VgZgwdMpnc96aLXXJ"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="far fa-images"></i>
+                  </span>
+                  <span>Data</span>
+                  </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <!-- <video id="teaser" autoplay muted loop playsinline height="100%">
+        <source src="./static/videos/teaser.mp4"
+                type="video/mp4">
+      </video> -->
+      <img src="./static/images/teaser.PNG"
+           class="interpolation-image"
+           alt="Teaser."/>
+      <!-- <h2 class="subtitle has-text-centered"> -->
+      <h2 class="subtitle is-full-width">
+        We present neural spectro-polarimetric fields that allow for the rendering of a scene from novel views, not limited
+        to the synthesis of (a) RGB radiance images. We can render (b) hyperspectral Stokes vectors for each individual light ray,
+        thus providing a comprehensive description of its spectro-polarization property. Also, (c) it can inherently reduce noise in
+        low-signal-to-noise ratio spectro-polarimetric measurements, as shown in the degree of polarization (DoP). (d)We further
+        show the analysis of spectro-polarimetric information for the CD that is otherwise invisible to the human eye.
+      </h2>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <!-- <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified"> -->
+    <div class="columns is-centered">      
+      <div class="column is-full-width">
+        <h2 class="title is-3">Abstract</h2>
+          <p>
+            Modeling the spatial radiance distribution of light rays in a scene has been extensively explored for applications,
+            including view synthesis. Spectrum and polarization, the wave properties of light, are often neglected due to their
+            integration into three RGB spectral bands and their non-perceptibility to human vision.
+            However, these properties are known to encompass substantial material and geometric information about a scene.
+            Here, we propose to model spectro-polarimetric fields, the spatial Stokes-vector distribution of any light ray at
+            an arbitrary wavelength. 
+          </p>
+          <p>
+            We present Neural Spectro-polarimetric Fields (NeSpoF), a neural representation that models
+            the physically-valid Stokes vector at given continuous variables of position, direction, and wavelength. NeSpoF manages
+            inherently noisy raw measurements, showcases memory efficiency, and preserves physically vital signals - factors that
+            are crucial for representing the high-dimensional signal of a spectro-polarimetric field.
+            To validate NeSpoF, we introduce the first multi-view hyperspectral-polarimetric image dataset, comprised of both synthetic
+            and real-world scenes. These were captured using our compact hyperspectral-polarimetric imaging system, which has been calibrated
+            for robustness against system imperfections. We demonstrate the capabilities of NeSpoF on diverse scenes.
+          </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!--/ Abstract. -->
+
+    <!-- Method. -->
+    <!-- <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Method</h2>
+        <div class="content has-text-justified"> -->    
+      <div class="columns is-centered">      
+        <div class="column is-full-width">
+          <h2 class="title is-3">Neural Spectro-polarimetric Field (NeSpoF)</h2>
+          <p>
+            We propose modeling the spectro-polarimetric field $f(\cdot)$ using NeSpoF, 
+            a neural representation that describes the Stokes vector $\mathbf{s}$ and volumetric density $\sigma$ 
+            for the input variables of position, direction, and wavelength.
+          </p>
+
+          <div class="column is-centered has-text-centered"><p>$\mathbf{s}, \sigma = F_\Theta(x,y,z,\theta, \phi, \lambda)$</p></div>
+
+          <img src="./static/images/network_architecture.PNG"
+                 class="interpolation-image"
+                 alt="Network architecture."
+                 width="100%"/>
+          
+          <p>
+            We design NeSpoF with a positional MLP, $F_\Theta^p$, and a spectro-directional MLP, $F_\Theta^d$ and turn to model
+            a physically-valid Stokes vector ($s_0^2 \geq s_1^2+s_2^2+s_3^2$) by using intermediate polarimetric properties 
+            as outputs ($s_0$, $\rho$, $\chi$, and $\psi$).
+            Additionally, we perform coordinate conversions of Stokes vectors since the polarization state of a light ray can be 
+            described differently with Stokes vectors at different coordinates.
+          </p>
+        </div>
+      </div>
+    <!--/ Method. -->
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+      <div class="columns is-centered">      
+        <div class="column is-full-width">
+          <h2 class="title is-3">Portable Hyperspectral-polarimetric Imager</h2>
+          <p>
+            We built a portable hyperspectral polarimetric imaging system, consisting of a monochromatic camera, LCTF that controls the transmitted wavelength, 
+            and a quarter wave plate mounted on a motorized rotation stage.
+          </p>
+          
+          <img src="./static/images/imaging_system.PNG"
+                 class="interpolation-image"
+                 alt="Network architecture."
+                 width="100%"/>
+
+          <!-- <p>
+            We capture a scene for 21 wavelengths and 4 quarter-wave plate angles and reconstruct 
+            per-pixel Stokes vector by solving a least-squares problem with spatially-varying spectro-polarimetric calibration using these captured images.
+          </p> -->
+        </div>
+      </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">      
+      <div class="column is-full-width">
+        <h2 class="title is-3">Multi-view Hyperspectral Polarimetric Dataset</h2>
+
+        <!-- <img src="./static/images/dataset_thumbnail.PNG"
+              class="interpolation-image"
+              alt="Dataset thumbnail."
+              width="100%"/> -->
+
+        <div class="columns is-centered">
+          <div class="column">
+            <div class="content">
+              <h3 class="title is-4">Synthetic</h3>
+
+              <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+                <source src="./static/videos/dataset_synthetic.mp4"
+                        type="video/mp4">
+              </video>
+
+              <img src="./static/images/dataset_synthetic.PNG"
+                    class="interpolation-image"
+                    alt="Network architecture."
+                    width="100%"/>
+
+              <p>
+                For synthetic scenes, we apply polarimetric BRDF to mesh by fitting a fourth order-polynomial function at each pixel along the spectrum 
+                since only five spectral channels are available in existing dataset [Baek et al. 2020] and render images using spectro-polarimetric renderer Mitsuba 3.
+              </p>
+            </div>
+          </div>
+
+          <div class="column">
+            <div class="content">
+              <h3 class="title is-4">Real-world</h3>
+
+              <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+                <source src="./static/videos/dataset_real.mp4"
+                        type="video/mp4">
+              </video>
+              
+              <img src="./static/images/dataset_real.PNG"
+                    class="interpolation-image"
+                    alt="Network architecture."
+                    width="100%"/>
+
+              <p>
+                For real-world scenes, we capture a scene for 21 wavelengths and 4 quarter-wave plate angles and reconstruct 
+                per-pixel Stokes vector by solving a least-squares problem with spatially-varying spectro-polarimetric calibration using these captured images.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+
+    <div class="columns is-centered">      
+      <div class="column is-full-width">
+        <h2 class="title is-3">Novel-view Spectro-polarimetric Synthesis</h2>         
+
+        <!-- Results -->
+        <div class="columns is-centered">
+          <div class="column">
+            <div class="content">
+              <h3 class="title is-4">Synthetic Results</h3>
+              <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+                <source src="./static/videos/synthetic_results_0.mp4"
+                        type="video/mp4">
+              </video>
+            </div>
+          </div>
+
+          <div class="column">
+            <h3 class="title is-4">Real Results</h3>
+            <div class="columns is-centered">
+              <div class="column content">
+                <video id="matting-video" controls playsinline height="100%">
+                  <source src="./static/videos/real_results_0.mp4"
+                          type="video/mp4">
+                </video>
+              </div>
+    
+            </div>
+          </div>
+        </div>
+        
+        <div class="content has-text-justified">
+          <p>
+            NeSpoF enables novel-view rendering of intensity, which is the first Stokes-vector element $s_0$, 
+            as well as polarimetric properties as visualized in AoLP (angle of linear polarization), DoP (degree of polarization), and ToP (type of polarization).
+          </p>
+        </div> 
+
+        <div class="columns is-vcentered interpolation-panel">
+          <div class="column is-3 has-text-centered">
+            <img src="./static/images/start_frame.png"
+                class="interpolation-image"
+                alt="Interpolate start reference image."/>
+            <p>Start Frame</p>
+          </div>
+
+          <div class="column interpolation-video-column">
+            <div id="interpolation-image-wrapper">
+              Loading...
+            </div>
+            <input class="slider is-fullwidth is-large is-info"
+                  id="interpolation-slider"
+                  step="1" min="0" max="52" value="0" type="range">
+          </div>
+          <div class="column is-3 has-text-centered">
+            <img src="./static/images/end_frame.png"
+                class="interpolation-image"
+                alt="Interpolation end reference image."/>
+            <p class="is-bold">End Frame</p>
+          </div>
+        </div>
+
+        <br/>
+
+        <div class="content has-text-justified">
+          <p>
+            Compared to ground truth, visualizing intensity $s_0$ and polarization states with AoLP, DoP, and ToP, 
+            we found that NeSpoF enables accurate polarimetric reconstruction. 
+          </p>
+        </div>
+
+        <div class="columns is-centered">      
+          <div class="column is-full-width">
+            <video id="replay-video"
+                 controls
+                 muted
+                 preload
+                 playsinline
+                 width="100%">
+              <source src="./static/videos/synthetic_results.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+        </div>
+
+        <div class="content has-text-justified">
+          <p>
+            This scene includes a glass box surrounding certain objects and a specular crystal outside of the glass box.
+            For this area, NeSpoF demonstrates modeling intricate variations of AoLP on the crystal surfaces. 
+            The polarization of this region also significantly changes according to viewpoints and wavelength.
+          </p>
+        </div>
+
+        <div class="columns is-centered">      
+          <div class="column is-full-width">
+            <video id="replay-video"
+                 controls
+                 muted
+                 preload
+                 playsinline
+                 width="100%">
+              <source src="./static/videos/real_results_1.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+        </div>
+
+        <div class="content has-text-justified">
+          <p>
+            This is another scene containing linear polarization film laptop and smartphone covered with protective film.
+            When we visualize AoLP for this region, we observed that the linear polarization film and laptop display emits uniformly-distributed 
+            linearly polarized light, while the light from smartphone display interacts with protective film, resulting in interesting polarimetric variation. 
+            NeSpoF successfully models such variations, closely matching the ground truth even for different wavelengths.
+          </p>
+        </div>
+
+        <div class="columns is-centered">      
+          <div class="column is-full-width">
+            <video id="replay-video"
+                 controls
+                 muted
+                 preload
+                 playsinline
+                 width="100%">
+              <source src="./static/videos/real_results_2.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Applications. -->
+    <h2 class="title is-3">Applications</h2>
+    
+    <!-- Diffuse/Specular. -->
+    <h3 class="title is-4">Spectral Light transport decomposition</h3>
+    <div class="content has-text-justified">
+      <p>
+        NeSpoF enables decomposing light transport into unpolarized and polarized hyperspectral components.
+        As a result, we can separate not only diffuse and specular components (red arrows) but also more complex light transport, 
+        such as polarized inter-reflection between the walls (blue arrows). 
+        Additionally, we can extract hyperspectral intensity for diffuse and specular components at a novel-view.
+      </p>
+    </div>
+
+    <div class="content has-text-centered">
+      <video id="replay-video"
+              controls
+              muted
+              preload
+              playsinline
+              width="100%">
+        <source src="./static/videos/spectral_light_transport_decomposition.mp4"
+                type="video/mp4">
+      </video>
+    </div>
+    <!--/ Diffuse/Specular. -->
+
+    <!-- Relighting. -->
+    <h3 class="title is-4">Novel-view Spectral Relighting</h3>
+    <div class="content has-text-justified">
+      <p>
+        We identify elliptically-polarized sky light and extract illumination spectrum of the sky.
+        NeSpoF enables rendering of the hyperspectral intensity at a novel view and relighting 
+        by replacing the original illumination with the target illumination, CIE D65 illuminant plotted as blue.
+      </p>
+    </div>
+
+    <div class="content has-text-centered">
+      <video id="replay-video"
+              controls
+              muted
+              preload
+              playsinline
+              width="100%">
+        <source src="./static/videos/novel_view_spectral_relighting.mp4"
+                type="video/mp4">
+      </video>
+    </div>
+    <!--/ Relighting. -->
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Applications. -->
+    <h2 class="title is-3">Fast Forward</h2>
+    <!-- <p>
+      Modeling the light rays with plenoptic function has been widely investigated in diverse applications such as imaging and rendering. 
+      However, it does not consider the wave properties of light.
+      Therefore, we define the spectro-polarimetric field to incorporate the spectrum and polarization in ray modeling.
+      In this work, we propose Neural Spectro-polarimetric Field (NeSpoF) and take a first step on acquiring, modeling, and rendering spectro-polarimetric fields.
+      By using NeSpoF, we can demonstrate diverse applications. We will describe more details in our talk. Thank you!
+    </p> -->
+
+    <div class="content has-text-centered">
+      <video id="replay-video"
+              controls
+              muted
+              preload
+              playsinline
+              width="100%">
+        <source src="./static/videos/NeSpoF_fast_forward.mp4"
+                type="video/mp4">
+      </video>
+    </div>
+  </div>
+</section>
+
+
+<!-- <section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Presentation</h2>
+    <div class="content has-text-centered">
+      <video id="replay-video"
+              controls
+              muted
+              preload
+              playsinline
+              width="100%">
+        <source src="./static/videos/NeSpoF_fast_forward.mov"
+                type="video/mov">
+      </video>
+    </div>
+    
+    <p>
+      I will upload the video once the conference is concluded!
+    </p>
+  </div>
+</section> -->
+
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>
+      @inproceedings{kim2023neural,
+        title={Neural spectro-polarimetric fields},
+        author={Kim, Youngchan and Jin, Wonjoon and Cho, Sunghyun and Baek, Seung-Hwan},
+        booktitle={SIGGRAPH Asia 2023 Conference Papers},
+        pages={1--11},
+        year={2023}
+      }
+    </code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <div class="content">
+          <p>
+            The website template is borrowed from 
+            <a href="https://github.com/nerfies/nerfies.github.io"><span class="dnerf">Nerfies</span></a>.
+            and licensed under a <a rel="license"
+                                                href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
