@@ -22,17 +22,17 @@ You need to prepare three types of datasets for hyperspectral reconstruction. Re
    
    Capture the scene under white scan line pattern with two different intensity pattern values.
    
-   These should be saved in `path_to_ldr_exp1`, `path_to_ldr_exp2`.
+   Save it in `path_to_ldr_exp1`, `path_to_ldr_exp2`.
 
 3. Scene under black pattern and white pattern
    
    We need scene captured under black pattern with two different exposure settings.
 
-   These should be saved in `path_to_black_exp1`, `path_to_black_exp2`.
+   Save it in `path_to_black_exp1`, `path_to_black_exp2`.
    
    Also, capture the scene under white pattern under two different intensity pattern values to calculate the radiance weight (normalization) for two different settings.
 
-   These should be saved in `path_to_intensity1`, `path_to_intensity2`.
+   Save it in `path_to_intensity1`, `path_to_intensity2`.
 
 ```
 dataset
