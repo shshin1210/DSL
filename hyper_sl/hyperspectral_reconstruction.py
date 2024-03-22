@@ -1,5 +1,5 @@
 import numpy as np
-import os, sys
+import os, sys, cv2, random
 from scipy import ndimage
 
 import torch
@@ -17,36 +17,29 @@ class HyperspectralReconstruction():
         Reconstruct hyperspectral iamge
 
         Arguments
-            - cam_H, cam_W: height and width of camera
             - wvls: linespace of minimum wavelengths to maximum wavelength in 10 nm interval(430nm to 660nm in 10nm intervals)
-            - date: date of real captured scene
             - calibrated date: date of calibration of correspondence model
             - new_wvls: linespace of minimum wavelengths to maximum wavelength in 5nm interval (430nm to 660nm in 5nm intervals)
-            - depth_min, depth_max: the range of depth where objects are placed
             - n_illum: number of illumination
             
             Calibrated parameters
             - PEF: projector emission function
             - CRF: camera response function
             - DG_efficiency: diffraction grating efficiency 
-            
-            Directory
-            - real_data_dir: directory of real captured scene
-            - position_calibrated_data_dir: directory of calibrated correspondence model
-            
+
             Real HDR data
             - hdr_imgs: captured scene into HDR image
     """
     def __init__(self, arg):
         
         # device
+        self.arg = arg
         self.device = "cuda:0"
+        self.epoch = arg.epoch_num
         
         # arguments
         self.cam_H, self.cam_W = arg.cam_H, arg.cam_W
         self.wvls = arg.wvls
-        self.date = arg.real_data_date
-        self.calibrated_date = arg.calibrated_date
         
         self.new_wvls = arg.new_wvls
         self.new_wvl_num = arg.new_wvl_num
@@ -62,9 +55,8 @@ class HyperspectralReconstruction():
         self.DG_efficiency = projector.Projector(arg, self.device).get_dg_intensity()
         
         # directory
-        self.real_data_dir = os.path.join(arg.real_data_dir, '2023%s_real_data'%self.date)
-        # directory of your first order correspondence model
-        self.position_calibrated_data_dir = arg.position_calibrated_data_dir%self.calibrated_date
+        self.position_calibrated_data_dir = arg.position_calibrated_data_dir
+        self.path_to_depth = arg.path_to_depth
         
         # hdr imgs
         self.hdr_imgs = hdr.HDR(arg).make_hdr()
@@ -78,7 +70,7 @@ class HyperspectralReconstruction():
                 
         """
         
-        depth = np.load(os.path.join(self.real_data_dir, './2023%s_color_checker.npy'%self.date))[:,:,2]*1e+3
+        depth = np.load(self.path_to_depth)[:,:,2]*1e+3
         depth = np.round(depth).reshape(self.cam_H* self.cam_W).astype(np.int16)
         
         return depth
@@ -122,9 +114,10 @@ class HyperspectralReconstruction():
             zero_illum_idx[i] = max_idx
 
         zero_illum_idx = np.round(zero_illum_idx)
+        zero_illum_idx = np.repeat(zero_illum_idx.reshape(1, 1, self.cam_H*self.cam_W), len(self.depth_arange), axis=0)
 
         # first order peak correspondence model
-        first_illum_idx = np.load(os.path.join(self.position_calibrated_data_dir,'first_illum_idx_final_transp.npy'))
+        first_illum_idx = np.load(self.position_calibrated_data_dir)
         first_illum_idx = first_illum_idx.reshape(self.new_wvl_num, len(self.depth_arange), self.cam_H* self.cam_W).transpose(1,0,2)
         
         return zero_illum_idx, first_illum_idx
@@ -144,10 +137,10 @@ class HyperspectralReconstruction():
         
         # Need to define mask
         Mask = np.ones_like(first_illum_idx)
-        Mask[first_illum_idx >= 318] = 0
+        Mask[first_illum_idx >= self.n_illum] = 0
         Mask[first_illum_idx < 0 ] = 0
 
-        first_illum_idx[first_illum_idx >= 318] = 317
+        first_illum_idx[first_illum_idx >= self.n_illum] = self.n_illum -1
         first_illum_idx[first_illum_idx < 0 ] = 0
         
         return Mask, first_illum_idx
@@ -177,7 +170,7 @@ class HyperspectralReconstruction():
         real_img_illum_idx = real_img_illum_idx.astype(np.int16).reshape(self.new_wvl_num, self.cam_H, self.cam_W)
         real_img_illum_idx_final = np.stack((real_img_illum_idx, real_img_illum_idx, real_img_illum_idx), axis = 3)
         
-        return real_img_illum_idx, real_img_illum_idx_final
+        return real_img_illum_idx, real_img_illum_idx_final, mask_idx
 
     def dg_image_efficiency(self, zero_illum_idx, real_img_illum_idx):
         """
@@ -194,86 +187,143 @@ class HyperspectralReconstruction():
         real_img_illum_idx_reshape = real_img_illum_idx.reshape(self.new_wvl_num, self.cam_H*self.cam_W)
         
         # DG efficiency for all pixels
-        DG_efficiency_image = np.zeros(shape=(self.cam_H * self.cam_W, self.new_wvl_num))
+        DG_efficiency_image_first = np.zeros(shape=(self.cam_H * self.cam_W, self.new_wvl_num))
+        DG_efficiency_image_zero = np.ones(shape=(self.cam_H * self.cam_W, self.new_wvl_num))
 
         for i in range(self.cam_H * self.cam_W):
             if zero_illum_idx[i] > real_img_illum_idx_reshape[0,i]: # 430nm # -1 order
-                DG_efficiency_image[i,:] =  self.DG_efficiency[0]
+                DG_efficiency_image_first[i,:] =  self.DG_efficiency[0]
+                
             elif zero_illum_idx[i] < real_img_illum_idx_reshape[0,i]: # +1 order
-                DG_efficiency_image[i,:] =  self.DG_efficiency[2]
+                DG_efficiency_image_first[i,:] =  self.DG_efficiency[2]
+            
             else: # else
-                DG_efficiency_image[i,:] = 0
+                DG_efficiency_image_first[i,:] = 0
 
-        return DG_efficiency_image
+        return DG_efficiency_image_zero, DG_efficiency_image_first
         
-    def SVD(self):
+    def Optimization(self):
         
         # datas        
         hdr_imgs = self.median_filter(self.hdr_imgs / 65535.)
-        np.save('./hdr_imgs_filtered_%s.npy'%self.date, hdr_imgs)
-        # hdr_imgs = np.load('./hdr_imgs_filtered.npy')
         
+        # correspondence model
         zero_illum_idx, first_illum_idx = self.peak_illumination_index(hdr_imgs)
         mask, first_illum_idx = self.get_mask(first_illum_idx)
-        
+        real_img_illum_idx, real_img_illum_idx_final, mask_idx = self.get_valid_illumination_idex(depth, first_illum_idx, mask)
+        DG_efficiency_image_zero, DG_efficiency_image_first = self.dg_image_efficiency(zero_illum_idx, real_img_illum_idx)
+
+        # depth
         depth = self.get_depth()
-        real_img_illum_idx, real_img_illum_idx_final = self.get_valid_illumination_idex(depth, first_illum_idx, mask)
         
-        DG_efficiency_image = self.dg_image_efficiency(zero_illum_idx, real_img_illum_idx)
+        # GT RGB image
+        x, y, z = np.meshgrid(np.arange(self.cam_H), np.arange(self.cam_W), np.arange(3), indexing='ij')
+        GT_I_RGB_FIRST = hdr_imgs[real_img_illum_idx_final, x, y, z].transpose(1, 2, 0, 3)   
+        GT_I_RGB_ZERO =  hdr_imgs[zero_illum_idx, x, y, z].transpose(1, 2, 0, 3)
         
-        print("Calculate SVD...")
+        # Mask
+        # Make all wavelength invalid if one wavelength is invalid
+        for i in range(self.cam_H* self.cam_W):
+            if 0 in mask_idx[:,i]:
+                mask_idx[:,i] = 0
+                
+        mask = np.zeros((self.cam_H, self.cam_W, self.new_wvl_num, 1))
+        mask_temp = mask_idx.T.reshape(self.cam_H, self.cam_W, self.new_wvl_num, 1)
+        for i in range(self.new_wvl_num):
+            a = mask_temp[:,:,i,:]
+            sigma = self.arg.sigma
+
+            dst = cv2.GaussianBlur(a, (0,0), sigma)
+            mask[:,:,i,:] = torch.tensor(dst[...,None])
         
-        x, y, z = np.meshgrid(np.arange(580), np.arange(890), np.arange(3), indexing='ij')
+        # Optimization
+        print("Start Optimization")
+        epoch = self.epoch
+        losses = [] 
 
-        # D matrix
-        i_mat = np.eye(self.new_wvl_num)
-        diagonal_indices = np.diag_indices(i_mat.shape[0])
-        new_diagonal_indices_col = np.copy(diagonal_indices[1])
-        new_diagonal_indices_col[:-1] = diagonal_indices[1][:-1] + 1
-        i_mat[(diagonal_indices[0], new_diagonal_indices_col)] = -1
-        D = i_mat
-        D[-1] = i_mat[-2]
+        # learning rate & decay step
+        lr = self.arg.lr
+        decay_step = self.arg.decay_step
+        gamma = self.arg.gamma
 
-        D = torch.tensor(D, device=self.device)
+        # optimized paramter (CRF & PEF)
+        initial_value = torch.ones(size =(self.cam_H*self.cam_W, self.new_wvl_num))/2
+        initial_value = torch.logit(initial_value)
+        _opt_param =  torch.tensor(initial_value, dtype= torch.float, requires_grad=True, device= self.device)
 
-        # to tensor, device
-        CRF = torch.tensor(self.CRF, device=self.device).type(torch.float32)
-        PEF = torch.tensor(self.PEF, device=self.device).type(torch.float32)
-        hdr_imgs_t = torch.tensor(hdr_imgs, device=self.device)
-        first_illum_idx_final_transp_t = torch.tensor(real_img_illum_idx_final, device=self.device)
-        DG_efficiency_image_t = torch.tensor(DG_efficiency_image.reshape(self.cam_H* self.cam_W, -1), device= self.device) # H x W, wvls
+        # optimizer and schedular
+        optimizer = torch.optim.Adam([_opt_param], lr = lr)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=decay_step, gamma = gamma)
 
-        # pattern
+        # shape : 3, num new wvls
+        PEF_dev = torch.tensor(self.PEF, dtype = torch.float).to(self.device).T
+        CRF_dev = torch.tensor(self.CRF, dtype = torch.float).to(self.device)
+        DG_efficiency_first_dev = torch.tensor(DG_efficiency_image_first.reshape(self.cam_H*self.cam_W, -1), device= self.device)
+        DG_efficiency_zero_dev = torch.tensor(DG_efficiency_image_zero.reshape(self.cam_H*self.cam_W, -1), device= self.device)
+
+        # depth scalar
+        A =  self.arg.depth_scalar
+        depth_scalar = ((depth.astype(np.int32))**2) / A
+
+        depth_scalar_dev = torch.tensor(depth_scalar, dtype = torch.float).to(self.device).T
+        unreached_mask_tensor = torch.tensor(mask_idx.T, device=self.device).reshape(self.cam_H, self.cam_W, self.num, 1)
+
+        # white pattern into multi-spectral channels
         white_patt = torch.ones(size = (self.cam_H * self.cam_W, 3), device=self.device) * 0.8
-        white_patt_hyp = white_patt @ PEF.T
+        white_patt_hyp = white_patt @ PEF_dev
         white_patt_hyp = white_patt_hyp.squeeze()
 
-        CRF_sum = torch.tensor(CRF, device=self.device).sum(axis = 1)
+        GT_I_RGB_FIRST_tensor = torch.tensor(GT_I_RGB_FIRST, device=self.device)
+        GT_I_RGB_ZERO_tensor = torch.tensor(GT_I_RGB_ZERO, device=self.device)
 
-        total_hyp_ref = []
+        weight_first = self.arg.weight_first
+        weight_zero = self.arg.weight_zero
+        weight_unreach = self.arg.weight_unreach
+        weight_spectral = self.arg.weight_spectral
 
-        # summation of Image RGB channel
-        I_C = hdr_imgs_t[first_illum_idx_final_transp_t.long(), x, y, z].permute(1, 2, 0, 3).sum(axis = 3).reshape(-1, self.new_wvl_num, 1) # H x W, wvls, 1
-        A = (CRF_sum.unsqueeze(dim = 0) * white_patt_hyp * DG_efficiency_image_t).unsqueeze(dim =2) # HxW, wvls, 1
+        loss_vis = []
+        A_first = CRF_dev.unsqueeze(dim = 0) * white_patt_hyp.unsqueeze(dim = -1) * DG_efficiency_first_dev.unsqueeze(dim = -1)
+        A_zero = CRF_dev.unsqueeze(dim = 0) * white_patt_hyp.unsqueeze(dim = -1) * DG_efficiency_zero_dev.unsqueeze(dim = -1)
 
-        A_diag = torch.diag_embed((A*A).squeeze())
+        for i in range(epoch):
+            # initial loss
+            loss = 0
 
-        weight_D_DT = (self.weight_D*D.T@D).unsqueeze(dim = 0)
+            opt_param = torch.sigmoid(_opt_param)
 
-        csj_x = torch.linalg.solve(A_diag + weight_D_DT, A*I_C.reshape(self.cam_H*self.cam_W, self.new_wvl_num,1))
+            Simulated_I_RGB_first = opt_param.unsqueeze(dim = -1) * A_first / depth_scalar_dev.unsqueeze(dim = -1).unsqueeze(dim = -1) 
+            Simulated_I_RGB_zero = torch.sum(opt_param.unsqueeze(dim = -1) * A_zero / depth_scalar_dev.unsqueeze(dim = -1).unsqueeze(dim = -1), axis=1) 
+            
+            image_loss_first = torch.abs((Simulated_I_RGB_first.reshape(self.cam_H, self.cam_W, self.new_wvl_num, 3)) - GT_I_RGB_FIRST_tensor) * unreached_mask_tensor / (self.cam_H*self.cam_W)
+            loss += weight_first * image_loss_first.sum()
 
-        total_hyp_ref = csj_x.squeeze()
-        total_hyp_ref = total_hyp_ref.reshape(self.cam_H, self.cam_W, self.new_wvl_num)
+            unreached_loss = torch.abs((Simulated_I_RGB_zero.reshape(self.cam_H, self.cam_W, 1, 3)) - GT_I_RGB_ZERO_tensor) * (1 - unreached_mask_tensor) / (self.cam_H*self.cam_W)
+            image_loss_zero = torch.abs((Simulated_I_RGB_zero.reshape(self.cam_H, self.cam_W, 1, 3)) - GT_I_RGB_ZERO_tensor) / (self.cam_H*self.cam_W)
+            
+            loss += (weight_zero * image_loss_zero.sum() + weight_unreach*unreached_loss.sum())
+            loss +=  weight_unreach*unreached_loss.sum()
+            
+            hyp_dL2 = ((opt_param[:,:-1] - opt_param[:,1:])**2).sum()/(self.cam_H*self.cam_W)
 
-        total_hyp_ref = np.load('./total_hyp_ref_%s.npy'%self.date)
-        # np.save('./total_hyp_ref_%s.npy'%self.date, total_hyp_ref.detach().cpu().numpy())        
-        return total_hyp_ref
-    
+            loss += weight_spectral*(hyp_dL2)
+
+            loss = loss.sum()
+            loss_vis.append(loss.item())
+            
+            optimizer.zero_grad()
+            loss.backward()
+            losses.append(loss.item())
+            optimizer.step()
+            scheduler.step()
+                
+            if i % 100 == 0:
+                print(f"Epoch : {i}/{epoch}, Loss: {loss.item()}, LR: {optimizer.param_groups[0]['lr']}")
+        
+        return opt_param
+
 if __name__ == "__main__":
         
     argument = Argument()
     arg = argument.parse()
     
-    total_hyp_ref = HyperspectralReconstruction(arg).SVD()
-    
-    print('test') 
+    Reconstructed_hyperspectral_relfectance = HyperspectralReconstruction(arg).Optimization()

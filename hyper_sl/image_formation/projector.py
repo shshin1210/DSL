@@ -16,11 +16,11 @@ class Projector():
         self.new_wvls = arg.new_wvls
         
         # path 
-        self.response_function_dir = arg.response_function_dir
         self.dg_intensity_dir = arg.dg_intensity_dir
 
         self.proj_int, _, self.proj_rmat, self.proj_tvec = calibrated_params.bring_params(arg.calibration_param_path,"proj")
 
+    # intrinsic parameters of projector
     def intrinsic_proj_real(self):
         intrinsic_proj_real = torch.tensor(self.proj_int).type(torch.float32)
         

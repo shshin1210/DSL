@@ -13,44 +13,41 @@ class HDR():
 
         Arguments
             - invalid_intensity_ratio: height and width of camera
-            - max_intensity: linespace of minimum wavelengths to maximum wavelength in 10 nm interval(430nm to 660nm in 10nm intervals)
-            - n_illum: date of real captured scene
+            - n_illum: number of white scan line pattern
             
             Exposure
             - ex_time: exposure times (min and max exposure time)
-            - ex_min: the minimum exposure time
-            
+
             Intensity
             - intensity: intensity of projected patterns
-            - intensity_normalization_pts: point of black color checker
-            - p_size: size of black patch
-            
-            Directory
-            - real_data_dir: directory of real captured scene
+            - p_size: patch size of black patch
 
     """
     def __init__(self, arg):
         
         # args
         self.invalid_intensity_ratio = arg.invalid_intensity_ratio
-        self.max_intensity = 2**16
         self.n_illum = arg.illum_num
-        
-        # idx min max for exposure and intensity normalization
-        self.idx_minmax = -1
+        self.max_intensity = arg.max_intensity
         
         # exposure 
         self.ex_time = np.array([arg.exp_min, arg.exp_max])
-        self.ex_min = self.ex_time[self.idx_minmax]
-        self.exposure = self.ex_time / self.ex_min
+        self.exposure = self.ex_time / arg.exp_max
         
         # intensity
         self.intensity = np.array([arg.intensity_min, arg.intensity_max])
         self.intensity_normalization_pts = np.array(arg.intensity_normalization_pts)
         self.p_size = 10
         
-        # director
-        self.real_data_dir = os.path.join(arg.real_data_dir, '2023%s_real_data'%arg.real_data_date)
+        # directoy
+        self.path_to_intensity1 = arg.path_to_intensity1
+        self.path_to_intensity2 = arg.path_to_intensity2
+        
+        self.path_to_black_exp1 = arg.path_to_black_exp1
+        self.path_to_black_exp2 = arg.path_to_black_exp2
+        
+        self.path_to_ldr_exp1 = arg.path_to_ldr_exp1
+        self.path_to_ldr_exp2 = arg.path_to_ldr_exp2
         
         
     def safe_subtract(self, a,b):
@@ -64,17 +61,17 @@ class HDR():
     
     def cal_radiance_weight(self):
         """
-            calculate radiance weight for different intensity illuminations
+            calculate radiance weight for different intensity illuminations normalization using colorchecker's black patch
             
             returns : radiance_weight
         
         """
         # calculate radiance_weight
-        exp_img_path = os.path.join(self.real_data_dir, 'intensity_%d_white_crop/calibration00/capture_%04d.png')
-        exp_img_black_path = os.path.join(self.real_data_dir, 'step2_%sms_black_crop/calibration00/capture_%04d.png')
+        exp_img_path = np.array([self.path_to_intensity1, self.path_to_intensity2])
+        exp_img_black_path = np.array([self.path_to_black_exp1, self.path_to_black_exp2])
 
-        exp_images = np.array([cv2.imread(exp_img_path%(self.intensity[k]*100, 0), -1)[:,:,::-1] for k in range(len(self.intensity))])
-        exp_black_images = np.array([cv2.imread(exp_img_black_path%(self.ex_time[0], 0), -1)[:,:,::-1] for k in self.ex_time])
+        exp_images = np.array([cv2.imread(exp_img_path[k], -1)[:,:,::-1] for k in range(len(self.intensity))])
+        exp_black_images = np.array([cv2.imread(exp_img_black_path[k], -1)[:,:,::-1] for k in self.ex_time])
 
         # remove black image
         exp_images_bgrm = self.safe_subtract(exp_images, exp_black_images)
@@ -114,7 +111,7 @@ class HDR():
         intv = float(self.max_intensity) * self.invalid_intensity_ratio
 
         for i in range(self.max_intensity):
-            if i < intv: # 3 
+            if i < intv:
                 weight_trapezoid_bgrm[i] = 0  
             elif i < intv * 2:
                 weight_trapezoid_bgrm[i] = (i - intv) / intv
@@ -159,25 +156,18 @@ class HDR():
         hdr_imgs = []
 
         # erase black image and get hdr image
-        for i in range(self.n_illum):    
-            ldr_path = os.path.join(self.real_data_dir, 'step2_%sms_crop/calibration00/capture_%04d.png')
-            black_path = os.path.join(self.real_data_dir, 'step2_%sms_black_crop/calibration00/capture_%04d.png')
+        for i in range(self.n_illum):
+            ldr_path = np.array([os.listdir(self.path_to_ldr_exp1), os.listdir(self.path_to_ldr_exp2)])
+            black_path = np.array([os.listdir(self.path_to_black_exp1), os.listdir(self.path_to_black_exp2)])
 
-            ldr_images = np.array([cv2.imread(ldr_path%(k, i), -1)[:,:,::-1] for k in self.ex_time])
-            ldr_black_images = np.array([cv2.imread(black_path%(k, 0), -1)[:,:,::-1] for k in self.ex_time])
-            
-            # print(ldr_images.max(), ldr_images.min(), ldr_black_images.max(), ldr_black_images.min())    
-            
-            ldr_images_bgrm = np.clip(self.safe_subtract(ldr_images, ldr_black_images), 0., 2**16)
+            ldr_images = np.array([cv2.imread(ldr_path[k, i], -1)[:,:,::-1] for k in self.ex_time])
+            ldr_black_images = np.array([cv2.imread(black_path[k, 0], -1)[:,:,::-1] for k in self.ex_time])
+                        
+            ldr_images_bgrm = np.clip(self.safe_subtract(ldr_images, ldr_black_images), 0., self.max_intensity)
             ldr_images_bgrm = ldr_images_bgrm.astype(np.uint16)
-            
-            # print(final_ldr_images.max(), final_ldr_images.min())
-                
+                            
             hdr_img, invalid_map, weight_map = self.hdr(ldr_images, ldr_images_bgrm)
             hdr_imgs.append(hdr_img)
-
-            if i % 10 == 0:
-                print('%03d-th finished'%i)
 
         hdr_imgs = np.array(hdr_imgs)
         
