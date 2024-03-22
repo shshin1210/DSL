@@ -13,6 +13,30 @@ from hyper_sl.image_formation import camera
 from hyper_sl.data import hdr
 
 class HyperspectralReconstruction():
+    """
+        Reconstruct hyperspectral iamge
+
+        Arguments
+            - cam_H, cam_W: height and width of camera
+            - wvls: linespace of minimum wavelengths to maximum wavelength in 10 nm interval(430nm to 660nm in 10nm intervals)
+            - date: date of real captured scene
+            - calibrated date: date of calibration of correspondence model
+            - new_wvls: linespace of minimum wavelengths to maximum wavelength in 5nm interval (430nm to 660nm in 5nm intervals)
+            - depth_min, depth_max: the range of depth where objects are placed
+            - n_illum: number of illumination
+            
+            Calibrated parameters
+            - PEF: projector emission function
+            - CRF: camera response function
+            - DG_efficiency: diffraction grating efficiency 
+            
+            Directory
+            - real_data_dir: directory of real captured scene
+            - position_calibrated_data_dir: directory of calibrated correspondence model
+            
+            Real HDR data
+            - hdr_imgs: captured scene into HDR image
+    """
     def __init__(self, arg):
         
         # device
@@ -31,29 +55,30 @@ class HyperspectralReconstruction():
         self.depth_arange = np.arange(self.depth_min *1e+3, self.depth_max*1e+3 + 1, 1)
         
         self.n_illum = arg.illum_num
+                
+        # calibrated parameters
+        self.PEF = projector.Projector(arg, self.device).get_PEF()
+        self.CRF = camera.Camera(arg).get_CRF()
+        self.DG_efficiency = projector.Projector(arg, self.device).get_dg_intensity()
         
-        self.weight_D = arg.weight_D
-        
+        # directory
         self.real_data_dir = os.path.join(arg.real_data_dir, '2023%s_real_data'%self.date)
+        # directory of your first order correspondence model
         self.position_calibrated_data_dir = arg.position_calibrated_data_dir%self.calibrated_date
         
-        # CRF, PEF, DG
-        self.PEF = projector.Projector(arg, self.device).get_PEF()
-        self.DG_efficiency = projector.Projector(arg, self.device).get_dg_intensity()
-        self.CRF = camera.Camera(arg).get_CRF()
-        
         # hdr imgs
-        self.hdr_imgs = np.load('./hdr_step5.npy')
-        # self.hdr_imgs = hdr.HDR(arg).make_hdr()
-        # np.save('./hdr_step5.npy', self.hdr_imgs)
+        self.hdr_imgs = hdr.HDR(arg).make_hdr()
         
     def get_depth(self):
         """
             bring gray code depth reconstructed depth values
+            
+            Output
+                - depth: depth with unit mm
+                
         """
+        
         depth = np.load(os.path.join(self.real_data_dir, './2023%s_color_checker.npy'%self.date))[:,:,2]*1e+3
-        # depth = np.load(os.path.join(self.real_data_dir, './2023%s_depth.npy'%self.date))[:,:,2]*1e+3
-
         depth = np.round(depth).reshape(self.cam_H* self.cam_W).astype(np.int16)
         
         return depth
@@ -61,28 +86,34 @@ class HyperspectralReconstruction():
     def median_filter(self, hdr_imgs):
         """
             median filtered to hdr_imgs for more smooth ppg graph
+            
+            Input
+                - hdr_imgs: HDR image
+                
+            Output
+                - hdr_imgs_filtered: 
         """
         
         # median filter
-        # hdr_imgs_filtered_R = np.array([ndimage.median_filter(image[:,:,0], size=4) for image in hdr_imgs])
-        # hdr_imgs_filtered_G = np.array([ndimage.median_filter(image[:,:,1], size=4) for image in hdr_imgs])
-        # hdr_imgs_filtered_B = np.array([ndimage.median_filter(image[:,:,2], size=4) for image in hdr_imgs])
+        hdr_imgs_filtered_R = np.array([ndimage.median_filter(image[:,:,0], size=4) for image in hdr_imgs])
+        hdr_imgs_filtered_G = np.array([ndimage.median_filter(image[:,:,1], size=4) for image in hdr_imgs])
+        hdr_imgs_filtered_B = np.array([ndimage.median_filter(image[:,:,2], size=4) for image in hdr_imgs])
 
-        # hdr_imgs_filtered = np.stack((hdr_imgs_filtered_R, hdr_imgs_filtered_G, hdr_imgs_filtered_B), axis = 3)
-
-        # # save
-        # np.save('./hdr_imgs_filtered.npy', hdr_imgs_filtered)
-        hdr_imgs_filtered = np.load('./hdr_imgs_filtered.npy')
-        print("median filtered to hdr image")
+        hdr_imgs_filtered = np.stack((hdr_imgs_filtered_R, hdr_imgs_filtered_G, hdr_imgs_filtered_B), axis = 3)
 
         return hdr_imgs_filtered
 
     def peak_illumination_index(self, hdr_imgs):
         """
-            bring calibrated first order & zero order peak illumination index
+            bring calibrated first order & zero order peak correspondence model
             
+            Input
+                - hdr_imgs : Real captured HDR image for zero order correspondence model
+            
+            Output
+                - zero and first order correspondence model
         """
-        # zero order peak illumination index
+        # zero order peak correspondence model
         zero_illum_idx = np.zeros(shape=(self.cam_H * self.cam_W))
         hdr_imgs_reshape = hdr_imgs.reshape(self.n_illum, self.cam_H*self.cam_W, 3)
 
@@ -92,7 +123,7 @@ class HyperspectralReconstruction():
 
         zero_illum_idx = np.round(zero_illum_idx)
 
-        # first order peak illumination index
+        # first order peak correspondence model
         first_illum_idx = np.load(os.path.join(self.position_calibrated_data_dir,'first_illum_idx_final_transp.npy'))
         first_illum_idx = first_illum_idx.reshape(self.new_wvl_num, len(self.depth_arange), self.cam_H* self.cam_W).transpose(1,0,2)
         
@@ -101,8 +132,17 @@ class HyperspectralReconstruction():
     def get_mask(self, first_illum_idx):
         """
             mask out invalid red wavelengths
+            
+            Input
+                - first_illum_idx : first order correspondence model
+                
+            Output
+                - Mask for invalid wavelengths
+                - first order correspondence model
+            
         """
-        # NEED TO DEFINE MASK
+        
+        # Need to define mask
         Mask = np.ones_like(first_illum_idx)
         Mask[first_illum_idx >= 318] = 0
         Mask[first_illum_idx < 0 ] = 0
@@ -114,34 +154,42 @@ class HyperspectralReconstruction():
     
     def get_valid_illumination_idex(self, depth, first_illum_idx, Mask):
         """
-            get the valid illumination index from 301 depth calibrated illum idx
-            and mask?
-            
-            (valid for specific scene)
+            get the scene dependent correspondence model calibrated correspondence model
+
+            Input
+                - depth : depth of the scene
+                - first_illum_idx : first order correspondence model
+                - Mask : Mask for invalid/valid wavelengths
             
         """
-        print("get valid illumination index for real scene")
 
         real_img_illum_idx = np.zeros(shape=(self.new_wvl_num, self.cam_H*self.cam_W))
         mask_idx = np.zeros(shape=(self.new_wvl_num, self.cam_H*self.cam_W))
 
         for i in range(self.cam_H*self.cam_W):
-                if (depth[i] < 600) or (depth[i] > 900):
-                        depth[i] = 600
+                # filter out depth out of range
+                if (depth[i] < self.depth_min) or (depth[i] > self.depth_max):
+                        depth[i] = self.depth_min
                 depth_idx = np.where(self.depth_arange == depth[i])[0][0]
                 real_img_illum_idx[:,i]= first_illum_idx[depth_idx,:,i]
                 mask_idx[:,i] = Mask[depth_idx,:,i]
         
         real_img_illum_idx = real_img_illum_idx.astype(np.int16).reshape(self.new_wvl_num, self.cam_H, self.cam_W)
         real_img_illum_idx_final = np.stack((real_img_illum_idx, real_img_illum_idx, real_img_illum_idx), axis = 3)
-
-        # mask as output as well? ======================================================================================================================
         
         return real_img_illum_idx, real_img_illum_idx_final
 
     def dg_image_efficiency(self, zero_illum_idx, real_img_illum_idx):
         """
             diffraction grating efficiency for m = -1, 1, 0 orders for each pixels
+            
+            Input
+                - zero_illum_idx : zero order correspondence model
+                - real_img_illum_idx : scene dependent correspondence model
+                
+            Output
+                - DG_efficiency_image : scene dependent diffraction grating efficiency
+            
         """
         real_img_illum_idx_reshape = real_img_illum_idx.reshape(self.new_wvl_num, self.cam_H*self.cam_W)
         

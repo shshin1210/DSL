@@ -7,34 +7,39 @@ class Argument:
 
 		self.parser.add_argument('--device', type = str, default="cuda:0")
 
-		################## PATH
+		# PATH
 		self.parser.add_argument('--calibration_param_path', type = str, default="./calibration/calibration_propcam.xml")
 
-		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_5")
-		self.parser.add_argument('--dat_dir', type = str, default='./dataset/image_formation/dat2')
+		self.parser.add_argument('--illum_dir', type = str, default="./dataset/image_formation/illum/line_pattern_5") 
+		self.parser.add_argument('--dat_dir', type = str, default='./dataset/image_formation/dat') 
   
-		self.parser.add_argument('--dg_intensity_dir', type=str, default='./dataset/image_formation')
-		self.parser.add_argument('--response_function_dir', type = str, default="./dataset/image_formation") 
-		self.parser.add_argument('--response_function_opt_param_dir', type = str, default="./calibration/radiometric_cal/opt_params/opt_param_0915_detach_09500.npy")
-  
+		self.parser.add_argument('--dg_intensity_dir', type=str, default='./dataset/image_formation/DG.npy')
+		self.parser.add_argument('--pef_dir', type = str, default="./dataset/image_formation/PEF.npy") 
+		self.parser.add_argument('--crf_dir', type = str, default="./dataset/image_formation/CRF.npy") 
+
 		self.parser.add_argument('--real_data_dir', type=str, default="./dataset/data")
 		self.parser.add_argument('--position_calibrated_data_dir', type = str, default="./dataset/image_formation/2023%s/npy_data")
   
 		self.parser.add_argument('--real_data_date', type = str, default="1003")
 		self.parser.add_argument('--calibrated_date', type =str, default="1007")
   
-		self.parser.add_argument('--exp_min', type = int, default=160)
-		self.parser.add_argument('--exp_max', type = int, default=320)
   
-		self.parser.add_argument('--intensity_min', type=float, default=0.2)
-		self.parser.add_argument('--intensity_max', type=float, default=0.8)
+  
+		# for HDR imaging
+		self.parser.add_argument('--exp_min', help= 'minimum exposure', type = int, default=160)
+		self.parser.add_argument('--exp_max', help= 'maximum exposure', type = int, default=320)
+  
+		self.parser.add_argument('--intensity_min', help= 'minimum exposure', type=float, default=0.2)
+		self.parser.add_argument('--intensity_max', help= 'maximum exposure', type=float, default=0.8)
 
-		self.parser.add_argument('--intensity_normalization_pts', type=list, default=[128, 517])
+		self.parser.add_argument('--intensity_normalization_pts', help= 'maximum exposure', type=list, default=[128, 517])
 
 		self.parser.add_argument('--invalid_intensity_ratio', type = float, default= 0.01)
-  
-		self.parser.add_argument('--weight_D', type=float, default=0.5)
-  
+    
+    
+    
+    
+    
 		self.parser.add_argument('--wvl_min', type = float, default= 430e-9) # 430e-9
 		self.parser.add_argument('--wvl_max', type = float, default= 660e-9) # 660e-9
 		self.parser.add_argument('--wvl_num', type = int, default= 24) # 24 개 (for 10nm interval) 47개 (for 5nm interval)
@@ -67,7 +72,6 @@ class Argument:
 
 		# projector
 		self.parser.add_argument('--sensor_diag_proj',  type = float, default= 5.842) # 5.842mm
-		# self.parser.add_argument('--focal_length_proj', type = float, default= 7.6904) # 8mm
 		
 	def parse(self):
 		arg = self.parser.parse_args()

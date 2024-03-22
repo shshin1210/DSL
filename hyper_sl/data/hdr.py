@@ -1,15 +1,34 @@
 import numpy as np
 import cv2, os, sys
-
-sys.path.append('C:/Users/owner/Documents/GitHub/Scalable-Hyp-3D-Imaging')
-
 from hyper_sl.utils.ArgParser import Argument
 
 """
     Create HDR image (which creates PPG graph)
+    
 """
 
 class HDR():
+    """
+        Reconstruct hyperspectral iamge
+
+        Arguments
+            - invalid_intensity_ratio: height and width of camera
+            - max_intensity: linespace of minimum wavelengths to maximum wavelength in 10 nm interval(430nm to 660nm in 10nm intervals)
+            - n_illum: date of real captured scene
+            
+            Exposure
+            - ex_time: exposure times (min and max exposure time)
+            - ex_min: the minimum exposure time
+            
+            Intensity
+            - intensity: intensity of projected patterns
+            - intensity_normalization_pts: point of black color checker
+            - p_size: size of black patch
+            
+            Directory
+            - real_data_dir: directory of real captured scene
+
+    """
     def __init__(self, arg):
         
         # args
@@ -30,7 +49,7 @@ class HDR():
         self.intensity_normalization_pts = np.array(arg.intensity_normalization_pts)
         self.p_size = 10
         
-        # dir
+        # director
         self.real_data_dir = os.path.join(arg.real_data_dir, '2023%s_real_data'%arg.real_data_date)
         
         
