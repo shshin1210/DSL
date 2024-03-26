@@ -238,8 +238,6 @@
   </div>
 </section>
 
-<!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  --><!--  -->
-
 <section class="section">
   <div class="container is-max-desktop">
     <div class="columns is-centered">      
@@ -298,75 +296,61 @@
   </div>
 </section>
 
-
 <section class="section">
   <div class="container is-max-desktop">
-    <!--/ Abstract. -->
+    <div class="columns is-centered">      
+      <div class="column is-full-width">
+        <h2 class="title is-3">Depth Imaging with Dispersed Structured Light</h2>
+        
+        <p>
+          We model the dispersed structured light using pre-calibrated correspondence model $\phi(p,z,m,\lambda)$.
+          Correspondence model enables to find the corresponding projector pixel $q_{m,\lambda}$ for any visible 
+          wavelength $\lambda$, order $m$, camera pixel $p$ and depth $z$.
+        </p>
 
-    <!-- Method. -->
-    <!-- <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
-        <h2 class="title is-3">Method</h2>
-        <div class="content has-text-justified"> -->    
-      <div class="columns is-centered">      
-        <div class="column is-full-width">
-          <h2 class="title is-3">Hyperspectral Imaging with Scanline Illuminations.</h2>
-          <p>
-            We model the dispersed structured light using pre-calibrated correspondence model $\phi(p,z,m,\lambda)$.
-            Correspondence model enables to find the corresponding projector pixel $q_{m,\lambda}$ for any visible 
-            wavelength $\lambda$, order $m$, camera pixel $p$ and depth $z$.
-          </p>
+        <div class="column is-centered has-text-centered"><p>$q_{m,\lambda} = \phi(p,z,m,\lambda)$</p></div>
 
-          <div class="column is-centered has-text-centered"><p>$q_{m,\lambda} = \phi(p,z,m,\lambda)$</p></div>
+        <div class="columns is-centered">
+          <div class="column">
+            <div class="content">
+              <h3 class="title is-4">Scene under White Scanline Pattern</h3>
 
-          <img src="./static/images/image_formation.PNG"
-                 class="interpolation-image"
-                 alt="Network architecture."
-                 width="100%"/>
-          
-          <p>
-            By capturing a scene under white scanline pattern, we earn a RGB pixel intensity graph. We exploit the first-order diffractions for
-            accurate hyperspectral reconstruction and formulate a per-pixel optimization problem utilizing the given correspondence function.
-          </p>
+              <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+                <source src="./static/videos/color_checker.mp4"
+                        type="video/mp4">
+              </video>
+
+              <p>
+                We illuminate white scanline pattern for each scenes with two different exposure time and pattern insensity.
+                By creating a high dynamic range image we earn valid intensity for both zero and first-orders.
+              </p>
+            </div>
+          </div>
+
+          <div class="column">
+            <div class="content">
+              <h3 class="title is-4">Real-world</h3>
+              
+              <img src="./static/images/pig.PNG"
+                    class="interpolation-image"
+                    alt="Network architecture."
+                    width="100%"/>
+
+              <p>
+                We capture the scene under multiple white scanline patterns then we earn a RGB pixel intensity graph as shown in the left image.
+              </p>
+
+            </div>
+          </div>
         </div>
+        
+        <p>
+          We exploit the first-order diffractions for accurate hyperspectral reconstruction and formulate a per-pixel 
+          optimization problem utilizing the given correspondence function.
+        </p>
+
       </div>
-    <!--/ Method. -->
-  </div>
-</section>
-
-
-<section class="section">
-  <div class="container is-max-desktop">
-    <!--/ Abstract. -->
-
-    <!-- Method. -->
-    <!-- <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
-        <h2 class="title is-3">Method</h2>
-        <div class="content has-text-justified"> -->    
-      <div class="columns is-centered">      
-        <div class="column is-full-width">
-          <h2 class="title is-3">Depth Imaging with Dispersed Structured Light.</h2>
-          <p>
-            We propose modeling the dispersed structured light using pre-calibrated correspondence model $\phi(p,z,m,\lambda)$.
-            correspondence model enables the corresponding projector pixel $q_{m,\lambda}$ for any visible wavelength $\lambda$ and order $m$.
-          </p>
-
-          <div class="column is-centered has-text-centered"><p>$\mathbf{s}, \sigma = F_\Theta(x,y,z,\theta, \phi, \lambda)$</p></div>
-
-          <img src="./static/images/image_formation.PNG"
-                 class="interpolation-image"
-                 alt="Network architecture."
-                 width="100%"/>
-          
-          <p>
-            (a) Camera response function and projector emission function. (b) Schematic diagram of image formation. 
-            (c) Depth dependency of the correspondence function $\psi$ for $m=1$ and a camera pixel $p$. 
-            (d) Spatially-varying correspondence map for depth 700mm and wavelength 430nm for the first-order diffractions $m=-1,1$.
-          </p>
-        </div>
-      </div>
-    <!--/ Method. -->
+    </div>
   </div>
 </section>
 
