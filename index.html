@@ -242,15 +242,20 @@
   <div class="container is-max-desktop">
     <div class="columns is-centered">      
       <div class="column is-full-width">
-        <h2 class="title is-3">Hyperspectral Imaging with Scanline Illuminations</h2>
+        <h2 class="title is-3">Hyperspectral 3D Imaging</h2>
         
         <p>
-          We model the dispersed structured light using pre-calibrated correspondence model $\phi(p,z,m,\lambda)$.
+          $textbf{Hyperspectral Imaging.}$ We model the dispersed structured light using pre-calibrated correspondence model $\phi(p,z,m,\lambda)$.
           Correspondence model enables to find the corresponding projector pixel $q_{m,\lambda}$ for any visible 
           wavelength $\lambda$, order $m$, camera pixel $p$ and depth $z$.
         </p>
 
         <div class="column is-centered has-text-centered"><p>$q_{m,\lambda} = \phi(p,z,m,\lambda)$</p></div>
+        
+        <p>
+          $textbf{Depth Imaging.}$ We use binary-code structured light patterns for depth estimation. We validate the decoding process for DSL by comparing the
+          minimum captured intensity $I^{on}_{min}$ and the maximum captured intensity $I^{off}_{max}$.
+        </p>
 
         <div class="columns is-centered">
           <div class="column">
@@ -271,69 +276,16 @@
 
           <div class="column">
             <div class="content">
-              <h3 class="title is-4">Pixel Intensity Graph</h3>
+              <h3 class="title is-4">Dispersed Structured Light</h3>
               
-              <img src="./static/images/pig.PNG"
-                    class="interpolation-image"
-                    alt="Network architecture."
-                    width="100%"/>
-
-              <p>
-                We earn a RGB pixel intensity graph. Utilizing this, we exploit the first-order diffractions for accurate hyperspectral 
-                reconstruction and formulate a per-pixel optimization problem utilizing the given correspondence function.
-              </p>
-
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="container is-max-desktop">
-    <div class="columns is-centered">      
-      <div class="column is-full-width">
-        <h2 class="title is-3">Depth Imaging with Dispersed Structured Light</h2>
-        
-        <p>
-          We use binary-code structured light patterns for depth estimation. We validate the decoding process for DSL by comparing the
-          minimum captured intensity $I^{on}_{min}$ when a scene point is only illuminated by zero-order and the maximum captured intensity
-          $I^{off}_{max}$ where first-order light is only illuminated.
-        </p>
-
-        <div class="column is-centered has-text-centered"><p>$q_{m,\lambda} = \phi(p,z,m,\lambda)$</p></div>
-
-        <div class="columns is-centered">
-          <div class="column">
-            <div class="content">
-              <h3 class="title is-4">Scene under White Scanline Pattern</h3>
-
               <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
-                <source src="./static/videos/color_checker.mp4"
+                <source src="./static/videos/color_checker_bc.mp4"
                         type="video/mp4">
               </video>
 
               <p>
-                We illuminate white scanline pattern for each scenes with two different exposure time and pattern insensity.
-                By creating a high dynamic range image we earn valid intensity for both zero and first-orders.
-              </p>
-            </div>
-          </div>
-
-          <div class="column">
-            <div class="content">
-              <h3 class="title is-4">Real-world</h3>
-              
-              <img src="./static/images/pig.PNG"
-                    class="interpolation-image"
-                    alt="Network architecture."
-                    width="100%"/>
-
-              <p>
-                We capture the scene under multiple white scanline patterns then we earn a RGB pixel intensity graph as shown in the left image.
+                We illuminate dispersed binary-code structured light for depth estimation and can earn precise depth values using
+                decoding method.
               </p>
 
             </div>
@@ -341,14 +293,15 @@
         </div>
         
         <p>
-          We exploit the first-order diffractions for accurate hyperspectral reconstruction and formulate a per-pixel 
-          optimization problem utilizing the given correspondence function.
+          We earn a RGB pixel intensity graph. Utilizing this, we exploit the first-order diffractions for accurate hyperspectral 
+          reconstruction and formulate a per-pixel optimization problem utilizing the given correspondence function.
         </p>
 
       </div>
     </div>
   </div>
 </section>
+
 
 <section class="section">
   <div class="container is-max-desktop">
