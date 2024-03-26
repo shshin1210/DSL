@@ -230,8 +230,8 @@
                  width="100%"/>
 
           <p>
-            (a) & (b) Our prototype consists of an RGB projector equipped with a diffraction grating film, and an RGB camera. 
-            (c) An example projector pattern and its corresponding captured image, exhibiting clear first-order diffraction.
+            Our prototype consists of an RGB projector equipped with a diffraction grating film, and an RGB camera as shown in the left and middle image.
+            Right image shows an example projector pattern and its corresponding captured image, exhibiting clear first-order diffraction.
           </p>
         </div>
       </div>
@@ -252,7 +252,43 @@
           <h2 class="title is-3">Hyperspectral Imaging with Scanline Illuminations.</h2>
           <p>
             We propose modeling the dispersed structured light using pre-calibrated correspondence model $\phi(p,z,m,\lambda)$.
-            correspondence model enables the corresponding projector pixel $q_{m,\lambda}$ for any visible wavelength $\lambda$ and order $\m$.
+            correspondence model enables the corresponding projector pixel $q_{m,\lambda}$ for any visible wavelength $\lambda$ and order $m$.
+          </p>
+
+          <div class="column is-centered has-text-centered"><p>$q_{m,\lambda} = \phi(p,z,m,\lambda)$</p></div>
+
+          <img src="./static/images/image_formation.PNG"
+                 class="interpolation-image"
+                 alt="Network architecture."
+                 width="100%"/>
+          
+          <p>
+            (a) Camera response function and projector emission function. (b) Schematic diagram of image formation. 
+            (c) Depth dependency of the correspondence function $\psi$ for $m=1$ and a camera pixel $p$. 
+            (d) Spatially-varying correspondence map for depth 700mm and wavelength 430nm for the first-order diffractions $m=-1,1$.
+          </p>
+        </div>
+      </div>
+    <!--/ Method. -->
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!--/ Abstract. -->
+
+    <!-- Method. -->
+    <!-- <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Method</h2>
+        <div class="content has-text-justified"> -->    
+      <div class="columns is-centered">      
+        <div class="column is-full-width">
+          <h2 class="title is-3">Depth Imaging with Dispersed Structured Light.</h2>
+          <p>
+            We propose modeling the dispersed structured light using pre-calibrated correspondence model $\phi(p,z,m,\lambda)$.
+            correspondence model enables the corresponding projector pixel $q_{m,\lambda}$ for any visible wavelength $\lambda$ and order $m$.
           </p>
 
           <div class="column is-centered has-text-centered"><p>$\mathbf{s}, \sigma = F_\Theta(x,y,z,\theta, \phi, \lambda)$</p></div>
