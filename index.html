@@ -247,7 +247,9 @@
         <p>
           $\textbf{Hyperspectral Imaging.}$ We model the dispersed structured light using pre-calibrated correspondence model $\phi(p,z,m,\lambda)$.
           Correspondence model enables to find the corresponding projector pixel $q_{m,\lambda}$ for any visible 
-          wavelength $\lambda$, order $m$, camera pixel $p$ and depth $z$.
+          wavelength $\lambda$, order $m$, camera pixel $p$ and depth $z$. We earn a RGB pixel intensity graph. Utilizing this, 
+          we exploit the first-order diffractions for accurate hyperspectral reconstruction and formulate a per-pixel optimization problem utilizing 
+          the given correspondence function.
         </p>
 
         <div class="column is-centered has-text-centered"><p>$q_{m,\lambda} = \phi(p,z,m,\lambda)$</p></div>
@@ -292,11 +294,6 @@
           </div>
         </div>
         
-        <p>
-          We earn a RGB pixel intensity graph. Utilizing this, we exploit the first-order diffractions for accurate hyperspectral 
-          reconstruction and formulate a per-pixel optimization problem utilizing the given correspondence function.
-        </p>
-
       </div>
     </div>
   </div>
