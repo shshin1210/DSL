@@ -242,7 +242,7 @@
   <div class="container is-max-desktop">
     <div class="columns is-centered">      
       <div class="column is-full-width">
-        <h2 class="title is-3">Hyperspectral 3D Imaging with Dispersed Structured Light</h2>
+        <h2 class="title is-3">Hyperspectral 3D Imaging using Dispersed Structured Light</h2>
         
         <p>
           $\textbf{Hyperspectral Imaging.}$ We model the dispersed structured light using pre-calibrated correspondence model $\phi(p,z,m,\lambda)$.
@@ -307,7 +307,7 @@
   <div class="container is-max-desktop">
     <div class="columns is-centered">      
       <div class="column is-full-width">
-        <h2 class="title is-3">Multi-view Hyperspectral Polarimetric Dataset</h2>
+        <h2 class="title is-3">Results</h2>
 
         <!-- <img src="./static/images/dataset_thumbnail.PNG"
               class="interpolation-image"
@@ -317,47 +317,38 @@
         <div class="columns is-centered">
           <div class="column">
             <div class="content">
-              <h3 class="title is-4">Synthetic</h3>
+              <h3 class="title is-4">White Scanline Pattern</h3>
 
               <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
-                <source src="./static/videos/dataset_synthetic.mp4"
+                <source src="./static/videos/flower_picture.mp4"
                         type="video/mp4">
               </video>
-
-              <img src="./static/images/dataset_synthetic.PNG"
-                    class="interpolation-image"
-                    alt="Network architecture."
-                    width="100%"/>
-
-              <p>
-                For synthetic scenes, we apply polarimetric BRDF to mesh by fitting a fourth order-polynomial function at each pixel along the spectrum 
-                since only five spectral channels are available in existing dataset [Baek et al. 2020] and render images using spectro-polarimetric renderer Mitsuba 3.
-              </p>
             </div>
           </div>
 
           <div class="column">
             <div class="content">
-              <h3 class="title is-4">Real-world</h3>
+              <h3 class="title is-4">Dispersed Structured Light</h3>
 
               <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
-                <source src="./static/videos/dataset_real.mp4"
+                <source src="./static/videos/flower_picture_bc.mp4"
                         type="video/mp4">
               </video>
-              
-              <img src="./static/images/dataset_real.PNG"
-                    class="interpolation-image"
-                    alt="Network architecture."
-                    width="100%"/>
 
-              <p>
-                For real-world scenes, we capture a scene for 21 wavelengths and 4 quarter-wave plate angles and reconstruct 
-                per-pixel Stokes vector by solving a least-squares problem with spatially-varying spectro-polarimetric calibration using these captured images.
-              </p>
             </div>
           </div>
         </div>
 
+        
+        <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+          <source src="./static/videos/flower_result.mp4"
+                  type="video/mp4">
+        </video>
+
+        <p>
+          For real-world scenes, we capture a scene for 21 wavelengths and 4 quarter-wave plate angles and reconstruct 
+          per-pixel Stokes vector by solving a least-squares problem with spatially-varying spectro-polarimetric calibration using these captured images.
+        </p>
       </div>
     </div>
   </div>
