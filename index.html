@@ -13,7 +13,7 @@
         content="Dispersed Structured Light Hyperspectral 3D Imaging reconstructs high quality depth and hyperspectral information">
   <meta name="keywords" content="Dispersed Structured Light, Hyperspectral 3D Imaging, DSL">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Neural Spectro-polarimetric Fields</title>
+  <title>Dispersed Structured Light, Hyperspectral 3D Imaging</title>
 
   <!-- Global site tag (gtag.js) - Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
@@ -57,25 +57,24 @@
           <h1 class="title is-1 publication-title">Dispersed Structured Light for Hyperspectral 3D Imaging</h1>
           <div class="is-size-5 publication-authors">
             <span class="author-block">
-              <a href="https://youngchan-k.github.io">Youngchan Kim</a>,
+              <a href="https://youngchan-k.github.io">Suhyun Shin</a><sup>1</sup>,
             </span>
             <span class="author-block">
-              <a href="https://jinwonjoon.github.io/">Wonjoon Jin</a>,</span>
+              <a href="https://jinwonjoon.github.io/">Seokjun Choi</a><sup>1</sup>,</span>
             <span class="author-block">
-              <a href="https://www.scho.pe.kr/">Sunghyun Cho</a>,
+              <a href="https://www.cs.princeton.edu/~fheide/">Felix Heide</a><sup>2</sup>,
             </span>
             <span class="author-block">
-              <a href="https://www.shbaek.com/">Seung-Hwan Baek</a>
+              <a href="https://www.shbaek.com/">Seung-Hwan Baek</a><sup>1</sup>
             </span>
           </div>
 
           <div class="is-size-5 publication-authors">
-            <span class="author-block">POSTECH</span>
-            <!-- <span class="author-block"><sup>2</sup>Google Research</span> -->
+            <span class="author-block"><sup>1</sup>POSTECH,</span>
+            <span class="author-block"><sup>2</sup>Princeton University</span>
           </div>
-
           <div class="is-size-5 publication-authors">
-            <span class="author-block">SIGGRAPH ASIA 2023</span>
+            <span class="author-block">CVPR 2024</span>
             <!-- <span class="author-block"><sup>2</sup>Google Research</span> -->
           </div>
 
@@ -83,7 +82,7 @@
             <div class="publication-links">
               <!-- PDF Link. -->
               <span class="link-block">
-                <a href="https://arxiv.org/abs/2306.12562"
+                <a href="https://arxiv.org/pdf/2311.18287.pdf"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="fas fa-file-pdf"></i>
@@ -105,7 +104,7 @@
               
               <!-- Supple Link. -->
               <span class="link-block">
-                <a href="https://youngchan-k.github.io/assets/paper/SIGA2023/NeSpoF_supple.pdf"
+                <a href="https://arxiv.org/pdf/2311.18287.pdf"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="fas fa-file-pdf"></i>
@@ -137,7 +136,7 @@
 
               <!-- Code Link. -->
               <span class="link-block">
-                <a href="https://github.com/youngchan-k/NeSpoF"
+                <a href="https://github.com/shshin1210/DSL"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="fab fa-github"></i>
@@ -176,11 +175,11 @@
            alt="Teaser."/>
       <!-- <h2 class="subtitle has-text-centered"> -->
       <h2 class="subtitle is-full-width">
-        We present neural spectro-polarimetric fields that allow for the rendering of a scene from novel views, not limited
-        to the synthesis of (a) RGB radiance images. We can render (b) hyperspectral Stokes vectors for each individual light ray,
-        thus providing a comprehensive description of its spectro-polarization property. Also, (c) it can inherently reduce noise in
-        low-signal-to-noise ratio spectro-polarimetric measurements, as shown in the degree of polarization (DoP). (d)We further
-        show the analysis of spectro-polarimetric information for the CD that is otherwise invisible to the human eye.
+        We introduce dispersed structured light, a low-cost high-quality hyperspectral 3D imaging method. 
+        By placing a diffraction grating film on a conventional camera-projector setup, we disperse structured-light patterns. 
+        Analyzing the images captured under the dispersed structured light enables accurate hyperspectral 3D reconstruction. 
+        (a) Capture configuration, (b) estimated hyperspectral image in sRGB, (c) comparison with spectroradiometer measurements, 
+        (d) estimated depth map, (e) estimated hyperspectral image.
       </h2>
     </div>
   </div>
@@ -198,27 +197,46 @@
       <div class="column is-full-width">
         <h2 class="title is-3">Abstract</h2>
           <p>
-            Modeling the spatial radiance distribution of light rays in a scene has been extensively explored for applications,
-            including view synthesis. Spectrum and polarization, the wave properties of light, are often neglected due to their
-            integration into three RGB spectral bands and their non-perceptibility to human vision.
-            However, these properties are known to encompass substantial material and geometric information about a scene.
-            Here, we propose to model spectro-polarimetric fields, the spatial Stokes-vector distribution of any light ray at
-            an arbitrary wavelength. 
-          </p>
-          <p>
-            We present Neural Spectro-polarimetric Fields (NeSpoF), a neural representation that models
-            the physically-valid Stokes vector at given continuous variables of position, direction, and wavelength. NeSpoF manages
-            inherently noisy raw measurements, showcases memory efficiency, and preserves physically vital signals - factors that
-            are crucial for representing the high-dimensional signal of a spectro-polarimetric field.
-            To validate NeSpoF, we introduce the first multi-view hyperspectral-polarimetric image dataset, comprised of both synthetic
-            and real-world scenes. These were captured using our compact hyperspectral-polarimetric imaging system, which has been calibrated
-            for robustness against system imperfections. We demonstrate the capabilities of NeSpoF on diverse scenes.
+            Hyperspectral 3D imaging aims to acquire both depth and spectral information of a scene. However, existing methods are 
+            either prohibitively expensive and bulky or compromise on spectral and depth accuracy. In this paper, we present Dispersed 
+            Structured Light (DSL), a cost-effective and compact method for accurate hyperspectral 3D imaging. DSL modifies a traditional
+            projector-camera system by placing a sub-millimeter thick diffraction grating film front of the projector. This configuration
+            enables dispersing structured light based on light wavelength. To utilize the dispersed structured light, we devise a model 
+            for dispersive projection image formation and a per-pixel hyperspectral 3D reconstruction method. We validate DSL by 
+            instantiating a compact experimental prototype. DSL achieves spectral accuracy of 18.8nm full-width half-maximum (FWHM) 
+            and depth error of 1mm, outperforming prior work on practical hyperspectral 3D imaging. DSL promises accurate and practical 
+            hyperspectral 3D imaging for diverse application domains, including computer vision and graphics, cultural heritage, geology, and biology.
           </p>
       </div>
     </div>
   </div>
 </section>
 
+<section class="section">
+  <div class="container is-max-desktop">
+      <div class="columns is-centered">      
+        <div class="column is-full-width">
+          <h2 class="title is-3">DSL Imaging System</h2>
+          <p>
+            We devise the proposed DSL imaging system with the goals of compactness and affordability. We combine a conventional 
+            trichromatic camera with a trichromatic projector and a diffraction-grating film mounted in front. This configuration 
+            makes light from the projector undergo dispersion, and, as such, patterns emitted from the projector are spatially dispersed 
+            depending on wavelength. 
+          </p>
+          
+          <img src="./static/images/imaging_system.PNG"
+                 class="interpolation-image"
+                 alt="Network architecture."
+                 width="100%"/>
+
+          <p>
+            (a) & (b) Our prototype consists of an RGB projector equipped with a diffraction grating film, and an RGB camera. 
+            (c) An example projector pattern and its corresponding captured image, exhibiting clear first-order diffraction.
+          </p>
+        </div>
+      </div>
+  </div>
+</section>
 
 <section class="section">
   <div class="container is-max-desktop">
@@ -231,58 +249,29 @@
         <div class="content has-text-justified"> -->    
       <div class="columns is-centered">      
         <div class="column is-full-width">
-          <h2 class="title is-3">Neural Spectro-polarimetric Field (NeSpoF)</h2>
+          <h2 class="title is-3">Hyperspectral Imaging with Scanline Illuminations.</h2>
           <p>
-            We propose modeling the spectro-polarimetric field $f(\cdot)$ using NeSpoF, 
-            a neural representation that describes the Stokes vector $\mathbf{s}$ and volumetric density $\sigma$ 
-            for the input variables of position, direction, and wavelength.
+            We propose modeling the dispersed structured light using pre-calibrated correspondence model $\phi(p,z,m,\lambda)$.
+            correspondence model enables the corresponding projector pixel $q_{m,\lambda}$ for any visible wavelength $\lambda$ and order $\m$.
           </p>
 
           <div class="column is-centered has-text-centered"><p>$\mathbf{s}, \sigma = F_\Theta(x,y,z,\theta, \phi, \lambda)$</p></div>
 
-          <img src="./static/images/network_architecture.PNG"
+          <img src="./static/images/image_formation.PNG"
                  class="interpolation-image"
                  alt="Network architecture."
                  width="100%"/>
           
           <p>
-            We design NeSpoF with a positional MLP, $F_\Theta^p$, and a spectro-directional MLP, $F_\Theta^d$ and turn to model
-            a physically-valid Stokes vector ($s_0^2 \geq s_1^2+s_2^2+s_3^2$) by using intermediate polarimetric properties 
-            as outputs ($s_0$, $\rho$, $\chi$, and $\psi$).
-            Additionally, we perform coordinate conversions of Stokes vectors since the polarization state of a light ray can be 
-            described differently with Stokes vectors at different coordinates.
+            (a) Camera response function and projector emission function. (b) Schematic diagram of image formation. 
+            (c) Depth dependency of the correspondence function $\psi$ for $m=1$ and a camera pixel $p$. 
+            (d) Spatially-varying correspondence map for depth 700mm and wavelength 430nm for the first-order diffractions $m=-1,1$.
           </p>
         </div>
       </div>
     <!--/ Method. -->
   </div>
 </section>
-
-
-<section class="section">
-  <div class="container is-max-desktop">
-      <div class="columns is-centered">      
-        <div class="column is-full-width">
-          <h2 class="title is-3">Portable Hyperspectral-polarimetric Imager</h2>
-          <p>
-            We built a portable hyperspectral polarimetric imaging system, consisting of a monochromatic camera, LCTF that controls the transmitted wavelength, 
-            and a quarter wave plate mounted on a motorized rotation stage.
-          </p>
-          
-          <img src="./static/images/imaging_system.PNG"
-                 class="interpolation-image"
-                 alt="Network architecture."
-                 width="100%"/>
-
-          <!-- <p>
-            We capture a scene for 21 wavelengths and 4 quarter-wave plate angles and reconstruct 
-            per-pixel Stokes vector by solving a least-squares problem with spatially-varying spectro-polarimetric calibration using these captured images.
-          </p> -->
-        </div>
-      </div>
-  </div>
-</section>
-
 
 <section class="section">
   <div class="container is-max-desktop">
