@@ -272,36 +272,51 @@
 </section>
 
 <!-- Scene 2 -->
-<!-- Full-width section with a light gray background -->
-<section class="hero is-light is-small" style="background-color: #f5f5f5; width: 100%;">
-  <div class="hero-body" style="padding: 0; margin: 0; width: 100%;">
-    <!-- Ensure the inner content does not have fixed-width constraints -->
-    <div class="columns is-centered" style="margin: 0; width: 100%;">
-      <!-- Full-width with centered content -->
-      <div class="column is-half">
-        <div class="content">
-          <h3 class="title is-4">White Scanline Pattern</h3>
-          <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
-            <source src="./static/videos/tree.mp4" type="video/mp4">
-          </video>
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">      
+      <div class="column is-full-width">
+        <h2 class="title is-3">Results</h2>
+
+        <p style="margin-bottom: 20px;">
+          We show reconstructed hyperspectral 3d results for real scene. We validate our reconstructed hyperspectral relfectance with
+          spectroradiometer measurements.
+        </p>
+
+        <!-- scene 1 -->
+        <div class="columns is-centered">
+          <div class="column">
+            <div class="content">
+              <h3 class="title is-4">White Scanline Pattern</h3>
+
+              <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+                <source src="./static/videos/tree.mp4"
+                        type="video/mp4">
+              </video>
+            </div>
+          </div>
+
+          <div class="column">
+            <div class="content">
+              <h3 class="title is-4">Dispersed Structured Light</h3>
+
+              <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+                <source src="./static/videos/tree_bc.mp4"
+                        type="video/mp4">
+              </video>
+
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="column is-half">
-        <div class="content">
-          <h3 class="title is-4">Dispersed Structured Light</h3>
-          <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
-              <source src="./static/videos/tree_bc.mp4" type="video/mp4">
-          </video>
-        </div>
-      </div>
-    </div>
-    <!-- Additional full-width content -->
-    <h3 class="title is-4">Reconstructed Results</h3>
-    <video id="dollyzoom" autoplay controls muted loop playsinline width="100%">
-      <source src="./static/videos/tree_final.mp4" type="video/mp4">
-    </video>
-  </div>
+
+        <h3 class="title is-4">Reconstructed Results</h3>
+
+        <video id="dollyzoom" autoplay controls muted loop playsinline width="100%">
+          <source src="./static/videos/tree_final.mp4"
+                  type="video/mp4">
+        </video>
 </section>
+
 
 
 
