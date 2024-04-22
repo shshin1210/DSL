@@ -176,46 +176,49 @@
   </div>
 </section>
 
+
 <section class="section">
   <div class="container is-max-desktop">
     <div class="columns is-centered">      
-      <div class="column is-full-width">
+      <!-- Full-width column with centered content -->
+      <div class="column is-full has-text-centered">
+        <!-- Centered title -->
         <h2 class="title is-3">Hyperspectral 3D Imaging using Dispersed Structured Light</h2>
         
-        <p style="margin-bottom: 10px;">
-        </p>
+        <!-- Padding/Margin for separation -->
+        <p style="margin-bottom: 10px;"></p>
 
-        <div class="columns is-centered">
+        <!-- Centered content with inner `columns` also centered -->
+        <div class="columns is-centered" style="justify-content: center;">
           <div class="column">
             <div class="content">
-              <h3 class="title is-4">White Scanline Pattern</h3>
-
+              <!-- Centered heading -->
+              <h3 class="title is-4 has-text-centered">White Scanline Pattern</h3>
+              <!-- Video centered with text alignment -->
               <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
-                <source src="./static/videos/color_checker_sl.mp4"
-                        type="video/mp4">
+                <source src="./static/videos/color_checker_sl.mp4" type="video/mp4">
               </video>
 
+              <!-- Centered paragraph -->
               <p>
-                The scene is illuminated by white scanline patterns under two different exposure time and pattern insensity.
-                We create a high dynamic range image to earn valid intensity values for both zero and first-orders.
+                The scene is illuminated by white scanline patterns under two different exposure times and pattern intensity. We create a high dynamic range image to earn valid intensity values for both zero and first-orders.
               </p>
             </div>
           </div>
 
           <div class="column">
             <div class="content">
-              <h3 class="title is-4">Dispersed Structured Light</h3>
-              
+              <!-- Centered heading -->
+              <h3 class="title is-4 has-text-centered">Dispersed Structured Light</h3>
+              <!-- Centered video -->
               <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
-                <source src="./static/videos/color_checker_bc.mp4"
-                        type="video/mp4">
+                <source src="./static/videos/color_checker_bc.mp4" type="video/mp4">
               </video>
 
+              <!-- Centered paragraph -->
               <p>
-                We illuminate dispersed binary-code structured light for depth estimation and can earn precise depth values using
-                DSL decoding method.
+                We illuminate dispersed binary-code structured light for depth estimation and can earn precise depth values using DSL decoding method.
               </p>
-
             </div>
           </div>
         </div>
@@ -224,6 +227,7 @@
     </div>
   </div>
 </section>
+
 
 <!-- scene 1 -->
 <section class="section">
