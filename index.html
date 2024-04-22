@@ -307,41 +307,38 @@
 
 
         <!-- Scene 2 -->
-      <section class="hero is-light is-small">
-        <div class="hero-body">
-            <div class="columns is-centered">
-              <div class="column">
-                <div class="content">
-                  <h3 class="title is-4">White Scanline Pattern</h3>
-
-                  <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
-                    <source src="./static/videos/tree.mp4"
-                            type="video/mp4">
-                  </video>
+        <section class="hero is-light is-small" style="background-color: #f5f5f5;">
+          <div class="hero-body" style="padding: 0;">
+            <!-- Full-width structure, ensuring background covers entire width -->
+            <div style="margin: 0;">
+              <!-- Centered columns for content alignment -->
+              <div class="columns is-centered" style="margin: 0;">
+                <div class="column">
+                  <div class="content">
+                    <h3 class="title is-4">White Scanline Pattern</h3>
+                    <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+                      <source src="./static/videos/tree.mp4" type="video/mp4">
+                    </video>
+                  </div>
+                </div>
+                <div class="column">
+                  <div class="content">
+                    <h3 class="title is-4">Dispersed Structured Light</h3>
+                    <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+                      <source src="./static/videos/tree_bc.mp4" type="video/mp4">
+                    </video>
+                  </div>
                 </div>
               </div>
-
-              <div class="column">
-                <div class="content">
-                  <h3 class="title is-4">Dispersed Structured Light</h3>
-
-                  <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
-                    <source src="./static/videos/tree_bc.mp4"
-                            type="video/mp4">
-                  </video>
-
-                </div>
-              </div>
+              <!-- Non-centered content can use full-width -->
+              <h3 class="title is-4">Reconstructed Results</h3>
+              <video id="dollyzoom" autoplay controls muted loop playsinline width="100%">
+                <source src="./static/videos/tree_final.mp4" type="video/mp4">
+              </video>
             </div>
-
-            <h3 class="title is-4">Reconstructed Results</h3>
-
-            <video id="dollyzoom" autoplay controls muted loop playsinline width="100%">
-              <source src="./static/videos/tree_final.mp4"
-                      type="video/mp4">
-            </video>
-        </div>
-      </section>
+          </div>
+        </section>
+        
 
         <!-- Scene 3 -->
 
