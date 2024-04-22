@@ -271,22 +271,21 @@
         </video>
 </section>
 
-<section class="section" style="background-color: #f5f5f5; padding: 0; margin: 0;">
-  <!-- Ensure the background spans the full width -->
-  <div class="container is-max-desktop" style="padding: 0; margin: 0;">
-    <!-- Remove `is-centered` to prevent width restriction -->
-    <div class="columns" style="margin: 0; padding: 0;">
-      <!-- Set the column to full width and ensure centered content -->
-      <div class="column is-full">
+<!-- scene 2 -->
+<section class="section" style="background-color: #f5f5f5; width: 100%;">
+  <div class="container is-max-desktop" style="padding: 0;">
+    <!-- Flexbox for centering content -->
+    <div class="columns is-centered" style="margin: 0;">
+      <!-- Ensure full width, with content centered -->
+      <div class="column is-half has-text-centered">
         <h2 class="title is-3">Results</h2>
-        <p style="margin-bottom: 20px;">We show reconstructed hyperspectral 3D results for a real scene. We validate our reconstructed hyperspectral reflectance with spectroradiometer measurements.</p>
+        <p style="margin-bottom: 20px;">We show reconstructed hyperspectral 3D results for real scenes. We validate our reconstructed hyperspectral reflectance with spectroradiometer measurements.</p>
 
-        <div class="columns is-centered" style="margin: 0; padding: 0;">
-          <!-- No fixed-width classes to allow the background to fill the section -->
+        <div class="columns is-centered" style="margin: 0;">
           <div class="column is-half">
             <div class="content">
               <h3 class="title is-4">White Scanline Pattern</h3>
-              <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+              <video autoplay controls muted loop playsinline height="100%">
                 <source src="./static/videos/tree.mp4" type="video/mp4">
               </video>
             </div>
@@ -294,7 +293,7 @@
           <div class="column is-half">
             <div class="content">
               <h3 class="title is-4">Dispersed Structured Light</h3>
-              <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+              <video autoplay controls muted loop playsinline height="100%">
                 <source src="./static/videos/tree_bc.mp4" type="video/mp4">
               </video>
             </div>
@@ -302,7 +301,7 @@
         </div>
 
         <h3 class="title is-4">Reconstructed Results</h3>
-        <video id="dollyzoom" autoplay controls muted loop playsinline width="100%">
+        <video autoplay controls muted loop playsinline width="100%">
           <source src="./static/videos/tree_final.mp4" type="video/mp4">
         </video>
       </div>
