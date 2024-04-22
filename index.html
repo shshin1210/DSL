@@ -152,27 +152,30 @@
 
 <section class="section">
   <div class="container is-max-desktop">
-      <div class="columns is-centered">      
-        <div class="column is-full-width">
-          <h2 class="title is-3">Imaging System</h2>
-          <p>
-            We devise the proposed imaging system with the goals of compactness and affordability. We combine a conventional 
-            trichromatic camera with a trichromatic projector and a diffraction-grating film mounted in front. This configuration 
-            makes light from the projector undergo dispersion, and, as such, patterns emitted from the projector are spatially dispersed 
-            depending on wavelength. 
-          </p>
-          
-          <img src="./static/images/imaging_system.PNG"
-                 class="interpolation-image"
-                 alt="Network architecture."
-                 width="100%"/>
+    <div class="columns is-centered">      
+      <!-- Ensure the inner column is full width with centered alignment -->
+      <div class="column is-full has-text-centered">
+        <!-- Centered title -->
+        <h2 class="title is-3">Imaging System</h2>
+        <!-- Centered paragraph -->
+        <p>
+          We devise the proposed imaging system with the goals of compactness and affordability. We combine a conventional trichromatic camera with a trichromatic projector and a diffraction-grating film mounted in front. This configuration makes light from the projector undergo dispersion, and, as such, patterns emitted from the projector are spatially dispersed depending on wavelength.
+        </p>
+        
+        <!-- Centered image -->
+        <img 
+          src="./static/images/imaging_system.PNG"
+          class="interpolation-image"
+          alt="Network architecture."
+          width="100%"
+        />
 
-          <p>
-            Our prototype consists of an RGB projector equipped with a diffraction grating film, and an RGB camera as shown in the left and middle image.
-            Right image shows an example projector pattern and its corresponding captured image, exhibiting clear first-order diffraction.
-          </p>
-        </div>
+        <!-- Centered paragraph -->
+        <p>
+          Our prototype consists of an RGB projector equipped with a diffraction grating film, and an RGB camera, as shown in the left and middle images. The right image shows an example projector pattern and its corresponding captured image, exhibiting clear first-order diffraction.
+        </p>
       </div>
+    </div>
   </div>
 </section>
 
@@ -201,7 +204,7 @@
 
               <!-- Centered paragraph -->
               <p>
-                The scene is illuminated by white scanline patterns under two different exposure times and pattern intensity. We create a high dynamic range image to earn valid intensity values for both zero and first-orders.
+                We illuminate white scan line pattern for hyperspectral imaging.
               </p>
             </div>
           </div>
@@ -217,7 +220,7 @@
 
               <!-- Centered paragraph -->
               <p>
-                We illuminate dispersed binary-code structured light for depth estimation and can earn precise depth values using DSL decoding method.
+                We illuminate dispersed binary-code structured light for depth imaging.
               </p>
             </div>
           </div>
