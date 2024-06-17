@@ -37,7 +37,7 @@ We provide an expample calibration parameters in our [DSL Calibration Parameters
 ## Datasets
 You need to prepare three types of datasets for hyperspectral reconstruction using our DSL method.
 
-Here are some steps to capture a single scene. Please refer to [DSL Supplementary](https://arxiv.org/pdf/2311.18287) for more details.
+Here are some steps to capture a single scene. Please refer to [DSL Supplementary](https://arxiv.org/pdf/2311.18287) for more details and we also provide example of captured datasets in our [DSL Calibration Parameters](https://drive.google.com/drive/folders/18HVXZuSfRsm4V31oBXS9DjdMzSNVSjcO?usp=sharing) named tedey_bear_datasets.zip.
 
 1. Scene's depth map
 
