@@ -9,6 +9,12 @@ cd DSL
 pip install -r requirements.txt
 ```
 
+## Image system configuration
+![image_system](https://github.com/shshin1210/DSL/assets/80568500/d0dc7d9e-d12b-4901-bc9c-91551f896bf1)
+Prepare the DSL imaging system configuration as the figure above.
+You will need conventional RGB projector, and a RGB camera with a diffraction grating infront of the projector.
+Calibration between camera-projector and camera-diffraction grating must be done in advance.
+
 ## Datasets
 You need to prepare three types of datasets for hyperspectral reconstruction. Refer to [DSL Supplementary](https://arxiv.org/pdf/2311.18287) for more details.
 
