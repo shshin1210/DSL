@@ -10,7 +10,7 @@ pip install -r requirements.txt
 ```
 
 ## Datasets
-You need to prepare three types of datasets for hyperspectral reconstruction. Refer to [DSL Supplementary](supplementary url) for more details.
+You need to prepare three types of datasets for hyperspectral reconstruction. Refer to [DSL Supplementary]([supplementary url](https://arxiv.org/pdf/2311.18287)) for more details.
 
 1. Scene's depth map
 
