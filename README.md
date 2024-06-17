@@ -14,9 +14,9 @@ pip install -r requirements.txt
 
 Prepare the DSL imaging system configuration as the figure above.
 
-You will need conventional RGB projector, and a RGB camera with a diffraction grating infront of the projector.
+- You will need conventional RGB projector, and a RGB camera with a diffraction grating infront of the projector.
 
-Calibration between camera-projector and camera-diffraction grating must be done in advance.
+- Calibration between camera-projector and camera-diffraction grating must be done in advance.
 
 
 ## Calibration datasets
@@ -43,27 +43,27 @@ Here are some steps to capture a single scene. Please refer to [DSL Supplementar
 
    https://github.com/shshin1210/DSL/assets/80568500/52a04828-5dad-4c4d-9d49-382ad86a81db
 
-   Capture a scene under binary code pattern with a specific exposure time where zoer-order light is valid and first-order dispersion intensity is invalid
+   - Capture a scene under binary code pattern with a specific exposure time where zoer-order light is valid and first-order dispersion intensity is invalid
 
-   By utilizing conventional structured light decoding method, you should be able to prepare depth reconstructed result. Save the depth result as npy file.
+   - By utilizing conventional structured light decoding method, you should be able to prepare depth reconstructed result. Save the depth result as npy file.
       
 2. Scene under white scan line pattern
 
    https://github.com/shshin1210/DSL/assets/80568500/c4c52964-c5c3-4915-a6ee-606ef3420bf6
    
-   Capture the scene under white scan line pattern with two different intensity pattern values and exposure time.
+   - Capture the scene under white scan line pattern with two different intensity pattern values and exposure time.
    
-   Save it in `path_to_ldr_exp1`, `path_to_ldr_exp2`.
+   - Save it in `path_to_ldr_exp1`, `path_to_ldr_exp2`.
 
 4. Scene under black pattern and white pattern
    
    We need scene captured under black pattern with two different intensity pattern values and exposure time same as step 2.
 
-   Save it in `path_to_black_exp1`, `path_to_black_exp2`.
+   - Save it in `path_to_black_exp1`, `path_to_black_exp2`.
    
    Also, capture the scene under white pattern under two different intensity pattern values to calculate the radiance weight (normalization) for two different settings same as step 2.
 
-   Save it in `path_to_intensity1`, `path_to_intensity2`.
+   - Save it in `path_to_intensity1`, `path_to_intensity2`.
 
 ```
 dataset
