@@ -23,7 +23,7 @@ Prepare the DSL imaging system configuration as the figure above.
 
 ![image](https://github.com/shshin1210/DSL/assets/80568500/2061bd98-1b70-4526-a0a8-f324585c2a6d)
 
-You should have a complete form of calibrated parpameters that fits to your imaging system configureation.
+You should have a complete form of calibrated parpameters that fits to your imaging system configuration.
 
 - Camera & projector intrinsic and extrinsic paramters
 
